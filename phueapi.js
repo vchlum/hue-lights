@@ -8,7 +8,7 @@ const GLib = imports.gi.GLib;
 const ByteArray = imports.byteArray;
 
 const ExtensionUtils = imports.misc.extensionUtils;
-const HueLights = ExtensionUtils.getCurrentExtension();
+const Me = ExtensionUtils.getCurrentExtension();
 
 function discoverBridges() {
     let session = Soup.Session.new();
@@ -18,7 +18,7 @@ function discoverBridges() {
     if (statusCode === Soup.Status.OK) {
         return JSON.parse(message.response_body.data);
     }
-    return null;
+    return [];
 }
 
 class _PhueBridge {
@@ -33,7 +33,44 @@ class _PhueBridge {
 
         this._bridgeConnected = false;
         this._userName = "";
-        this._bridgeData = null;
+
+        this._bridgeData = [];
+        this._lightsData = [];
+        this._groupsData = [];
+        this._configData = [];
+        this._schedulesData = [];
+        this._scenesData = [];
+        this._rulesData = [];
+        this._sensorsData = [];
+        this._resourcelinksData = [];
+        this._bridgeError = [];
+    }
+
+    _checkBridgeError(data, resetError = true) {
+        if (resetError) {
+            this._bridgeError = [];
+        }
+
+        if (Array.isArray(data)) {
+            for (let i in data) {
+                this._checkBridgeError(data[i], false);
+            }
+        }
+
+        for (let key in data) {
+            if (key == "error") {
+                this._bridgeError.push(data["error"]);
+                if (data["error"]["type"] === 1) {
+                    this._bridgeConnected = false;
+                }
+            }
+        }
+
+        if (this._bridgeError.length === 0) {
+            return false;
+        }
+
+        return this._bridgeError;
     }
 
     _requestJson(method, url, data) {
@@ -46,9 +83,13 @@ class _PhueBridge {
 
         let statusCode = this._bridgeSession.send_message(msg);
         if (statusCode === Soup.Status.OK) {
-            return JSON.parse(msg.response_body.data);
+            try {
+                return JSON.parse(msg.response_body.data);
+            } catch {
+                return [];
+            }
         }
-        return null;
+        return [];
 
     }
 
@@ -67,18 +108,17 @@ class _PhueBridge {
     _createUser() {
         const CMD_FQDN = "hostname --fqdn";
         let hostname = "";
+        let username = "";
 
         try {
             let output = GLib.spawn_command_line_sync(CMD_FQDN);
-            //hostname = new String(output[1], "UTF-8").trim();
             hostname = ByteArray.toString(output[1]).trim();
-            log(hostname);
         } catch(e) {
             hostname = "unknown-host";
             log(e);
         }
 
-        let username = `gnome-extension-hue-lights#${hostname}`;
+        username = `gnome-extension-hue-lights#${hostname}`;
 
         return this._bridgePOST(this._bridgeUrl, {"devicetype": username});
     }
@@ -103,8 +143,14 @@ class _PhueBridge {
    connectBridge() {
         let data = this._createUser();
 
-        if (data[0]["error"] !== undefined) {
-            return data;
+
+        if (this._checkBridgeError(data)) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        if (data.length === 0) {
+            return [];
         }
 
         if (data[0]["success"] !== undefined) {
@@ -117,30 +163,105 @@ class _PhueBridge {
 
     }
 
-    getAllData() {
-        this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${this._userName}`);
+    _getData(data) {
+        let userName = this._userName;
+        if (userName === "") {
+            userName = "unknown";
+        }
+        this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${userName}/${data}`);
+        if (this._checkBridgeError(this._bridgeData)) {
+            log(JSON.stringify(this._bridgeError));
+            return [];
+        }
+
         return this._bridgeData;
+    }
+
+    getAll() {
+        if (this._getData("") === [] ) {
+            return [];
+        }
+
+        this._lightsData = this._bridgeData["lights"];
+        this._groupsData = this._bridgeData["groups"];
+        this._configData = this._bridgeData["config"];
+        this._schedulesData = this._bridgeData["schedules"];
+        this._scenesData = this._bridgeData["scenes"];
+        this._rulesData = this._bridgeData["rules"];
+        this._sensorsData = this._bridgeData["sensors"];
+        this._resourcelinksData = this._bridgeData["resourcelinks"];
+        return this._bridgeData;
+    }
+
+    getLights() {
+        this._lightsData = this._getData("lights");
+        return this._lightsData;
+    }
+
+    getGroups() {
+        this._groupsData = this._getData("groups");
+        return this._groupsData;
+    }
+
+    getConfig() {
+        this._configData = this._getData("config");
+        return this._configData;
+    }
+
+    getSchedules() {
+        this._schedulesData = this._getData("schedules");
+        return this._schedulesData;
+    }
+
+    getScenes() {
+        this._scenesData = this._getData("scenes");
+        return this._scenesData;
+    }
+
+    getRules() {
+        this._rulesData = this._getData("rules");
+        return this._rulesData;
+    }
+
+    getSensors() {
+        this._sensorsData = this._getData("sensors");
+        return this._sensorsData;
+    }
+
+    getResourcelinks() {
+        this._resourcelinksData = this._getData("resourcelinks");
+        return this._resourcelinksData;
     }
 
     setLights(lights, data) {
         let url = "";
+        let res = [];
 
         switch (typeof(lights)) {
             case "number":
                 url = `${this._bridgeUrl}/${this._userName}/lights/${lights.toString()}/state`;
-                return this._bridgePUT(url, data);
+                res = this._bridgePUT(url, data)
+                if (this._checkBridgeError(res)) {
+                    log(JSON.stringify(this._bridgeError));
+                    return this._bridgeError;
+                }
+                return res;
 
             case "object":
-                let light;
                 let result = [];
-                for (light in lights) {
+                for (let light in lights) {
                     url = `${this._bridgeUrl}/${this._userName}/lights/${lights[light].toString()}/state`;
-                    result = result.concat(this._bridgePUT(url, data));
+                    res = this._bridgePUT(url, data)
+                    if (this._checkBridgeError(res)) {
+                        log(JSON.stringify(this._bridgeError));
+                        return this._bridgeError;
+                    }
+                    result = result.concat(res);
                 }
                 return result;
 
             default:
-                return null;
+                return [];
         }
     }
 }
