@@ -1,36 +1,60 @@
 'use strict';
 
+/**
+ * phueapi
+ * JavaScript library for Philips Hue bridge.
+ *
+ * @author Václav Chlumský
+ * @copyright Copyright 2020, Václav Chlumský.
+ */
+
+ /**
+ * @license
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2020 Václav Chlumský
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 const Soup = imports.gi.Soup;
 const Json = imports.gi.Json;
-
 const GLib = imports.gi.GLib;
-
 const ByteArray = imports.byteArray;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
 
 function discoverBridges() {
     let session = Soup.Session.new();
     session.set_property(Soup.SESSION_USER_AGENT, "hue-discovery");
+
     let message = Soup.Message.new('GET', "https://discovery.meethue.com/");
     let statusCode = session.send_message(message);
+
     if (statusCode === Soup.Status.OK) {
         return JSON.parse(message.response_body.data);
     }
+
     return [];
 }
 
 class _PhueBridge {
 
     constructor(ip) {
-        this._ip = ip;
-        this._baseUrl = `http://${ip}`;
-        this._bridgeUrl = `${this._baseUrl}/api`;
-
-        this._bridgeSession = Soup.Session.new();
-        this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
-
         this._bridgeConnected = false;
         this._userName = "";
 
@@ -43,7 +67,16 @@ class _PhueBridge {
         this._rulesData = [];
         this._sensorsData = [];
         this._resourcelinksData = [];
+
         this._bridgeError = [];
+
+        this._ip = ip;
+        this._baseUrl = `http://${ip}`;
+        this._bridgeUrl = `${this._baseUrl}/api`;
+
+        this._bridgeSession = Soup.Session.new();
+        this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
+        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 5);
     }
 
     _checkBridgeError(data, resetError = true) {
@@ -133,11 +166,18 @@ class _PhueBridge {
 
     setUserName(userName) {
         this._userName = userName;
-        this._bridgeConnected = true;
     }
 
     isConnected() {
-        return this._bridgeConnected;
+        let res = this.getConfig();
+
+        if (res["zigbeechannel"] === undefined) {
+            this._bridgeConnected = false;
+            return this._bridgeConnected
+        }
+
+        this._bridgeConnected = true;
+        return this._bridgeConnected
     }
 
    connectBridge() {
@@ -165,10 +205,13 @@ class _PhueBridge {
 
     _getData(data) {
         let userName = this._userName;
+
         if (userName === "") {
             userName = "unknown";
         }
+
         this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${userName}/${data}`);
+
         if (this._checkBridgeError(this._bridgeData)) {
             log(JSON.stringify(this._bridgeError));
             return [];
@@ -190,6 +233,7 @@ class _PhueBridge {
         this._rulesData = this._bridgeData["rules"];
         this._sensorsData = this._bridgeData["sensors"];
         this._resourcelinksData = this._bridgeData["resourcelinks"];
+
         return this._bridgeData;
     }
 
@@ -252,10 +296,12 @@ class _PhueBridge {
                 for (let light in lights) {
                     url = `${this._bridgeUrl}/${this._userName}/lights/${lights[light].toString()}/state`;
                     res = this._bridgePUT(url, data)
+
                     if (this._checkBridgeError(res)) {
                         log(JSON.stringify(this._bridgeError));
                         return this._bridgeError;
                     }
+
                     result = result.concat(res);
                 }
                 return result;

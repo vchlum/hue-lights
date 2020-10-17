@@ -1,13 +1,44 @@
 'use strict';
 
+/**
+ * prefs hue-lights
+ * JavaScript Gnome extension for Philips Hue lights and bridges.
+ *
+ * @author Václav Chlumský
+ * @copyright Copyright 2020, Václav Chlumský.
+ */
+
+ /**
+ * @license
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2020 Václav Chlumský
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
-
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
-
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
@@ -25,7 +56,14 @@ var Settings = class HueSettings {
 
     constructor(hue) {
         this._hue = hue;
-        this._widget = new Gtk.ScrolledWindow({ hscrollbar_policy: Gtk.PolicyType.NEVER });
+        this._prefsWidget = new Gtk.ScrolledWindow({hscrollbar_policy: Gtk.PolicyType.NEVER, hexpand: true, vexpand: true, vexpand_set:true, hexpand_set: true, halign:Gtk.Align.FILL, valign:Gtk.Align.FILL});
+
+        this._prefsWidget.connect('realize', () => {
+            let window = this._prefsWidget.get_toplevel();
+            let [default_width, default_height] = window.get_default_size();
+            window.resize(default_width, default_height/1.5);
+        });
+
     }
 
     _widgetOnConnect(data) {
@@ -35,9 +73,12 @@ var Settings = class HueSettings {
         bridge = data["id"];
         ip = data["ipwidget"].get_text();
         this._hue.bridges[bridge]["ip"] = ip;
-        Utils.saveBridges(this._hue.bridges);
+        Utils.writeBridges(this._hue.bridges);
         this._hue.checkBridges();
-        this.getWidget();
+
+        Utils.writeBridges(this._hue.bridges);
+
+        this.getPrefsWidget();
     }
 
     _widgetOnRemove(data) {
@@ -47,13 +88,17 @@ var Settings = class HueSettings {
         log(`removing hue bridge ${bridge}`);
         delete this._hue.bridges[bridge];
         log(JSON.stringify(this._hue.bridges));
-        Utils.saveBridges(this._hue.bridges);
-        this.getWidget();
+        Utils.writeBridges(this._hue.bridges);
+
+        this.getPrefsWidget();
     }
 
     _widgetOnDiscovery() {
         this._hue.checkBridges();
-        this.getWidget();
+
+        Utils.writeBridges(this._hue.bridges);
+
+        this.getPrefsWidget();
     }
 
     _ipAdd(dialog, ipEntry) {
@@ -64,8 +109,12 @@ var Settings = class HueSettings {
             dialogFailed.get_content_area().add(new Gtk.Label({label: _("Press the button on the bridge and try again.")}));
             dialogFailed.show_all();
         }
+
         this._hue.checkBridges();
-        this.getWidget();
+
+        Utils.writeBridges(this._hue.bridges);
+
+        this.getPrefsWidget();
     }
 
     _widgetAdd() {
@@ -82,20 +131,21 @@ var Settings = class HueSettings {
         dialog.show_all();
     }
 
-    getWidget() {
-        let children = this._widget.get_children();
+    getPrefsWidget() {
+        let children = this._prefsWidget.get_children();
         for (let child in children) {
             children[child].destroy();
         }
 
-        this._widget.add(this._buildGrid());
-        this._widget.show_all();
+        this._prefsWidget.add(this._buildGrid());
+        this._prefsWidget.show_all();
 
-        return this._widget;
+        return this._prefsWidget;
     }
 
     _buildGrid() {
-        let grid = new Gtk.Grid();
+        let grid = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
+
         let top = 1;
 
         let tmpWidged = null;
@@ -157,9 +207,13 @@ var Settings = class HueSettings {
 
 function buildPrefsWidget() {
 
+    hue.bridges = Utils.readBridges();
+
     hue.checkBridges();
 
-    let settings = new Settings(hue);
+    Utils.writeBridges(hue.bridges);
 
-    return settings.getWidget();
+    let hueSettings = new Settings(hue);
+
+    return hueSettings.getPrefsWidget();
 }
