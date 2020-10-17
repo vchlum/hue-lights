@@ -46,6 +46,13 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Gio = imports.gi.Gio;
 const GObject = imports.gi.GObject;
+const Lang = imports.lang;
+
+const PhueMenuPosition = {
+    CENTER: 0,
+    RIGHT: 1,
+    LEFT: 2
+};
 
 var PhueMenu = GObject.registerClass({
      GTypeName: 'PhueMenu'
@@ -54,11 +61,21 @@ var PhueMenu = GObject.registerClass({
         _init() {
             super._init(0.0, Me.metadata.name, false);
 
+            this._settings = ExtensionUtils.getSettings(Utils.HELIGHTS_SETTINGS_SCHEMA);
+            this._settings.connect("changed", Lang.bind(this, function() {
+                Main.notify('settings changed', 'Now!');
+                this.readSettings();
+                this.hue.checkBridges();
+                for (let bridgeid in this.hue.instances) {
+                    log(JSON.stringify(this.hue.instances[bridgeid].setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
+                }
+            }));
+
             this.hue = new Hue.Phue();
-            this.hue.bridges = Utils.readBridges();
+
+            this.readSettings();
+
             this.hue.checkBridges();
-            Utils.writeBridges(this.hue.bridges);
-            log(JSON.stringify(Utils.readBridges()));
 
             for (let bridgeid in this.hue.instances) {
                 //log(JSON.stringify(this.hue.instances[bridgeid].setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
@@ -84,5 +101,36 @@ var PhueMenu = GObject.registerClass({
             let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
             prefsMenuItem.connect('button-press-event', function(){ Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
             this.menu.addMenuItem(prefsMenuItem);
+
+
+            this.setPositionInPanel(PhueMenuPosition.CENTER);
+    }
+
+    readSettings() {
+        this.hue.bridges = this._settings.get_value(Utils.HELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+    }
+
+    setPositionInPanel(position) {
+        let children = null;
+
+        this.get_parent().remove_actor(this);
+
+        switch (position) {
+            case PhueMenuPosition.LEFT:
+                children = Main.panel._leftBox.get_children();
+                Main.panel._leftBox.insert_child_at_index(this, children.length);
+                break;
+            case PhueMenuPosition.CENTER:
+                children = Main.panel._centerBox.get_children();
+                Main.panel._centerBox.insert_child_at_index(this, children.length);
+                break;
+            case PhueMenuPosition.RIGHT:
+                children = Main.panel._rightBox.get_children();
+                Main.panel._rightBox.insert_child_at_index(this, 0);
+                break;
+            default:
+                children = Main.panel._rightBox.get_children();
+                Main.panel._rightBox.insert_child_at_index(this, 0);
+        }
     }
 });

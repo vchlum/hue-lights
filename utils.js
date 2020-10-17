@@ -40,6 +40,10 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
+var HELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
+var HELIGHTS_SETTINGS_BRIDGES = "bridges";
+var HELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
+
 function initTranslations() {
     Gettext.textdomain(Me.metadata.uuid);
     Gettext.bindtextdomain(Me.metadata.uuid, Me.dir.get_child("locale").get_path());
@@ -57,16 +61,4 @@ function _settingsSchemaInit() {
     });
 
     return settings
-}
-
-function readBridges() {
-    return _settingsSchemaInit().get_value("bridges").deep_unpack();
-}
-
-function writeBridges(data) {
-    return _settingsSchemaInit().set_value("bridges", new GLib.Variant("a{sa{ss}}", data));
-}
-
-function readOrder() {
-    return _settingsSchemaInit().get_value("zones-first");
 }

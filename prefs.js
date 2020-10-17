@@ -39,6 +39,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
+const Lang = imports.lang;
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
@@ -52,11 +53,18 @@ function init() {
     log(`initializing ${Me.metadata.name} Preferences`);
 }
 
-var Settings = class HueSettings {
+var Prefs = class HuePrefs {
 
     constructor(hue) {
         this._hue = hue;
         this._prefsWidget = new Gtk.ScrolledWindow({hscrollbar_policy: Gtk.PolicyType.NEVER, hexpand: true, vexpand: true, vexpand_set:true, hexpand_set: true, halign:Gtk.Align.FILL, valign:Gtk.Align.FILL});
+
+        this._settings = ExtensionUtils.getSettings(Utils.HELIGHTS_SETTINGS_SCHEMA);
+        this._settings.connect("changed", Lang.bind(this, function() {
+            this.getPrefsWidget();
+        }));
+
+        this.readSettings();
 
         this._prefsWidget.connect('realize', () => {
             let window = this._prefsWidget.get_toplevel();
@@ -64,6 +72,17 @@ var Settings = class HueSettings {
             window.resize(default_width, default_height/1.5);
         });
 
+        this._hue.checkBridges();
+
+        this.readSettings();
+    }
+
+    readSettings() {
+        this._hue.bridges = this._settings.get_value(Utils.HELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+    }
+
+    writeSettings() {
+        this._settings.set_value(Utils.HELIGHTS_SETTINGS_BRIDGES, new GLib.Variant(Utils.HELIGHTS_SETTINGS_BRIDGES_TYPE, this._hue.bridges));
     }
 
     _widgetOnConnect(data) {
@@ -73,12 +92,10 @@ var Settings = class HueSettings {
         bridge = data["id"];
         ip = data["ipwidget"].get_text();
         this._hue.bridges[bridge]["ip"] = ip;
-        Utils.writeBridges(this._hue.bridges);
+
         this._hue.checkBridges();
 
-        Utils.writeBridges(this._hue.bridges);
-
-        this.getPrefsWidget();
+        this.writeSettings();
     }
 
     _widgetOnRemove(data) {
@@ -87,18 +104,13 @@ var Settings = class HueSettings {
         bridge = data["id"];
         log(`removing hue bridge ${bridge}`);
         delete this._hue.bridges[bridge];
-        log(JSON.stringify(this._hue.bridges));
-        Utils.writeBridges(this._hue.bridges);
 
-        this.getPrefsWidget();
+        this.writeSettings();
     }
 
     _widgetOnDiscovery() {
         this._hue.checkBridges();
-
-        Utils.writeBridges(this._hue.bridges);
-
-        this.getPrefsWidget();
+        this.writeSettings();
     }
 
     _ipAdd(dialog, ipEntry) {
@@ -112,9 +124,7 @@ var Settings = class HueSettings {
 
         this._hue.checkBridges();
 
-        Utils.writeBridges(this._hue.bridges);
-
-        this.getPrefsWidget();
+        this.writeSettings();
     }
 
     _widgetAdd() {
@@ -206,14 +216,7 @@ var Settings = class HueSettings {
 
 
 function buildPrefsWidget() {
+    let huePrefs = new Prefs(hue);
 
-    hue.bridges = Utils.readBridges();
-
-    hue.checkBridges();
-
-    Utils.writeBridges(hue.bridges);
-
-    let hueSettings = new Settings(hue);
-
-    return hueSettings.getPrefsWidget();
+    return huePrefs.getPrefsWidget();
 }
