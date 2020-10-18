@@ -47,6 +47,9 @@ const St = imports.gi.St;
 const Gio = imports.gi.Gio;
 const GObject = imports.gi.GObject;
 const Lang = imports.lang;
+const Slider = imports.ui.slider;
+const CheckBox = imports.ui.checkBox;
+const Atk = imports.gi.Atk;
 
 const PhueMenuPosition = {
     CENTER: 0,
@@ -96,25 +99,133 @@ var PhueMenu = GObject.registerClass({
     readSettings() {
         this.hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
         this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
+        this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
+    }
+
+    _createLight(data, lightid) {
+        let light;
+        let slider;
+        let checkbox;
+
+        if (typeof(lightid) == "object") {
+            light = new PopupMenu.PopupMenuItem(_("All"));
+        } else {
+            light = new PopupMenu.PopupMenuItem(_(data["lights"][lightid]["name"]));
+        }
+
+        light.set_x_align(St.Align.START);
+        light.label.set_x_expand(true);
+
+        slider = new Slider.Slider(0);
+        slider.set_width(200);
+        slider.set_x_align(St.Align.END);
+        slider.set_x_expand(false);
+        slider.value = 100/254;
+        slider.connect('drag-end', this._onSliderChanged.bind(this, slider));
+        light.add(slider);
+
+        checkbox = new CheckBox.CheckBox()
+        checkbox.set_x_align(St.Align.END);
+        checkbox.set_x_expand(false);
+        light.add(checkbox);
+
+        return light;
+    }
+
+    _createMenuLights(data, lights) {
+        let lightsItems = [];
+        let light;
+
+        if (lights.length === 0) {
+            return [];
+        }
+
+        light = this._createLight(data, lights);
+        lightsItems.push(light);
+
+        for (let lightid in lights) {
+            light = this._createLight(data, parseInt(lights[lightid]));
+            lightsItems.push(light);
+        }
+
+        return lightsItems;
+    }
+
+    _createMenuGroups(data, groupType) {
+        let groupItem;
+        let menuItems = [];
+
+        if (data["groups"] === undefined) {
+            return [];
+        }
+
+        for (let groupid in data["groups"]) {
+            if (data["groups"][groupid]["type"] !== groupType) {
+                continue;
+            }
+
+            groupItem = new PopupMenu.PopupSubMenuMenuItem(data["groups"][groupid]["name"]);
+            menuItems.push(groupItem);
+
+            let lightItems = this._createMenuLights(data, data["groups"][groupid]["lights"]);
+            for (let lightItem in lightItems) {
+                groupItem.menu.addMenuItem(lightItems[lightItem]);
+            }
+        }
+
+        return menuItems;
+    }
+
+    _createMenuBridge(bridgeid) {
+        let items = [];
+        let data = {};
+
+        data = this.hue.instances[bridgeid].getAll();
+
+        if (data["config"] === undefined) {
+            return [];
+        }
+
+        items.push(new PopupMenu.PopupMenuItem(data["config"]["name"], { hover: false, reactive: false, can_focus: false }));
+
+        if (this._zonesFirst) {
+            items = items.concat(this._createMenuGroups(data, "Zone"));
+            items = items.concat(this._createMenuGroups(data, "Room"));
+        } else {
+            items = items.concat(this._createMenuGroups(data, "Room"));
+            items = items.concat(this._createMenuGroups(data, "Zone"));
+        }
+
+        return items;
     }
 
     refreshMenu() {
-        let items = this.menu._getMenuItems();
-        for (let item in items){
-            items[item].destroy();
+        let bridgeItems = [];
+        let oldItems = this.menu._getMenuItems();
+
+        for (let item in oldItems){
+            oldItems[item].destroy();
         }
 
-        let menuItem = new PopupMenu.PopupMenuItem('Menu Item');
-        menuItem.add_child(new St.Label({text : 'Label added to the end'}));
-        menuItem.connect('button-press-event', function(){ Main.notify('Example Notification', 'Hello World !'); });
+        for (let bridgeid in this.hue.instances) {
 
-        this.menu.addMenuItem(menuItem);
+            bridgeItems = this._createMenuBridge(bridgeid);
 
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            for (let item in bridgeItems) {
+                this.menu.addMenuItem(bridgeItems[item]);
+            }
+
+            this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        }
 
         let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
-        prefsMenuItem.connect('button-press-event', function(){ Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
+        prefsMenuItem.connect('button-press-event', () => { Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
         this.menu.addMenuItem(prefsMenuItem);
+    }
+
+    _onSliderChanged(slider) {
+        log("hue " + (slider.value * 254));
+
     }
 
     setPositionInPanel(position) {
