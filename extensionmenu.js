@@ -236,6 +236,8 @@ var PhueMenu = GObject.registerClass({
             light = new PopupMenu.PopupMenuItem(data["lights"][lightid]["name"]);
         }
 
+        light.connect('button-press-event', () => { Main.notify(_("Under construction"), _("Colour picker will be here")); });
+
         light.set_x_align(St.Align.START);
         light.label.set_x_expand(true);
 
@@ -424,18 +426,16 @@ var PhueMenu = GObject.registerClass({
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         }
 
+        let refreshMenuItem = new PopupMenu.PopupMenuItem(_("Refresh menu"));
+        refreshMenuItem.connect('button-press-event', () => { this.rebuildMenu() });
+        this.menu.addMenuItem(refreshMenuItem);
+
         let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
         prefsMenuItem.connect('button-press-event', () => { Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
         this.menu.addMenuItem(prefsMenuItem);
 
         this._changeHappened = true;
         this.refreshMenu();
-    }
-
-    _onSliderChanged(slider) {
-        log("hue " + (slider.value * 254));
-        this.refreshMenu();
-
     }
 
     setPositionInPanel(position) {
