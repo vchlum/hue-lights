@@ -42,6 +42,7 @@ const Main = imports.ui.main;
 var hue;
 var hueLightsMenu;
 
+
 function init() {
     Utils.initTranslations();
 
@@ -50,6 +51,7 @@ function init() {
 
 function enable() {
     hueLightsMenu = new HueMenu.PhueMenu();
+
     Main.panel.addToStatusArea('hue-lights', hueLightsMenu);
 
     log(`enabling ${Me.metadata.name} version ${Me.metadata.version}`);

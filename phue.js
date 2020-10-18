@@ -42,6 +42,7 @@ class _Phue {
     constructor() {
         this.bridges = {};
         this.instances = {};
+        this.data = {};
     }
 
     _checkBridge(bridgeid) {
@@ -55,7 +56,7 @@ class _Phue {
             this.bridges[bridgeid]["mac"] = res["mac"];
         }
 
-        this.instances[bridgeid].getAll();
+        this.data[bridgeid] = this.instances[bridgeid].getAll();
     }
 
     addBridgeManual(ip) {
@@ -126,11 +127,10 @@ class _Phue {
             if (instance.isConnected()) {
                 //log(JSON.stringify(instance.setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
             }
-
         }
 
+        return this.data;
     }
-
 }
 
 var Phue = class Phue extends _Phue {

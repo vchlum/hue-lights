@@ -50,12 +50,51 @@ const Lang = imports.lang;
 const Slider = imports.ui.slider;
 const CheckBox = imports.ui.checkBox;
 const Atk = imports.gi.Atk;
+const Mainloop = imports.mainloop;
 
 const PhueMenuPosition = {
     CENTER: 0,
     RIGHT: 1,
     LEFT: 2
 };
+
+/* https://github.com/optimisme/gjs-examples/blob/master/assets/timers.js */
+const setTimeout = function(func, millis /* , ... args */) {
+
+    let args = [];
+    if (arguments.length > 2) {
+        args = args.slice.call(arguments, 2);
+    }
+
+    let id = Mainloop.timeout_add(millis, () => {
+        func.apply(null, args);
+        return false; // Stop repeating
+    }, null);
+
+    return id;
+};
+
+/* https://github.com/optimisme/gjs-examples/blob/master/assets/timers.js */
+const setInterval = function(func, millis /* , ... args */) {
+
+    let args = [];
+    if (arguments.length > 2) {
+        args = args.slice.call(arguments, 2);
+    }
+
+    let id = Mainloop.timeout_add(millis, () => {
+        func.apply(null, args);
+        return true; // Repeat
+    }, null);
+
+    return id;
+};
+
+const clearInterval = function(id) {
+
+    Mainloop.source_remove(id);
+};
+
 
 var PhueMenu = GObject.registerClass({
      GTypeName: 'PhueMenu'
@@ -64,13 +103,15 @@ var PhueMenu = GObject.registerClass({
         _init() {
             super._init(0.0, Me.metadata.name, false);
 
+            this.refreshMenuObjects = {};
+            this._changeHappened = false;
             this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
             this._settings.connect("changed", Lang.bind(this, function() {
                 Main.notify('settings changed', 'Now!');
                 this.readSettings();
                 this.setPositionInPanel();
                 this.hue.checkBridges();
-                this.refreshMenu();
+                this.rebuildMenu();
             }));
 
             this.hue = new Hue.Phue();
@@ -93,7 +134,11 @@ var PhueMenu = GObject.registerClass({
               });
             this.add_child(icon);
 
-            this.refreshMenu();
+            this.rebuildMenu();
+
+            this.idInterval = setInterval(() => {
+                this.refreshMenu();
+            }, 2000);
     }
 
     readSettings() {
@@ -102,37 +147,135 @@ var PhueMenu = GObject.registerClass({
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
     }
 
-    _createLight(data, lightid) {
+    _rndID () {
+        /* items in this.refreshMenuObjects may occure more then ones,
+         * this way it is possible - otherwise, the ID is useless
+         */
+        return Math.round((Math.random()*999999));
+    }
+
+    _menuEventHandler(data) {
+        let bridgeid = data["bridgeid"];
+        let type = data["type"];
+        let object = data["object"];
+        let hueId = data["hueId"];
+        let lights;
+        let sHueId = [];
+        let value;
+        let cmd = "";
+
+        this.bridesData = this.hue.checkBridges();
+
+        sHueId = hueId.split("::");
+        log("hue " + sHueId);
+        switch(type) {
+
+            case "checkbox":
+                sHueId[2] = parseInt(sHueId[2]);
+
+                value = object.get_checked();
+
+                if (sHueId[1] == "groups") {
+                    lights = this.bridesData[bridgeid]["groups"][sHueId[2]]["lights"];
+                }
+
+                if (sHueId[1] == "lights") {
+                    lights = sHueId[2];
+                }
+
+                this.hue.instances[bridgeid].setLights(lights, {"on": value});
+                break;
+
+            case "slider":
+                sHueId[2] = parseInt(sHueId[2]);
+
+                value = Math.round(object.value * 254);
+
+                if (sHueId[1] == "groups") {
+                    lights = this.bridesData[bridgeid]["groups"][sHueId[2]]["lights"];
+                    log ("hue " + lights);
+                    for (let light in lights) {
+                        if (value == 0) {
+                            cmd = {"on": false, "bri": value};
+                        } else {
+                            cmd = {"on": true, "bri": value};
+                        }
+
+                        this.hue.instances[bridgeid].setLights(parseInt(lights[light]), cmd);
+                    }
+                }
+
+                if (sHueId[1] == "lights") {
+                    lights = sHueId[2];
+                    if (value == 0) {
+                        cmd = {"on": false, "bri": value};
+                    } else {
+                        cmd = {"on": true, "bri": value};
+                    }
+
+                    this.hue.instances[bridgeid].setLights(lights, cmd);
+                }
+
+                break;
+
+            default:
+        }
+
+        this._changeHappened = true;
+    }
+
+    _createLight(bridgeid, data, lightid, groupid) {
         let light;
         let slider;
         let checkbox;
+        let hueId = "";
 
-        if (typeof(lightid) == "object") {
+        if (groupid !== null) {
             light = new PopupMenu.PopupMenuItem(_("All"));
         } else {
-            light = new PopupMenu.PopupMenuItem(_(data["lights"][lightid]["name"]));
+            light = new PopupMenu.PopupMenuItem(data["lights"][lightid]["name"]);
         }
 
         light.set_x_align(St.Align.START);
         light.label.set_x_expand(true);
 
-        slider = new Slider.Slider(0);
-        slider.set_width(200);
-        slider.set_x_align(St.Align.END);
-        slider.set_x_expand(false);
-        slider.value = 100/254;
-        slider.connect('drag-end', this._onSliderChanged.bind(this, slider));
-        light.add(slider);
+        if ((groupid === null && data["lights"][lightid]["state"]["bri"] !== undefined) ||
+            (groupid !== null && data["groups"][groupid]["action"]["bri"] !== undefined)) {
+            slider = new Slider.Slider(0);
+            slider.set_width(200);
+            slider.set_x_align(St.Align.END);
+            slider.set_x_expand(false);
+            slider.value = 100/254;
+            if (groupid !== null) {
+                hueId = `${this._rndID()}::groups::${groupid}::action::bri`;
+            } else {
+                hueId = `${this._rndID()}::lights::${lightid}::state::bri`;
+            }
+
+            slider.connect("drag-end", this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":slider, "type": "slider"}));
+            this.refreshMenuObjects[hueId] = {"bridgeid": bridgeid, "object":slider, "type": "slider"}
+
+            light.add(slider);
+        }
 
         checkbox = new CheckBox.CheckBox()
         checkbox.set_x_align(St.Align.END);
         checkbox.set_x_expand(false);
+        if (groupid !== null) {
+            hueId = `${this._rndID()}::groups::${groupid}::state::all_on`;
+        } else {
+            hueId = `${this._rndID()}::lights::${lightid}::state::on`;
+        }
+
+        checkbox.connect("clicked", this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":checkbox, "type": "checkbox"}));
+        this.refreshMenuObjects[hueId] = {"bridgeid": bridgeid, "object":checkbox, "type": "checkbox"}
+
         light.add(checkbox);
 
         return light;
     }
 
-    _createMenuLights(data, lights) {
+    _createMenuLights(bridgeid, data, lights, groupid) {
         let lightsItems = [];
         let light;
 
@@ -140,18 +283,18 @@ var PhueMenu = GObject.registerClass({
             return [];
         }
 
-        light = this._createLight(data, lights);
+        light = this._createLight(bridgeid, data, lights, groupid);
         lightsItems.push(light);
 
         for (let lightid in lights) {
-            light = this._createLight(data, parseInt(lights[lightid]));
+            light = this._createLight(bridgeid, data, parseInt(lights[lightid]), null);
             lightsItems.push(light);
         }
 
         return lightsItems;
     }
 
-    _createMenuGroups(data, groupType) {
+    _createMenuGroups(bridgeid, data, groupType) {
         let groupItem;
         let menuItems = [];
 
@@ -167,7 +310,7 @@ var PhueMenu = GObject.registerClass({
             groupItem = new PopupMenu.PopupSubMenuMenuItem(data["groups"][groupid]["name"]);
             menuItems.push(groupItem);
 
-            let lightItems = this._createMenuLights(data, data["groups"][groupid]["lights"]);
+            let lightItems = this._createMenuLights(bridgeid, data, data["groups"][groupid]["lights"], groupid);
             for (let lightItem in lightItems) {
                 groupItem.menu.addMenuItem(lightItems[lightItem]);
             }
@@ -189,19 +332,82 @@ var PhueMenu = GObject.registerClass({
         items.push(new PopupMenu.PopupMenuItem(data["config"]["name"], { hover: false, reactive: false, can_focus: false }));
 
         if (this._zonesFirst) {
-            items = items.concat(this._createMenuGroups(data, "Zone"));
-            items = items.concat(this._createMenuGroups(data, "Room"));
+            items = items.concat(this._createMenuGroups(bridgeid, data, "Zone"));
+            items = items.concat(this._createMenuGroups(bridgeid, data, "Room"));
         } else {
-            items = items.concat(this._createMenuGroups(data, "Room"));
-            items = items.concat(this._createMenuGroups(data, "Zone"));
+            items = items.concat(this._createMenuGroups(bridgeid, data, "Room"));
+            items = items.concat(this._createMenuGroups(bridgeid, data, "Zone"));
         }
 
         return items;
     }
 
     refreshMenu() {
+        let bridgeid = "";
+        let type = "";
+        let object = null;
+        let sPath = [];
+        let value;
+
+        if (!this._changeHappened) {
+            return
+        }
+
+        this.bridesData = this.hue.checkBridges();
+
+        for (let path in this.refreshMenuObjects) {
+
+            bridgeid = this.refreshMenuObjects[path]["bridgeid"];
+            object = this.refreshMenuObjects[path]["object"];
+            type = this.refreshMenuObjects[path]["type"];
+
+            sPath = path.split("::");
+
+            switch (type) {
+                case "checkbox":
+
+                    sPath[2] = parseInt(sPath[2]);
+
+                    value = this.bridesData[bridgeid];
+                    for (let i in sPath) {
+                        if (i == 0) {
+                            continue;
+                        }
+
+                        value = value[sPath[i]];
+                    }
+
+                    object.set_checked(value);
+                    break;
+
+                case "slider":
+
+                    sPath[2] = parseInt(sPath[2]);
+
+                    value = this.bridesData[bridgeid];
+                    for (let i in sPath) {
+                        if (i == 0) {
+                            continue;
+                        }
+
+                        value = value[sPath[i]];
+                    }
+
+                    object.value = value/255;;
+                    break;
+
+                default:
+            }
+        }
+
+        this._changeHappened = false;
+    }
+
+    rebuildMenu() {
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
+
+        this.refreshMenuObjects = {};
 
         for (let item in oldItems){
             oldItems[item].destroy();
@@ -221,10 +427,14 @@ var PhueMenu = GObject.registerClass({
         let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
         prefsMenuItem.connect('button-press-event', () => { Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
         this.menu.addMenuItem(prefsMenuItem);
+
+        this._changeHappened = true;
+        this.refreshMenu();
     }
 
     _onSliderChanged(slider) {
         log("hue " + (slider.value * 254));
+        this.refreshMenu();
 
     }
 
