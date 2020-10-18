@@ -1,12 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
+  <enum id="org.gnome.shell.extensions.hue-lights.indicator-position">
+    <value value="0" nick="center"/>
+    <value value="1" nick="right"/>
+    <value value="2" nick="left"/>
+  </enum>
   <schema id="org.gnome.shell.extensions.hue-lights" path="/org/gnome/shell/extensions/hue-lights/">
     <!-- See also: https://developer.gnome.org/glib/stable/gvariant-format-strings.html -->
     <key name="bridges" type="a{sa{ss}}">
       <default>{}</default>
+      <summary>All bridges</summary>
     </key>
     <key name="zones-first" type="b">
       <default>false</default>
+      <summary>Display zones first</summary>
+    </key>
+        <key name="indicator-position" enum="org.gnome.shell.extensions.hue-lights.indicator-position">
+      <default>"right"</default>
+      <summary>Position in Panel</summary>
     </key>
   </schema>
 </schemalist>

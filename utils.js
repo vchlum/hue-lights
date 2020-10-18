@@ -40,9 +40,11 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
-var HELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
-var HELIGHTS_SETTINGS_BRIDGES = "bridges";
-var HELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
+var HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
+var HUELIGHTS_SETTINGS_BRIDGES = "bridges";
+var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
+var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
+var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 
 function initTranslations() {
     Gettext.textdomain(Me.metadata.uuid);

@@ -61,26 +61,26 @@ var PhueMenu = GObject.registerClass({
         _init() {
             super._init(0.0, Me.metadata.name, false);
 
-            this._settings = ExtensionUtils.getSettings(Utils.HELIGHTS_SETTINGS_SCHEMA);
+            this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
             this._settings.connect("changed", Lang.bind(this, function() {
                 Main.notify('settings changed', 'Now!');
                 this.readSettings();
+                this.setPositionInPanel();
                 this.hue.checkBridges();
-                for (let bridgeid in this.hue.instances) {
-                    log(JSON.stringify(this.hue.instances[bridgeid].setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
-                }
+                this.refreshMenu();
             }));
 
             this.hue = new Hue.Phue();
 
             this.readSettings();
+            this._indicatorPositionBackUp = -1;
+            this.setPositionInPanel();
 
             this.hue.checkBridges();
 
             for (let bridgeid in this.hue.instances) {
                 //log(JSON.stringify(this.hue.instances[bridgeid].setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
             }
-
 
             Main.notify('Example Notification', 'Hello World !');
 
@@ -90,32 +90,43 @@ var PhueMenu = GObject.registerClass({
               });
             this.add_child(icon);
 
-            let menuItem = new PopupMenu.PopupMenuItem('Menu Item');
-            menuItem.add_child(new St.Label({text : 'Label added to the end'}));
-            menuItem.connect('button-press-event', function(){ Main.notify('Example Notification', 'Hello World !'); });
-
-            this.menu.addMenuItem(menuItem);
-
-            this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
-            let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
-            prefsMenuItem.connect('button-press-event', function(){ Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
-            this.menu.addMenuItem(prefsMenuItem);
-
-
-            this.setPositionInPanel(PhueMenuPosition.CENTER);
+            this.refreshMenu();
     }
 
     readSettings() {
-        this.hue.bridges = this._settings.get_value(Utils.HELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+        this.hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+        this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
+    }
+
+    refreshMenu() {
+        let items = this.menu._getMenuItems();
+        for (let item in items){
+            items[item].destroy();
+        }
+
+        let menuItem = new PopupMenu.PopupMenuItem('Menu Item');
+        menuItem.add_child(new St.Label({text : 'Label added to the end'}));
+        menuItem.connect('button-press-event', function(){ Main.notify('Example Notification', 'Hello World !'); });
+
+        this.menu.addMenuItem(menuItem);
+
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
+        prefsMenuItem.connect('button-press-event', function(){ Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
+        this.menu.addMenuItem(prefsMenuItem);
     }
 
     setPositionInPanel(position) {
         let children = null;
 
+        if (this._indicatorPositionBackUp === this._indicatorPosition) {
+            return;
+        }
+
         this.get_parent().remove_actor(this);
 
-        switch (position) {
+        switch (this._indicatorPosition) {
             case PhueMenuPosition.LEFT:
                 children = Main.panel._leftBox.get_children();
                 Main.panel._leftBox.insert_child_at_index(this, children.length);
@@ -132,5 +143,7 @@ var PhueMenu = GObject.registerClass({
                 children = Main.panel._rightBox.get_children();
                 Main.panel._rightBox.insert_child_at_index(this, 0);
         }
+
+        this._indicatorPositionBackUp = this._indicatorPosition;
     }
 });

@@ -56,12 +56,16 @@ function init() {
 var Prefs = class HuePrefs {
 
     constructor(hue) {
+        this._refreshPrefs = false;
         this._hue = hue;
         this._prefsWidget = new Gtk.ScrolledWindow({hscrollbar_policy: Gtk.PolicyType.NEVER, hexpand: true, vexpand: true, vexpand_set:true, hexpand_set: true, halign:Gtk.Align.FILL, valign:Gtk.Align.FILL});
 
-        this._settings = ExtensionUtils.getSettings(Utils.HELIGHTS_SETTINGS_SCHEMA);
-        this._settings.connect("changed", Lang.bind(this, function() {
-            this.getPrefsWidget();
+        this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
+        this._settings.connect("changed", Lang.bind(this, () => {
+            if (this._refreshPrefs) {
+                this.getPrefsWidget();
+                this._refreshPrefs = false;
+            }
         }));
 
         this.readSettings();
@@ -69,76 +73,22 @@ var Prefs = class HuePrefs {
         this._prefsWidget.connect('realize', () => {
             let window = this._prefsWidget.get_toplevel();
             let [default_width, default_height] = window.get_default_size();
-            window.resize(default_width, default_height/1.5);
+            window.resize(default_width, default_height);
         });
 
         this._hue.checkBridges();
 
-        this.readSettings();
+        this.writeSettings();
     }
 
     readSettings() {
-        this._hue.bridges = this._settings.get_value(Utils.HELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+        this._hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+        this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
+        this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
     }
 
     writeSettings() {
-        this._settings.set_value(Utils.HELIGHTS_SETTINGS_BRIDGES, new GLib.Variant(Utils.HELIGHTS_SETTINGS_BRIDGES_TYPE, this._hue.bridges));
-    }
-
-    _widgetOnConnect(data) {
-        let bridge;
-        let ip;
-
-        bridge = data["id"];
-        ip = data["ipwidget"].get_text();
-        this._hue.bridges[bridge]["ip"] = ip;
-
-        this._hue.checkBridges();
-
-        this.writeSettings();
-    }
-
-    _widgetOnRemove(data) {
-        let bridge;
-
-        bridge = data["id"];
-        log(`removing hue bridge ${bridge}`);
-        delete this._hue.bridges[bridge];
-
-        this.writeSettings();
-    }
-
-    _widgetOnDiscovery() {
-        this._hue.checkBridges();
-        this.writeSettings();
-    }
-
-    _ipAdd(dialog, ipEntry) {
-        let ip = ipEntry.get_text();
-        dialog.destroy();
-        if (this._hue.addBridgeManual(ip) === false) {
-            let dialogFailed = new Gtk.Dialog ({ modal: true, title: _("Bridge not found") });
-            dialogFailed.get_content_area().add(new Gtk.Label({label: _("Press the button on the bridge and try again.")}));
-            dialogFailed.show_all();
-        }
-
-        this._hue.checkBridges();
-
-        this.writeSettings();
-    }
-
-    _widgetAdd() {
-        let dialog = new Gtk.Dialog ({ modal: true, title: _("Enter new IP address") });
-
-        let entry = new Gtk.Entry();
-        dialog.get_content_area().add(entry);
-
-        let buttonOk = Gtk.Button.new_from_stock(Gtk.STOCK_OK);
-        buttonOk.connect("clicked", this._ipAdd.bind(this, dialog, entry));
-
-        dialog.get_action_area().add(buttonOk);
-
-        dialog.show_all();
+        this._settings.set_value(Utils.HUELIGHTS_SETTINGS_BRIDGES, new GLib.Variant(Utils.HUELIGHTS_SETTINGS_BRIDGES_TYPE, this._hue.bridges));
     }
 
     getPrefsWidget() {
@@ -147,16 +97,34 @@ var Prefs = class HuePrefs {
             children[child].destroy();
         }
 
-        this._prefsWidget.add(this._buildGrid());
+        this._prefsWidget.add(this._buildWidget());
         this._prefsWidget.show_all();
 
         return this._prefsWidget;
     }
 
-    _buildGrid() {
-        let grid = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
+    _buildWidget() {
+        let notebook = new Gtk.Notebook();
 
+        let pageBridges = this._buildBridgesWidget();
+        pageBridges.border_width = 10;
+        notebook.append_page(pageBridges, new Gtk.Label({label: _("Philips Hue Bridges")}));
+
+        let pageGeneral = this._buildGeneralWidget();
+        pageGeneral.border_width = 10;
+        notebook.append_page(pageGeneral, new Gtk.Label({label: _("General settings")}));
+
+        let pageAbout = this._buildAboutWidget()
+        pageAbout.border_width = 10;
+        notebook.append_page(pageAbout, Gtk.Image.new_from_icon_name("help-about", Gtk.IconSize.MENU));
+
+        return notebook;
+    }
+
+    _buildBridgesWidget() {
         let top = 1;
+
+        let bridgesWidget = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
 
         let tmpWidged = null;
         let nameWidget = null;
@@ -175,45 +143,156 @@ var Prefs = class HuePrefs {
             }
 
             nameWidget = new Gtk.Label({label: name});
-            grid.attach(nameWidget, 1, top, 1, 1);
+            bridgesWidget.attach(nameWidget, 1, top, 1, 1);
 
             ipWidget = new Gtk.Entry();
             ipWidget.set_text(this._hue.bridges[bridge]["ip"]);
-            grid.attach_next_to(ipWidget, nameWidget, Gtk.PositionType.RIGHT, 1, 1);
+            bridgesWidget.attach_next_to(ipWidget, nameWidget, Gtk.PositionType.RIGHT, 1, 1);
 
             if (hue.instances[bridge].isConnected()) {
                 statusWidget = new Gtk.Label({label: _("Connected")});
-                grid.attach_next_to(statusWidget, ipWidget, Gtk.PositionType.RIGHT, 1, 1);
+                bridgesWidget.attach_next_to(statusWidget, ipWidget, Gtk.PositionType.RIGHT, 1, 1);
                 tmpWidged = statusWidget;
             } else {
                 connectWidget = new Gtk.Button({label: _("Connect")});
-                connectWidget.connect("clicked", this._widgetOnConnect.bind(this, {"id":bridge, "ipwidget":ipWidget}));
-                grid.attach_next_to(connectWidget, ipWidget, Gtk.PositionType.RIGHT, 1, 1);
+                connectWidget.connect("clicked", this._widgetEventHandler.bind(this, {"event": "connect-bridge", "bridgeid":bridge, "object":ipWidget}));
+                bridgesWidget.attach_next_to(connectWidget, ipWidget, Gtk.PositionType.RIGHT, 1, 1);
                 tmpWidged = connectWidget;
             }
             removeWidget = new Gtk.Button({label: _("Remove")});
-            removeWidget.connect("clicked", this._widgetOnRemove.bind(this, {"id":bridge}));
-            grid.attach_next_to(removeWidget, tmpWidged, Gtk.PositionType.RIGHT, 1, 1);
+            removeWidget.connect("clicked", this._widgetEventHandler.bind(this, {"event": "remove-bridge", "bridgeid": bridge}));
+            bridgesWidget.attach_next_to(removeWidget, tmpWidged, Gtk.PositionType.RIGHT, 1, 1);
 
             top++;
         }
 
-        addWidget = new Gtk.Button({label: _("Add bridge IP")});
-        addWidget.connect("clicked", this._widgetAdd.bind(this, {"ipwidget":ipWidget}));
-        grid.attach(addWidget, 1, top, 4, 1);
+        addWidget = new Gtk.Button({label: _("Add Philips Hue bridge IP")});
+        addWidget.connect("clicked", this._widgetEventHandler.bind(this, {"event": "add-ip", "object": ipWidget}));
+        bridgesWidget.attach(addWidget, 1, top, 4, 1);
 
         top++;
 
-        discoveryWidget = new Gtk.Button({label: _("Discover bridges")});
-        discoveryWidget.connect("clicked", this._widgetOnDiscovery.bind(this));
-        grid.attach(discoveryWidget, 1, top, 4, 1);
+        discoveryWidget = new Gtk.Button({label: _("Discover Philips Hue bridges")});
+        discoveryWidget.connect("clicked", this._widgetEventHandler.bind(this, {"event": "discovery-bridges"}));
+        bridgesWidget.attach(discoveryWidget, 1, top, 4, 1);
 
         top++;
 
-        return grid
+        return bridgesWidget;
     }
-}
 
+    _buildGeneralWidget() {
+        let top = 1;
+        let labelWidget = null;
+
+        let generalWidget = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
+
+        labelWidget = new Gtk.Label({label: _("Indicator position in panel:")});
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let positinInPanelWidget = new Gtk.ComboBoxText();
+        positinInPanelWidget.append_text(_("center"));
+        positinInPanelWidget.append_text(_("right"));
+        positinInPanelWidget.append_text(_("left"));
+        positinInPanelWidget.set_active(this._indicatorPosition);
+        positinInPanelWidget.connect("changed", this._widgetEventHandler.bind(this, {"event": "position-in-panel", "object": positinInPanelWidget}))
+        generalWidget.attach_next_to(positinInPanelWidget, labelWidget, Gtk.PositionType.RIGHT, 1, 1);
+
+        top++;
+
+        labelWidget = new Gtk.Label({label: _("Show zones first:")});
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let zonesFirstWidget = new Gtk.Switch({active: this._zonesFirst, hexpand: false, vexpand: false, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
+        zonesFirstWidget.connect("notify::active", this._widgetEventHandler.bind(this, {"event": "zones-first", "object": zonesFirstWidget}))
+        generalWidget.attach_next_to(zonesFirstWidget, labelWidget, Gtk.PositionType.RIGHT, 1, 1);
+        return generalWidget;
+    }
+
+    _buildAboutWidget() {
+        let aboutWidget = new Gtk.Box({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
+        aboutWidget.add(new Gtk.Label({label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2020 Václav Chlumský`}));
+        return aboutWidget;
+    }
+
+    _widgetEventHandler(data) {
+        let bridge;
+        let ip;
+
+        switch(data["event"]) {
+
+            case "connect-bridge":
+                bridge = data["bridgeid"];
+                ip = data["object"].get_text();
+                this._hue.bridges[bridge]["ip"] = ip;
+
+                this._hue.checkBridges();
+
+                this.writeSettings();
+                this._refreshPrefs = true;
+                break;
+
+            case "remove-bridge":
+                bridge = data["bridgeid"];
+                log(`removing hue bridge ${bridge}`);
+                delete this._hue.bridges[bridge];
+
+                this.writeSettings();
+                this._refreshPrefs = true;
+                break;
+
+            case "new-ip":
+                ip = data["object2"].get_text();
+                data["object1"].destroy();
+                if (this._hue.addBridgeManual(ip) === false) {
+                    let dialogFailed = new Gtk.Dialog({modal: true, title: _("Bridge not found")});
+                    dialogFailed.get_content_area().add(new Gtk.Label({label: _("Press the button on the bridge and try again.")}));
+                    dialogFailed.show_all();
+                    break;
+                }
+
+                this._hue.checkBridges();
+                this.writeSettings();
+                this._refreshPrefs = true;
+                break;
+
+            case "add-ip":
+                let dialog = new Gtk.Dialog({modal: true, title: _("Enter new IP address")});
+
+                let entry = new Gtk.Entry();
+                dialog.get_content_area().add(entry);
+
+                let buttonOk = Gtk.Button.new_from_stock(Gtk.STOCK_OK);
+                buttonOk.connect("clicked", this._widgetEventHandler.bind(this, {"event":"new-ip", "object1": dialog, "object2": entry}));
+
+                dialog.get_action_area().add(buttonOk);
+
+                dialog.show_all();
+                break;
+
+            case "discovery-bridges":
+                this._hue.checkBridges();
+                this.writeSettings();
+                this._refreshPrefs = true;
+                break;
+
+            case "position-in-panel":
+                this._indicatorPosition = data["object"].get_active();
+                this._settings.set_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR, this._indicatorPosition);
+                break;
+
+            case "zones-first":
+                this._zonesFirst = data["object"].get_active();
+                this._settings.set_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST, this._zonesFirst);
+                break;
+
+            case undefined:
+            default:
+                log("unknown event");
+          }
+    }
+
+}
 
 function buildPrefsWidget() {
     let huePrefs = new Prefs(hue);
