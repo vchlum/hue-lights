@@ -51,50 +51,11 @@ const Lang = imports.lang;
 const Slider = imports.ui.slider;
 const CheckBox = imports.ui.checkBox;
 const Atk = imports.gi.Atk;
-const Mainloop = imports.mainloop;
 
 const PhueMenuPosition = {
     CENTER: 0,
     RIGHT: 1,
     LEFT: 2
-};
-
-/* https://github.com/optimisme/gjs-examples/blob/master/assets/timers.js */
-const setTimeout = function(func, millis /* , ... args */) {
-
-    let args = [];
-    if (arguments.length > 2) {
-        args = args.slice.call(arguments, 2);
-    }
-
-    let id = Mainloop.timeout_add(millis, () => {
-        func.apply(null, args);
-        return false; // Stop repeating
-    }, null);
-
-    return id;
-};
-
-/* https://github.com/optimisme/gjs-examples/blob/master/assets/timers.js */
-const setInterval = function(func, millis /* , ... args */) {
-
-    let args = [];
-    if (arguments.length > 2) {
-        args = args.slice.call(arguments, 2);
-    }
-
-    let id = Mainloop.timeout_add(millis, () => {
-        func.apply(null, args);
-        return true; // Repeat
-    }, null);
-
-    return id;
-};
-
-/* https://github.com/optimisme/gjs-examples/blob/master/assets/timers.js */
-const clearInterval = function(id) {
-
-    Mainloop.source_remove(id);
 };
 
 var PhueMenu = GObject.registerClass({
@@ -120,7 +81,6 @@ var PhueMenu = GObject.registerClass({
             super._init(0.0, Me.metadata.name, false);
 
             this.refreshMenuObjects = {};
-            this._changeHappened = false;
             this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
             this._settings.connect("changed", Lang.bind(this, function() {
                 Main.notify('settings changed', 'Now!');
@@ -151,9 +111,7 @@ var PhueMenu = GObject.registerClass({
 
             this.rebuildMenu();
 
-            this.idInterval = setInterval(() => {
-                this.refreshMenu();
-            }, 2000);
+            this.menu.connect("open-state-changed", () => {if (this.menu.isOpen) {this.refreshMenu();}});
         }
 
         /**
@@ -310,7 +268,7 @@ var PhueMenu = GObject.registerClass({
                 default:
             }
 
-            this._changeHappened = true;
+            this.refreshMenu();
         }
 
         /**
@@ -497,10 +455,6 @@ var PhueMenu = GObject.registerClass({
             let sHueId = [];
             let value;
 
-            if (!this._changeHappened) {
-                return
-            }
-
             this.bridesData = this.hue.checkBridges();
 
             for (let hueId in this.refreshMenuObjects) {
@@ -547,8 +501,6 @@ var PhueMenu = GObject.registerClass({
                     default:
                 }
             }
-
-            this._changeHappened = false;
         }
 
         /**
@@ -586,7 +538,6 @@ var PhueMenu = GObject.registerClass({
             prefsMenuItem.connect('button-press-event', () => { Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
             this.menu.addMenuItem(prefsMenuItem);
 
-            this._changeHappened = true;
             this.refreshMenu();
         }
 

@@ -104,8 +104,6 @@ var ColorPicker =  GObject.registerClass({
                     box.add(colorButton);
                 }
     
-
-
                 mainbox.add(box);
             }
         }
