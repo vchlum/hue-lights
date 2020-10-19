@@ -46,21 +46,13 @@ var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 
+/**
+ * Translations initialization.
+ * 
+ * @method initTranslations
+ */
 function initTranslations() {
+
     Gettext.textdomain(Me.metadata.uuid);
     Gettext.bindtextdomain(Me.metadata.uuid, Me.dir.get_child("locale").get_path());
-}
-
-function _settingsSchemaInit() {
-    let gschema = Gio.SettingsSchemaSource.new_from_directory(
-        Me.dir.get_child("schemas").get_path(),
-        Gio.SettingsSchemaSource.get_default(),
-        false
-    );
-
-    let settings = new Gio.Settings({
-        settings_schema: gschema.lookup("org.gnome.shell.extensions.hue-lights", true)
-    });
-
-    return settings
 }

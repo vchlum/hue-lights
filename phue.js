@@ -37,6 +37,14 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const HueApi = Me.imports.phueapi;
 
+/**
+ * _Phue class for controlling multiple bridges.
+ *
+ * @class _Phue
+ * @constructor
+ * @private
+ * @return {Object} instance
+ */
 class _Phue {
 
     constructor() {
@@ -45,7 +53,16 @@ class _Phue {
         this.data = {};
     }
 
+    /**
+     * Check if bridge with bridgeid is connected,
+     * and refreshes info about bridge.
+     * 
+     * @method _checkBridge
+     * @private
+     * @param {String} bridgeid which bridge we use here
+     */
     _checkBridge(bridgeid) {
+
         let res = this.instances[bridgeid].getConfig();
 
         if (res["name"] !== undefined) {
@@ -59,7 +76,15 @@ class _Phue {
         this.data[bridgeid] = this.instances[bridgeid].getAll();
     }
 
+    /**
+     * Add new bridge into the pool by the IP address.
+     * 
+     * @method addBridgeManual
+     * @param {String} ip IP address of a new bridge
+     * @return {Boolean} success of adding
+     */
     addBridgeManual(ip) {
+
         let instance = new HueApi.PhueBridge(ip);
 
         let res = instance.connectBridge();
@@ -79,7 +104,15 @@ class _Phue {
         return false;
     }
 
+    /**
+     * Check all bridges and try to connect to them.
+     * If bridge button pressed discovered brodge will be connected.
+     * 
+     * @method checkBridges
+     * @return {Object} dictionary with data of all bridges.
+     */
     checkBridges() {
+
         let discovered = HueApi.discoverBridges();
 
         for (let i in discovered) {
@@ -125,7 +158,7 @@ class _Phue {
             }
 
             if (instance.isConnected()) {
-                //log(JSON.stringify(instance.setLights([12, 21], {"on":true, "sat":254, "bri":254,"hue":10000})));
+                /* I am connected */
             }
         }
 
@@ -133,8 +166,17 @@ class _Phue {
     }
 }
 
+/**
+ * Phue class for controlling multiple bridges.
+ *
+ * @class Phue
+ * @constructor
+ * @return {Object} instance
+ */
 var Phue = class Phue extends _Phue {
+
     constructor(params) {
+
         super(params);
 
         Object.assign(this, params);

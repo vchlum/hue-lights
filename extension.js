@@ -39,17 +39,27 @@ const HueMenu = Me.imports.extensionmenu;
 const Utils = Me.imports.utils;
 const Main = imports.ui.main;
 
-var hue;
-var hueLightsMenu;
+var hueLightsMenu; /* main widget */
 
-
+/**
+ * This function is called once when your extension is loaded, not enabled.
+ *
+ * @method init
+ */
 function init() {
+
     Utils.initTranslations();
 
     log(`initializing ${Me.metadata.name} version ${Me.metadata.version}`);
 }
 
+/**
+ * This function could be called after your extension is enabled.
+ *
+ * @method enable
+ */
 function enable() {
+
     hueLightsMenu = new HueMenu.PhueMenu();
 
     Main.panel.addToStatusArea('hue-lights', hueLightsMenu);
@@ -57,7 +67,14 @@ function enable() {
     log(`enabling ${Me.metadata.name} version ${Me.metadata.version}`);
 }
 
+/**
+ * This function could be called after your extension is uninstalled,
+ * disabled GNOME Tweaks, when you log out or when the screen locks.
+ *
+ * @method disable
+ */
 function disable() {
+
     hueLightsMenu.destroy();
 
     log(`disabling ${Me.metadata.name} version ${Me.metadata.version}`);

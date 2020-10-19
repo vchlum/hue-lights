@@ -45,17 +45,18 @@ const _ = Gettext.gettext;
 
 var hue;
 
-function init() {
-    Utils.initTranslations();
-
-    hue = new Hue.Phue();
-
-    log(`initializing ${Me.metadata.name} Preferences`);
-}
-
+/**
+ * HuePrefs class for creating preference window
+ *
+ * @class HuePrefs
+ * @constructor
+ * @param {object} instance of Phue class with bridges
+ * @return {Object} instance
+ */
 var Prefs = class HuePrefs {
 
     constructor(hue) {
+
         this._refreshPrefs = false;
         this._hue = hue;
         this._prefsWidget = new Gtk.ScrolledWindow({hscrollbar_policy: Gtk.PolicyType.NEVER, hexpand: true, vexpand: true, vexpand_set:true, hexpand_set: true, halign:Gtk.Align.FILL, valign:Gtk.Align.FILL});
@@ -81,17 +82,36 @@ var Prefs = class HuePrefs {
         this.writeSettings();
     }
 
+    /**
+     * Reads settings into class variables.
+     * 
+     * @method readSettings
+     */
     readSettings() {
+
         this._hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
         this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
     }
 
+    /**
+     * Write settings from class variables.
+     * 
+     * @method writeSettings
+     */
     writeSettings() {
+
         this._settings.set_value(Utils.HUELIGHTS_SETTINGS_BRIDGES, new GLib.Variant(Utils.HUELIGHTS_SETTINGS_BRIDGES_TYPE, this._hue.bridges));
     }
 
+    /**
+     * Get the main witget for prefs.
+     * 
+     * @method getPrefsWidget
+     * @return {Object} the widget itself
+     */
     getPrefsWidget() {
+
         let children = this._prefsWidget.get_children();
         for (let child in children) {
             children[child].destroy();
@@ -103,7 +123,15 @@ var Prefs = class HuePrefs {
         return this._prefsWidget;
     }
 
+    /**
+     * Create the main notebook with its content.
+     * 
+     * @method _buildWidget
+     * @private
+     * @return {Object} the notebook widget
+     */
     _buildWidget() {
+
         let notebook = new Gtk.Notebook();
 
         let pageBridges = this._buildBridgesWidget();
@@ -121,11 +149,16 @@ var Prefs = class HuePrefs {
         return notebook;
     }
 
+    /**
+     * Create the widget with listed bridges.
+     * 
+     * @method _buildBridgesWidget
+     * @private
+     * @return {Object} the widget with bridges
+     */
     _buildBridgesWidget() {
+
         let top = 1;
-
-        let bridgesWidget = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
-
         let tmpWidged = null;
         let nameWidget = null;
         let ipWidget = null;
@@ -134,6 +167,8 @@ var Prefs = class HuePrefs {
         let removeWidget = null;
         let discoveryWidget = null;
         let addWidget = null;
+
+        let bridgesWidget = new Gtk.Grid({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
 
         for (let bridge in hue.bridges) {
             let name = _("unknown name");
@@ -181,7 +216,15 @@ var Prefs = class HuePrefs {
         return bridgesWidget;
     }
 
+    /**
+     * Create the widget with general settings.
+     * 
+     * @method _buildGeneralWidget
+     * @private
+     * @return {Object} the widget with settings
+     */
     _buildGeneralWidget() {
+
         let top = 1;
         let labelWidget = null;
 
@@ -209,13 +252,29 @@ var Prefs = class HuePrefs {
         return generalWidget;
     }
 
+    /**
+     * Create the widget with 'About'.
+     * 
+     * @method _buildBridgesWidget
+     * @private
+     * @return {Object} the widget with 'about'
+     */
     _buildAboutWidget() {
+
         let aboutWidget = new Gtk.Box({hexpand: true, vexpand: true, halign:Gtk.Align.CENTER, valign:Gtk.Align.CENTER});
         aboutWidget.add(new Gtk.Label({label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2020 Václav Chlumský`}));
         return aboutWidget;
     }
 
+    /**
+     * Handles events from widget in prefs.
+     * 
+     * @method _widgetEventHandler
+     * @private
+     * @param (object) dictionary with instruction what to do
+     */
     _widgetEventHandler(data) {
+
         let bridge;
         let ip;
 
@@ -294,7 +353,28 @@ var Prefs = class HuePrefs {
 
 }
 
+/**
+ * Like `extension.js` this is used for any one-time setup like translations.
+ *
+ * @method init
+ */
+function init() {
+
+    Utils.initTranslations();
+
+    hue = new Hue.Phue();
+
+    log(`initializing ${Me.metadata.name} Preferences`);
+}
+
+/**
+ * This function is called when the preferences window is first created to build
+ * and return a Gtk widget.
+ *
+ * @method buildPrefsWidget
+ */
 function buildPrefsWidget() {
+
     let huePrefs = new Prefs(hue);
 
     return huePrefs.getPrefsWidget();

@@ -38,7 +38,14 @@ const Json = imports.gi.Json;
 const GLib = imports.gi.GLib;
 const ByteArray = imports.byteArray;
 
+/**
+  * Check all bridges in the local network.
+  * 
+  * @method discoverBridges
+  * @return {Object} dictionary with bridges in local network
+  */
 function discoverBridges() {
+
     let session = Soup.Session.new();
     session.set_property(Soup.SESSION_USER_AGENT, "hue-discovery");
 
@@ -52,9 +59,19 @@ function discoverBridges() {
     return [];
 }
 
+/**
+ * _PhueBridge API class for one bridge.
+ *
+ * @class _PhueBridge
+ * @constructor
+ * @private
+ * @param {String} ip address
+ * @return {Object} instance
+ */
 class _PhueBridge {
 
     constructor(ip) {
+
         this._bridgeConnected = false;
         this._userName = "";
 
@@ -79,7 +96,17 @@ class _PhueBridge {
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 5);
     }
 
+    /**
+     * Check if any error recently occured (based on input data dictionary).
+     * 
+     * @method _checkBridgeError
+     * @private
+     * @param {Object} dictionary with data to check
+     * @param {Boolean} should the error tag be unset before processing?
+     * @return {Boolean|Object} false on OK, dictionary with errors on error
+     */
     _checkBridgeError(data, resetError = true) {
+
         if (resetError) {
             this._bridgeError = [];
         }
@@ -106,7 +133,18 @@ class _PhueBridge {
         return this._bridgeError;
     }
 
+    /**
+     * Process url request to the bridge.
+     * 
+     * @method _requestJson
+     * @private
+     * @param {String} method to be used like POST, PUT, GET
+     * @param {Boolean} url to be requested
+     * @param {Object} input data in case of supported method
+     * @return {Object} JSON with response
+     */
     _requestJson(method, url, data) {
+
         let msg = Soup.Message.new(method, url);
 
         if (data !== null) {
@@ -126,19 +164,57 @@ class _PhueBridge {
 
     }
 
+    /**
+     * POST requst to url of a bridge.
+     * 
+     * @method _bridgePOST
+     * @private
+     * @param {Boolean} url to be requested
+     * @param {Object} input data
+     * @return {Object} JSON with response
+     */
     _bridgePOST(url, data) {
+
         return this._requestJson("POST", url, data);
     }
 
+    /**
+     * PUT requst to url of a bridge.
+     * 
+     * @method _bridgePOST
+     * @private
+     * @param {Boolean} url to be requested
+     * @param {Object} input data
+     * @return {Object} JSON with response
+     */
     _bridgePUT(url, data) {
+
         return this._requestJson("PUT", url, data);
     }
 
+    /**
+     * GET requst to url of a bridge.
+     * 
+     * @method _bridgeGET
+     * @private
+     * @param {Boolean} url to be requested
+     * @return {Object} JSON with response
+     */
     _bridgeGET(url) {
+
         return this._requestJson("GET", url, null);
     }
 
+    /**
+     * Create new user on the bridge.
+     * The button must be pressed before.
+     * 
+     * @method _createUser
+     * @private
+     * @return {Object} JSON with response
+     */
     _createUser() {
+
         const CMD_FQDN = "hostname --fqdn";
         let hostname = "";
         let username = "";
@@ -156,19 +232,47 @@ class _PhueBridge {
         return this._bridgePOST(this._bridgeUrl, {"devicetype": username});
     }
 
+    /**
+     * Get allowed username on the bridge.
+     * 
+     * @method getUserName
+     * @return {String} the username
+     */
     getUserName() {
+
         return this._userName;
     }
 
+    /**
+     * Get ip address on the bridge.
+     * 
+     * @method getIp
+     * @return {String} the ip address
+     */
     getIp() {
+
         return this._ip;
     }
 
+    /**
+     * Set allowed username on the bridge.
+     * 
+     * @method setUserName
+     * @param {String} the username
+     */
     setUserName(userName) {
+
         this._userName = userName;
     }
 
+    /**
+     * Check if the bridge is connected.
+     * 
+     * @method isConnected
+     * @return {Boolean} true if connected, false otherwise
+     */
     isConnected() {
+
         let res = this.getConfig();
 
         if (res["zigbeechannel"] === undefined) {
@@ -180,7 +284,14 @@ class _PhueBridge {
         return this._bridgeConnected
     }
 
+    /**
+     * Try to connect to the bridge. Create the username if necessary.
+     * 
+     * @method connectBridge
+     * @return {Object} JSON with response
+     */
    connectBridge() {
+
         let data = this._createUser();
 
 
@@ -203,7 +314,15 @@ class _PhueBridge {
 
     }
 
+    /**
+     * Get data from the bridge. Uses GET request.
+     * 
+     * @method _getData
+     * @private
+     * @return {Object} JSON data
+     */
     _getData(data) {
+
         let userName = this._userName;
 
         if (userName === "") {
@@ -220,7 +339,14 @@ class _PhueBridge {
         return this._bridgeData;
     }
 
+    /**
+     * Check bridge and get all possible data from it.
+     * 
+     * @method getAll
+     * @return {Object} JSON data
+     */
     getAll() {
+
         if (this._getData("") === [] ) {
             return [];
         }
@@ -237,47 +363,113 @@ class _PhueBridge {
         return this._bridgeData;
     }
 
+    /**
+     * Check bridge and get data for lights.
+     * 
+     * @method getLights
+     * @return {Object} JSON data
+     */
     getLights() {
+
         this._lightsData = this._getData("lights");
         return this._lightsData;
     }
 
+    /**
+     * Check bridge and get data for groups.
+     * 
+     * @method getGroups
+     * @return {Object} JSON data
+     */
     getGroups() {
+
         this._groupsData = this._getData("groups");
         return this._groupsData;
     }
 
+    /**
+     * Check bridge and get data for config.
+     * 
+     * @method getConfig
+     * @return {Object} JSON data
+     */
     getConfig() {
+
         this._configData = this._getData("config");
         return this._configData;
     }
 
+    /**
+     * Check bridge and get data for schedules.
+     * 
+     * @method getSchedules
+     * @return {Object} JSON data
+     */
     getSchedules() {
+
         this._schedulesData = this._getData("schedules");
         return this._schedulesData;
     }
 
+    /**
+     * Check bridge and get data for scenes.
+     * 
+     * @method getScenes
+     * @return {Object} JSON data
+     */
     getScenes() {
+
         this._scenesData = this._getData("scenes");
         return this._scenesData;
     }
 
+    /**
+     * Check bridge and get data for rules.
+     * 
+     * @method getRules
+     * @return {Object} JSON data
+     */
     getRules() {
+
         this._rulesData = this._getData("rules");
         return this._rulesData;
     }
 
+    /**
+     * Check bridge and get data for sensors.
+     * 
+     * @method getSensors
+     * @return {Object} JSON data
+     */
     getSensors() {
+
         this._sensorsData = this._getData("sensors");
         return this._sensorsData;
     }
 
+    /**
+     * Check bridge and get data for resourcelinks.
+     * 
+     * @method getResourcelinks
+     * @return {Object} JSON data
+     */
     getResourcelinks() {
+
         this._resourcelinksData = this._getData("resourcelinks");
         return this._resourcelinksData;
     }
 
+    /**
+     * Set lights - turn on/off, brightness, colour, ...
+     * Multiple lights possible.
+     * 
+     * @method setLights
+     * @param {Number|Object} light id or array of light id
+     * @param {Object} JSON input data
+     * @return {Object} JSON output data
+     */
     setLights(lights, data) {
+
         let url = "";
         let res = [];
 
@@ -312,9 +504,16 @@ class _PhueBridge {
     }
 }
 
-
-
+/**
+ * PhueBridge API class for one bridge.
+ *
+ * @class PhueBridge
+ * @constructor
+ * @param {String} ip address
+ * @return {Object} instance
+ */
 var PhueBridge = class PhueBridge extends _PhueBridge {
+
     constructor(params) {
         super(params);
 
