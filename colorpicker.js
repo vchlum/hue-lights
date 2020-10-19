@@ -98,7 +98,7 @@ var ColorPicker =  GObject.registerClass({
                         style: `background-color: ${colorHexStr}; border-radius: 3px;`
                     });
         
-                    colorButton.connect('button-press-event', this._colorPickedEvent.bind(this, rnd));
+                    colorButton.connect("button-press-event", this._colorPickedEvent.bind(this, rnd));
                     colorButton.set_size(20, 20);
                     
                     box.add(colorButton);

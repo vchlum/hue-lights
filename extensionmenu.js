@@ -96,12 +96,12 @@ var PhueMenu = GObject.registerClass({
             this._indicatorPositionBackUp = -1;
             this.setPositionInPanel();
 
+            this.bridesData = this.hue.checkBridges();
+
             this.colorPicker = new ColorPicker.ColorPicker();
             this.colorPicker.show_all();
             this.colorPicker.hide();
             this.colorPicker.connect('color-picked', this._menuEventColor.bind(this));
-
-            this.hue.checkBridges();
 
             let icon = new St.Icon({
                 gicon : Gio.icon_new_for_string(Me.dir.get_path() + '/media/devicesBridgesV2white.svg'),
@@ -455,7 +455,10 @@ var PhueMenu = GObject.registerClass({
             let sHueId = [];
             let value;
 
-            this.bridesData = this.hue.checkBridges();
+            for (bridgeid in this.hue.instances) {
+                this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAll();
+            }
+            //this.bridesData = this.hue.checkBridges();
 
             for (let hueId in this.refreshMenuObjects) {
 
@@ -479,7 +482,9 @@ var PhueMenu = GObject.registerClass({
                             value = value[sHueId[i]];
                         }
 
-                        object.set_checked(value);
+                        if (object.checked !== value) {
+                            object.set_checked(value);
+                        }
                         break;
 
                     case "slider":
@@ -495,7 +500,11 @@ var PhueMenu = GObject.registerClass({
                             value = value[sHueId[i]];
                         }
 
-                        object.value = value/255;;
+                        value = value/255;
+
+                        if (object.value !== value) {
+                            object.value = value;
+                        }
                         break;
 
                     default:
