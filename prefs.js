@@ -40,6 +40,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
 const Lang = imports.lang;
+
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
@@ -281,6 +282,7 @@ var Prefs = class HuePrefs {
         switch(data["event"]) {
 
             case "connect-bridge":
+
                 bridge = data["bridgeid"];
                 ip = data["object"].get_text();
                 this._hue.bridges[bridge]["ip"] = ip;
@@ -292,6 +294,7 @@ var Prefs = class HuePrefs {
                 break;
 
             case "remove-bridge":
+
                 bridge = data["bridgeid"];
                 log(`removing hue bridge ${bridge}`);
                 delete this._hue.bridges[bridge];
@@ -301,6 +304,7 @@ var Prefs = class HuePrefs {
                 break;
 
             case "new-ip":
+
                 ip = data["object2"].get_text();
                 data["object1"].destroy();
                 if (this._hue.addBridgeManual(ip) === false) {
@@ -316,6 +320,7 @@ var Prefs = class HuePrefs {
                 break;
 
             case "add-ip":
+
                 let dialog = new Gtk.Dialog({modal: true, title: _("Enter new IP address")});
 
                 let entry = new Gtk.Entry();
@@ -330,17 +335,20 @@ var Prefs = class HuePrefs {
                 break;
 
             case "discovery-bridges":
+
                 this._hue.checkBridges();
                 this.writeSettings();
                 this._refreshPrefs = true;
                 break;
 
             case "position-in-panel":
+
                 this._indicatorPosition = data["object"].get_active();
                 this._settings.set_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR, this._indicatorPosition);
                 break;
 
             case "zones-first":
+
                 this._zonesFirst = data["object"].get_active();
                 this._settings.set_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST, this._zonesFirst);
                 break;
@@ -350,7 +358,6 @@ var Prefs = class HuePrefs {
                 log("unknown event");
           }
     }
-
 }
 
 /**

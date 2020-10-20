@@ -61,7 +61,7 @@ function initTranslations() {
  * https://stackoverflow.com/questions/22564187/rgb-to-philips-hue-hsb 
  * https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3 
  */
-function getRGBtoXY(cred, cgreen, cblue) {
+function getRGBtoHueXY(cred, cgreen, cblue) {
     // For the hue bulb the corners of the triangle are:
     // -Red: 0.675, 0.322
     // -Green: 0.4091, 0.518
