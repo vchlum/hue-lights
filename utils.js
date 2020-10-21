@@ -60,6 +60,7 @@ function initTranslations() {
 /**
  * https://stackoverflow.com/questions/22564187/rgb-to-philips-hue-hsb 
  * https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3 
+ * https://developers.meethue.com/develop/application-design-guidance/color-conversion-formulas-rgb-to-xy-and-back/#Color-rgb-to-xy
  */
 function getRGBtoHueXY(cred, cgreen, cblue) {
     // For the hue bulb the corners of the triangle are:
