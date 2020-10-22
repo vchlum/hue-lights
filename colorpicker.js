@@ -40,6 +40,7 @@ const Clutter = imports.gi.Clutter;
 const GObject = imports.gi.GObject;
 const Main = imports.ui.main;
 const Slider = imports.ui.slider;
+const PopupMenu = imports.ui.popupMenu;
 const Gdk = imports.gi.Gdk;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -191,7 +192,13 @@ const white_shades = [
  */
 var ColorPicker =  GObject.registerClass({
     GTypeName: "ColorPicker",
-    Signals: {'opened': {}, 'closed': {}, 'color-picked': {}, 'brightness-picked': {}, 'finish': {} }
+    Signals: {
+        'opened': {},
+        'closed': {},
+        'color-picked': {},
+        'brightness-picked': {},
+        'finish': {}
+    }
 }, class ColorPicker extends ModalDialog.ModalDialog {
 
     /**
@@ -203,28 +210,46 @@ var ColorPicker =  GObject.registerClass({
     _init(params = {}) {
         super._init();
 
-        this.slider = null;
-
         this._dialogLayout = typeof this.dialogLayout === "undefined"
             ? this._dialogLayout
             : this.dialogLayout;
 
+        this.slider = null;
         this.brightness = null;
+        this.switchWhite = null;
         this.colorTemperature = 0;
         this.pickedcolor = 0;
         this.r = 0;
         this.g = 0;
         this.b = 0;
 
-        this.setButtons([{ label: _("Finish"), action: Lang.bind(this, this._colorPickedFinish), key: Clutter.Escape}]);
+        this.setButtons([{
+            label: _("Finish"),
+            action: Lang.bind(this, this._colorPickedFinish),
+            key: Clutter.Escape
+        }]);
+
+        this.contentLayout.add(this._createMainBox());
+    }
+
+    /**
+     * Create main box with content
+     * 
+     * @method _createMainBox
+     * @private
+     * @return {object} main box as BoxLayout
+     */
+    _createMainBox() {
+
+        let box;
+        let switchButton;
+        let RGB = [0,0,0];
 
         let mainbox = new St.BoxLayout({vertical: true});
 
-        this.contentLayout.add(mainbox);
-
-        let box;
-        let RGB = [0,0,0];
-
+        /**
+         * Grid with colors 
+         */
         for (let i = 0; i < 13; i++) {
 
             box = new St.BoxLayout({vertical: false});
@@ -234,18 +259,38 @@ var ColorPicker =  GObject.registerClass({
                     continue;
                 }
 
-                RGB = [parseInt("0x" + pallete[i][j].slice(1, 3), 16), parseInt("0x" + pallete[i][j].slice(3, 5), 16), parseInt("0x" + pallete[i][j].slice(5, 7), 16)];
+                RGB = [
+                    parseInt("0x" + pallete[i][j].slice(1, 3), 16),
+                    parseInt("0x" + pallete[i][j].slice(3, 5), 16),
+                    parseInt("0x" + pallete[i][j].slice(5, 7), 16)
+                ];
 
-                box.add(this._createRgbButton(RGB, 0), { expand: false,
-                    x_fill: false,
-                    x_align: St.Align.MIDDLE,
-                    y_fill: false,
-                    y_align: St.Align.MIDDLE });
+                box.add(
+                    this._createRgbButton(RGB, 0),
+                    {
+                        expand: false,
+                        x_fill: false,
+                        x_align: St.Align.MIDDLE,
+                        y_fill: false,
+                        y_align: St.Align.MIDDLE
+                    }
+                );
             }
 
             mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
         }
 
+        mainbox.add(
+            new PopupMenu.PopupSeparatorMenuItem(),
+            {
+                x_fill: true,
+                x_align: St.Align.MIDDLE
+            }
+        );
+
+        /**
+         * Grid with temperatures of white
+         */
         for (let i = 0; i < 2; i++) {
 
             box = new St.BoxLayout({vertical: false});
@@ -254,21 +299,54 @@ var ColorPicker =  GObject.registerClass({
 
                 RGB = kelvin_table[white_shades[i][j]];
 
-                box.add(this._createRgbButton(RGB, white_shades[i][j]), { expand: false,
-                    x_fill: false,
-                    x_align: St.Align.MIDDLE,
-                    y_fill: false,
-                    y_align: St.Align.MIDDLE });
+                box.add(
+                    this._createRgbButton(RGB, white_shades[i][j]),
+                    {
+                        expand: false,
+                        x_fill: false,
+                        x_align: St.Align.MIDDLE,
+                        y_fill: false,
+                        y_align: St.Align.MIDDLE
+                    }
+                );
             }
 
             mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
         }
 
+        box = new St.BoxLayout({vertical: false});
+        box.add(
+            new St.Label({"text": _("Temperature of white:") }),
+            {x_fill: true, x_align: St.Align.MIDDLE}
+        );
+
+        this.switchWhite = new PopupMenu.Switch(true);
+
+        switchButton = new St.Button({reactive: true, can_focus: true});
+        switchButton.set_x_align(St.Align.MIDDLE);
+        switchButton.set_x_expand(false);
+        switchButton.child = this.switchWhite;
+        switchButton.connect("button-press-event",  Lang.bind(this, function() {
+            this.switchWhite.toggle();
+        }));
+
+        box.add(switchButton, {x_fill: false, x_align: St.Align.MIDDLE});
+        mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
+
+        mainbox.add(
+            new PopupMenu.PopupSeparatorMenuItem(),
+            {x_fill: true, x_align: St.Align.MIDDLE}
+        );
+
+        /**
+         * Brightness slider
+         */
         this.slider = new Slider.Slider(0);
         this.slider.connect("drag-end", this._brightnessEvent.bind(this));
         mainbox.add(this.slider);
-    }
 
+        return mainbox;
+    }
     /**
      * Create collored button
      *  
@@ -285,7 +363,10 @@ var ColorPicker =  GObject.registerClass({
             style: `background-color: ${colorHexStr}; border-radius: 3px;`
         });
 
-        colorButton.connect("button-press-event", this._colorPickedEvent.bind(this, RGB, colorTemperature));
+        colorButton.connect(
+            "button-press-event",
+            this._colorPickedEvent.bind(this, RGB, colorTemperature)
+        );
         colorButton.set_size(20, 20);
 
         return colorButton;
@@ -309,8 +390,8 @@ var ColorPicker =  GObject.registerClass({
             (primary.height / 100) * height_percents
         );
 
-        let help_width = Math.round(translator_width * 0.9);
-        let help_height = Math.round(translator_height * 0.9);
+        let help_width = Math.round(translator_width * 1);
+        let help_height = Math.round(translator_height * 1);
         this._dialogLayout.set_width(help_width);
         this._dialogLayout.set_height(help_height);
     }

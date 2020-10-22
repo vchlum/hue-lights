@@ -474,6 +474,7 @@ class _PhueBridge {
         let res = [];
 
         switch (typeof(lights)) {
+
             case "number":
                 url = `${this._bridgeUrl}/${this._userName}/lights/${lights.toString()}/state`;
                 res = this._bridgePUT(url, data)
@@ -500,6 +501,27 @@ class _PhueBridge {
 
             default:
                 return [];
+        }
+    }
+
+    /**
+     * Set action for the whole group.
+     * Like setting the scene.
+     * 
+     * @method actionGroup
+     * @param {Number} groupId for the action
+     * @param {Object} JSON input data
+     * @return {Object} JSON output data
+     */
+    actionGroup(groupId, data) {
+        let url = "";
+        let res = [];
+
+        url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}/action`;
+        res = this._bridgePUT(url, data)
+        if (this._checkBridgeError(res)) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
         }
     }
 }

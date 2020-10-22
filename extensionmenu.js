@@ -58,7 +58,28 @@ const PhueMenuPosition = {
     LEFT: 2
 };
 
-const ctToHue = {1600:500, 1800:455, 2000:448, 2200:430, 2400:413, 2600:396, 2800:378, 3000:361, 3200:343, 3500:326, 3800:309, 4400:292, 4800:274, 5200:257, 5600:240, 6000:222, 7000:205, 9000:187, 10500:170, 12000:153};
+const ctToHue = {
+    1600:500,
+    1800:455,
+    2000:448,
+    2200:430,
+    2400:413,
+    2600:396,
+    2800:378,
+    3000:361,
+    3200:343,
+    3500:326,
+    3800:309,
+    4400:292,
+    4800:274,
+    5200:257,
+    5600:240,
+    6000:222,
+    7000:205,
+    9000:187,
+    10500:170,
+    12000:153
+};
 
 /**
  * PhueMenu class. Provides widget with menu items.
@@ -78,6 +99,7 @@ var PhueMenu = GObject.registerClass({
      * @private
      */
     _init() {
+
         super._init(0.0, Me.metadata.name, false);
 
         this.refreshMenuObjects = {};
@@ -117,9 +139,21 @@ var PhueMenu = GObject.registerClass({
      */
     readSettings() {
 
-        this.hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
-        this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
-        this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
+        this.hue.bridges = this._settings.get_value(
+            Utils.HUELIGHTS_SETTINGS_BRIDGES
+        ).deep_unpack();
+
+        this._indicatorPosition = this._settings.get_enum(
+            Utils.HUELIGHTS_SETTINGS_INDICATOR
+        );
+
+        this._zonesFirst = this._settings.get_boolean(
+            Utils.HUELIGHTS_SETTINGS_ZONESFIRST
+        );
+
+        this._showScenes = this._settings.get_boolean(
+            Utils.HUELIGHTS_SETTINGS_SHOWSCENES
+        );
     }
 
     /**
@@ -144,6 +178,7 @@ var PhueMenu = GObject.registerClass({
      * @private
      */
     _menuEventBrightness() {
+
         let tmpobject = this.colorData["object"];
         this.colorData["object"] = this.colorPicker.brightness;
         this.colorData["type"] = "slider";
@@ -160,6 +195,7 @@ var PhueMenu = GObject.registerClass({
      * @private
      */
     _menuEventColor() {
+
         this.colorData["type"] = "set-color";
         this._menuEventHandler(this.colorData);
         this.colorData["type"] = "select-color";
@@ -177,30 +213,30 @@ var PhueMenu = GObject.registerClass({
         let bridgeid = data["bridgeid"];
         let type = data["type"];
         let object = data["object"];
-        let hueId = data["hueId"];
+        let bridgePath = data["bridgePath"];
         let lights;
-        let sHueId = [];
+        let sbridgePath = [];
         let value;
         let colorTemperature;
         let cmd = "";
 
         this.bridesData = this.hue.checkBridges();
 
-        sHueId = hueId.split("::");
+        sbridgePath = bridgePath.split("::");
 
         switch(type) {
 
             case "switch":
-                sHueId[2] = parseInt(sHueId[2]);
+                sbridgePath[2] = parseInt(sbridgePath[2]);
 
                 value = object.state;
 
-                if (sHueId[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sHueId[2]]["lights"];
+                if (sbridgePath[1] == "groups") {
+                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
                 }
 
-                if (sHueId[1] == "lights") {
-                    lights = sHueId[2];
+                if (sbridgePath[1] == "lights") {
+                    lights = sbridgePath[2];
                 }
 
                 this.hue.instances[bridgeid].setLights(lights, {"on": value});
@@ -208,12 +244,12 @@ var PhueMenu = GObject.registerClass({
 
             case "slider":
 
-                sHueId[2] = parseInt(sHueId[2]);
+                sbridgePath[2] = parseInt(sbridgePath[2]);
 
                 value = Math.round(object.value * 254);
 
-                if (sHueId[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sHueId[2]]["lights"];
+                if (sbridgePath[1] == "groups") {
+                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
                     for (let light in lights) {
                         if (value == 0) {
                             cmd = {"on": false, "bri": value};
@@ -221,19 +257,25 @@ var PhueMenu = GObject.registerClass({
                             cmd = {"on": true, "bri": value};
                         }
 
-                        this.hue.instances[bridgeid].setLights(parseInt(lights[light]), cmd);
+                        this.hue.instances[bridgeid].setLights(
+                            parseInt(lights[light]),
+                            cmd
+                        );
                     }
                 }
 
-                if (sHueId[1] == "lights") {
-                    lights = sHueId[2];
+                if (sbridgePath[1] == "lights") {
+                    lights = sbridgePath[2];
                     if (value == 0) {
                         cmd = {"on": false, "bri": value};
                     } else {
                         cmd = {"on": true, "bri": value};
                     }
 
-                    this.hue.instances[bridgeid].setLights(lights, cmd);
+                    this.hue.instances[bridgeid].setLights(
+                        lights,
+                        cmd
+                    );
                 }
 
                 break;
@@ -247,22 +289,34 @@ var PhueMenu = GObject.registerClass({
                 }
                 this.colorPicker = new ColorPicker.ColorPicker();
                 this.colorPicker.show_all();
-                this.colorPicker.connect("finish", () => {this.colorPicker = null; });
-                this.colorPicker.connect('color-picked', this._menuEventColor.bind(this));
-                this.colorPicker.connect('brightness-picked', this._menuEventBrightness.bind(this));
+                this.colorPicker.connect("finish", () => {
+                    this.colorPicker = null;
+                });
+                this.colorPicker.connect(
+                    'color-picked',
+                    this._menuEventColor.bind(this)
+                );
+                this.colorPicker.connect(
+                    'brightness-picked',
+                    this._menuEventBrightness.bind(this)
+                );
                 this.colorPicker.newPosition();
 
                 break;
 
             case "set-color":
 
-                sHueId[2] = parseInt(sHueId[2]);
+                sbridgePath[2] = parseInt(sbridgePath[2]);
 
-                value = Utils.getRGBtoHueXY(this.colorPicker.r, this.colorPicker.g, this.colorPicker.b);
+                value = Utils.getRGBtoHueXY(
+                    this.colorPicker.r,
+                    this.colorPicker.g,
+                    this.colorPicker.b
+                );
                 colorTemperature = this.colorPicker.colorTemperature;
 
-                if (sHueId[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sHueId[2]]["lights"];
+                if (sbridgePath[1] == "groups") {
+                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
 
                     for (let light in lights) {
 
@@ -272,18 +326,23 @@ var PhueMenu = GObject.registerClass({
                             cmd = {"on": true};
                         }
 
-                        if (colorTemperature > 0) {
+                        if (colorTemperature > 0 &&
+                            this.colorPicker.switchWhite.state) {
+
                             cmd["ct"] = ctToHue[colorTemperature];
                         } else {
                             cmd["xy"] = value;
                         }
 
-                        this.hue.instances[bridgeid].setLights(parseInt(lights[light]), cmd);
+                        this.hue.instances[bridgeid].setLights(
+                            parseInt(lights[light]),
+                            cmd
+                        );
                     }
                 }
 
-                if (sHueId[1] == "lights") {
-                    lights = sHueId[2];
+                if (sbridgePath[1] == "lights") {
+                    lights = sbridgePath[2];
 
                     if (value == 0) {
                         cmd = {"on": false};
@@ -291,14 +350,32 @@ var PhueMenu = GObject.registerClass({
                         cmd = {"on": true};
                     }
 
-                    if (colorTemperature > 0) {
+                    if (colorTemperature > 0 &&
+                        this.colorPicker.switchWhite.state) {
+
                         cmd["ct"] = ctToHue[colorTemperature];
                     } else {
                         cmd["xy"] = value;
                     }
 
-                    this.hue.instances[bridgeid].setLights(lights, cmd);
+                    this.hue.instances[bridgeid].setLights(
+                        lights,
+                        cmd
+                    );
                 }
+                break;
+
+            case "scene":
+
+                cmd = {
+                    "scene": object,
+                    "transitiontime": 4
+                };
+
+                this.hue.instances[bridgeid].actionGroup(
+                    data["groupid"],
+                    cmd
+                );
                 break;
 
             default:
@@ -310,7 +387,7 @@ var PhueMenu = GObject.registerClass({
     /**
      * Creates last item in menu hierarchy with all the controls.
      * 
-     * @method _createLight
+     * @method _createItemLight
      * @private
      * @param {String} bridgeid which bridge we use here
      * @param {Object} dictionary data for the bridgeid
@@ -318,71 +395,183 @@ var PhueMenu = GObject.registerClass({
      * @param {Number} groupid creates menu item for all lights (not mandatory)
      * @return {Object} menuitem with light controls
      */
-    _createLight(bridgeid, data, lightid, groupid) {
+    _createItemLight(bridgeid, data, lightid, groupid) {
 
         let light;
         let slider;
-        let hueId = "";
+        let bridgePath = "";
         let switchBox;
         let switchButton
 
+        /**
+         * Decide if this is item for one light or a group.
+         */
         if (groupid !== null) {
-            light = new PopupMenu.PopupMenuItem(_("All"));
+            light = new PopupMenu.PopupMenuItem(
+                _("All")
+            );
         } else {
-            light = new PopupMenu.PopupMenuItem(data["lights"][lightid]["name"]);
+            light = new PopupMenu.PopupMenuItem(
+                data["lights"][lightid]["name"]
+            );
         }
-
-        if (groupid !== null) {
-            hueId = `${this._rndID()}::groups::${groupid}::action::hue`;
-        } else {
-            hueId = `${this._rndID()}::lights::${lightid}::state::hue`;
-        }
-
-        light.connect('button-press-event', this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":light, "type": "select-color"}));
 
         light.set_x_align(St.Align.START);
         light.label.set_x_expand(true);
 
-        if ((groupid === null && data["lights"][lightid]["state"]["bri"] !== undefined) ||
-            (groupid !== null && data["groups"][groupid]["action"]["bri"] !== undefined)) {
+        /**
+         * Open color picker on mouse click
+         */
+        if (groupid !== null) {
+            bridgePath = `${this._rndID()}::groups::${groupid}::action::hue`;
+        } else {
+            bridgePath = `${this._rndID()}::lights::${lightid}::state::hue`;
+        }
+
+        light.connect(
+            'button-press-event',
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object":light, "type":
+                    "select-color"
+                }
+            )
+        );
+
+        /**
+         * If brightness is possible, add a slider
+         */
+        if ((groupid === null &&
+                data["lights"][lightid]["state"]["bri"] !== undefined) ||
+            (groupid !== null &&
+                data["groups"][groupid]["action"]["bri"] !== undefined)) {
+
             slider = new Slider.Slider(0);
             slider.set_width(200);
             slider.set_x_align(St.Align.END);
             slider.set_x_expand(false);
             slider.value = 100/254;
+
             if (groupid !== null) {
-                hueId = `${this._rndID()}::groups::${groupid}::action::bri`;
+                bridgePath = `${this._rndID()}::groups::${groupid}::action::bri`;
             } else {
-                hueId = `${this._rndID()}::lights::${lightid}::state::bri`;
+                bridgePath = `${this._rndID()}::lights::${lightid}::state::bri`;
             }
 
-            slider.connect("drag-end", this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":slider, "type": "slider"}));
+            slider.connect(
+                "drag-end",
+                this._menuEventHandler.bind(
+                    this,
+                    {
+                        "bridgePath": bridgePath,
+                        "bridgeid": bridgeid,
+                        "object":slider,
+                        "type": "slider"
+                    }
+                )
+            );
 
-            this.refreshMenuObjects[hueId] = {"bridgeid": bridgeid, "object":slider, "type": "slider"}
+            this.refreshMenuObjects[bridgePath] = {
+                "bridgeid": bridgeid,
+                "object":slider,
+                "type": "slider"
+            }
 
             light.add(slider);
         }
 
+        /**
+         * Add switch for turn the light on/off
+         */
         if (groupid !== null) {
-            hueId = `${this._rndID()}::groups::${groupid}::state::all_on`;
+            bridgePath = `${this._rndID()}::groups::${groupid}::state::all_on`;
         } else {
-            hueId = `${this._rndID()}::lights::${lightid}::state::on`;
+            bridgePath = `${this._rndID()}::lights::${lightid}::state::on`;
         }
+
         switchBox = new PopupMenu.Switch(false);
-        switchButton = new St.Button({reactive: true, can_focus: true});
+        switchButton = new St.Button(
+            {reactive: true, can_focus: true}
+        );
         switchButton.set_x_align(St.Align.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
-        switchButton.connect("button-press-event",  Lang.bind(this, function() {
-            switchBox.toggle();
-        }));
-        switchButton.connect("button-press-event", this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":switchBox, "type": "switch"}));
+        switchButton.connect(
+            "button-press-event",
+            Lang.bind(this, function() {
+                switchBox.toggle();
+            })
+        );
+        switchButton.connect(
+            "button-press-event",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object":switchBox,
+                    "type": "switch"
+                }
+            )
+        );
 
-        this.refreshMenuObjects[hueId] = {"bridgeid": bridgeid, "object":switchBox, "type": "switch"}
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object":switchBox,
+            "type": "switch"
+        }
 
         light.add(switchButton);
 
         return light;
+    }
+
+    /**
+     * Creates array of menu items with scenes
+     * 
+     * @method _createScenes
+     * @private
+     * @param {String} bridgeid which bridge we use here
+     * @param {Object} dictionary data for the bridgeid
+     * @param {Number} groupid of scenes
+     * @return {Object} menuitem with scenes
+     */
+    _createScenes(bridgeid, data, groupid) {
+        let scenes = [];
+        let scene;
+
+        for (let sceneid in data["scenes"]) {
+            if (data["scenes"][sceneid]["group"] != undefined &&
+                data["scenes"][sceneid]["group"] === groupid.toString()) {
+
+                scene = new PopupMenu.PopupMenuItem(
+                    data["scenes"][sceneid]["name"]
+                );
+
+                scene.set_x_align(St.Align.END);
+                scene.label.set_x_expand(false);
+
+                scene.connect(
+                    "button-press-event",
+                    this._menuEventHandler.bind(
+                        this,
+                        {
+                            "bridgePath": "",
+                            "bridgeid": bridgeid,
+                            "groupid": groupid,
+                            "object":sceneid,
+                            "type": "scene"
+                        }
+                    )
+                );
+                scenes.push(scene);
+            }
+        }
+
+        return scenes;
     }
 
     /**
@@ -405,34 +594,75 @@ var PhueMenu = GObject.registerClass({
             return [];
         }
 
-        light = this._createLight(bridgeid, data, lights, groupid);
+        light = this._createItemLight(
+            bridgeid,
+            data,
+            lights,
+            groupid
+        );
         lightsItems.push(light);
 
         for (let lightid in lights) {
-            light = this._createLight(bridgeid, data, parseInt(lights[lightid]), null);
+            light = this._createItemLight(
+                bridgeid,
+                data,
+                parseInt(lights[lightid]),
+                null
+            );
             lightsItems.push(light);
         }
 
+        if (this._showScenes) {
+            lightsItems = lightsItems.concat(
+                this._createScenes(bridgeid, data, groupid)
+            );
+        }
         return lightsItems;
     }
 
+    /**
+     * Creates switch for group menu item
+     * 
+     * @method _createGroupSwitch
+     * @param {String} bridgeid 
+     * @param {String} groupid 
+     * @return {Object} switch button
+     */
     _createGroupSwitch(bridgeid, groupid) {
         let switchBox;
         let switchButton;
 
-        let hueId = `${this._rndID()}::groups::${groupid}::state::any_on`;
+        let bridgePath = `${this._rndID()}::groups::${groupid}::state::any_on`;
 
         switchBox = new PopupMenu.Switch(false);
         switchButton = new St.Button({reactive: true, can_focus: true});
         switchButton.set_x_align(St.Align.START);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
-        switchButton.connect("button-press-event",  Lang.bind(this, function() {
-            switchBox.toggle();
-        }));
-        switchButton.connect("button-press-event", this._menuEventHandler.bind(this, {"hueId": hueId, "bridgeid": bridgeid, "object":switchBox, "type": "switch"}));
+        switchButton.connect(
+            "button-press-event",
+            Lang.bind(this, function() {
+                switchBox.toggle();
+            })
+        );
+        switchButton.connect(
+            "button-press-event",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object":switchBox,
+                    "type": "switch"
+                }
+            )
+        );
 
-        this.refreshMenuObjects[hueId] = {"bridgeid": bridgeid, "object":switchBox, "type": "switch"}
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object":switchBox,
+            "type": "switch"
+        }
 
         return switchButton;
     }
@@ -461,14 +691,20 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
-            groupItem = new PopupMenu.PopupSubMenuMenuItem(data["groups"][groupid]["name"]);
-
+            groupItem = new PopupMenu.PopupSubMenuMenuItem(
+                data["groups"][groupid]["name"]
+            );
 
             groupItem.add(this._createGroupSwitch(bridgeid, groupid));
 
             menuItems.push(groupItem);
 
-            let lightItems = this._createMenuLights(bridgeid, data, data["groups"][groupid]["lights"], groupid);
+            let lightItems = this._createMenuLights(
+                bridgeid,
+                data,
+                data["groups"][groupid]["lights"],
+                groupid
+            );
             for (let lightItem in lightItems) {
                 groupItem.menu.addMenuItem(lightItems[lightItem]);
             }
@@ -496,14 +732,29 @@ var PhueMenu = GObject.registerClass({
             return [];
         }
 
-        items.push(new PopupMenu.PopupMenuItem(data["config"]["name"], { hover: false, reactive: false, can_focus: false }));
+        items.push(new PopupMenu.PopupMenuItem(
+            data["config"]["name"],
+            {
+                hover: false,
+                reactive: false,
+                can_focus: false
+            }
+        ));
 
         if (this._zonesFirst) {
-            items = items.concat(this._createMenuGroups(bridgeid, data, "Zone"));
-            items = items.concat(this._createMenuGroups(bridgeid, data, "Room"));
+            items = items.concat(
+                this._createMenuGroups(bridgeid, data, "Zone")
+            );
+            items = items.concat(
+                this._createMenuGroups(bridgeid, data, "Room")
+            );
         } else {
-            items = items.concat(this._createMenuGroups(bridgeid, data, "Room"));
-            items = items.concat(this._createMenuGroups(bridgeid, data, "Zone"));
+            items = items.concat(
+                this._createMenuGroups(bridgeid, data, "Room")
+            );
+            items = items.concat(
+                this._createMenuGroups(bridgeid, data, "Zone")
+            );
         }
 
         return items;
@@ -519,34 +770,34 @@ var PhueMenu = GObject.registerClass({
         let bridgeid = "";
         let type = "";
         let object = null;
-        let sHueId = [];
+        let sbridgePath = [];
         let value;
 
         for (bridgeid in this.hue.instances) {
             this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAll();
         }
 
-        for (let hueId in this.refreshMenuObjects) {
+        for (let bridgePath in this.refreshMenuObjects) {
 
-            bridgeid = this.refreshMenuObjects[hueId]["bridgeid"];
-            object = this.refreshMenuObjects[hueId]["object"];
-            type = this.refreshMenuObjects[hueId]["type"];
+            bridgeid = this.refreshMenuObjects[bridgePath]["bridgeid"];
+            object = this.refreshMenuObjects[bridgePath]["object"];
+            type = this.refreshMenuObjects[bridgePath]["type"];
 
-            sHueId = hueId.split("::");
+            sbridgePath = bridgePath.split("::");
 
             switch (type) {
 
                 case "switch":
 
-                    sHueId[2] = parseInt(sHueId[2]);
+                    sbridgePath[2] = parseInt(sbridgePath[2]);
 
                     value = this.bridesData[bridgeid];
-                    for (let i in sHueId) {
+                    for (let i in sbridgePath) {
                         if (i == 0) {
                             continue;
                         }
 
-                        value = value[sHueId[i]];
+                        value = value[sbridgePath[i]];
                     }
 
                     if (object.state !== value) {
@@ -556,15 +807,15 @@ var PhueMenu = GObject.registerClass({
 
                 case "slider":
 
-                    sHueId[2] = parseInt(sHueId[2]);
+                    sbridgePath[2] = parseInt(sbridgePath[2]);
 
                     value = this.bridesData[bridgeid];
-                    for (let i in sHueId) {
+                    for (let i in sbridgePath) {
                         if (i == 0) {
                             continue;
                         }
 
-                        value = value[sHueId[i]];
+                        value = value[sbridgePath[i]];
                     }
 
                     value = value/255;
@@ -603,15 +854,27 @@ var PhueMenu = GObject.registerClass({
                 this.menu.addMenuItem(bridgeItems[item]);
             }
 
-            this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            this.menu.addMenuItem(
+                new PopupMenu.PopupSeparatorMenuItem()
+            );
         }
 
-        let refreshMenuItem = new PopupMenu.PopupMenuItem(_("Refresh menu"));
-        refreshMenuItem.connect('button-press-event', () => { this.rebuildMenu() });
+        let refreshMenuItem = new PopupMenu.PopupMenuItem(
+            _("Refresh menu")
+        );
+        refreshMenuItem.connect(
+            'button-press-event',
+            () => { this.rebuildMenu(); }
+        );
         this.menu.addMenuItem(refreshMenuItem);
 
-        let prefsMenuItem = new PopupMenu.PopupMenuItem(_("Settings"));
-        prefsMenuItem.connect('button-press-event', () => { Util.spawn(["gnome-shell-extension-prefs", Me.uuid]); });
+        let prefsMenuItem = new PopupMenu.PopupMenuItem(
+            _("Settings")
+        );
+        prefsMenuItem.connect(
+            'button-press-event',
+            () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
+        );
         this.menu.addMenuItem(prefsMenuItem);
 
         this.refreshMenu();
@@ -638,13 +901,19 @@ var PhueMenu = GObject.registerClass({
             case PhueMenuPosition.LEFT:
 
                 children = Main.panel._leftBox.get_children();
-                Main.panel._leftBox.insert_child_at_index(this, children.length);
+                Main.panel._leftBox.insert_child_at_index(
+                    this,
+                    children.length
+                );
                 break;
 
             case PhueMenuPosition.CENTER:
 
                 children = Main.panel._centerBox.get_children();
-                Main.panel._centerBox.insert_child_at_index(this, children.length);
+                Main.panel._centerBox.insert_child_at_index(
+                    this,
+                    children.length
+                    );
                 break;
 
             case PhueMenuPosition.RIGHT:

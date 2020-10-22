@@ -45,6 +45,7 @@ var HUELIGHTS_SETTINGS_BRIDGES = "bridges";
 var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
+var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
 
 /**
  * Translations initialization.

@@ -11,11 +11,15 @@
       <default>{}</default>
       <summary>All bridges</summary>
     </key>
+    <key name="show-scenes" type="b">
+      <default>true</default>
+      <summary>Display scenes in menu</summary>
+    </key>
     <key name="zones-first" type="b">
       <default>false</default>
       <summary>Display zones first</summary>
     </key>
-        <key name="indicator-position" enum="org.gnome.shell.extensions.hue-lights.indicator-position">
+    <key name="indicator-position" enum="org.gnome.shell.extensions.hue-lights.indicator-position">
       <default>"right"</default>
       <summary>Position in Panel</summary>
     </key>

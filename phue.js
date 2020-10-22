@@ -96,7 +96,12 @@ class _Phue {
             res = instance.getConfig();
             let bridgeid = res["bridgeid"].toLowerCase();
 
-            this.bridges[bridgeid] = {"ip": ip, "username": username, "name": res["name"], "mac": res["mac"]};
+            this.bridges[bridgeid] = {
+                "ip": ip,
+                "username": username,
+                "name": res["name"],
+                "mac": res["mac"]
+            };
 
             this.instances[bridgeid] = instance;
             return true;
