@@ -248,6 +248,7 @@ var Prefs = class HuePrefs {
                     ipWidget,
                     Gtk.PositionType.RIGHT,
                     1,
+                    1
                 );
                 tmpWidged = connectWidget;
             }

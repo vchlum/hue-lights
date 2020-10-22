@@ -107,7 +107,6 @@ var PhueMenu = GObject.registerClass({
         this._settings.connect("changed", Lang.bind(this, function() {
             this.readSettings();
             this.setPositionInPanel();
-            this.hue.checkBridges();
             this.rebuildMenu();
         }));
 
@@ -116,8 +115,6 @@ var PhueMenu = GObject.registerClass({
         this.readSettings();
         this._indicatorPositionBackUp = -1;
         this.setPositionInPanel();
-
-        this.bridesData = this.hue.checkBridges();
 
         this.colorPicker = null;
 
@@ -129,7 +126,9 @@ var PhueMenu = GObject.registerClass({
 
         this.rebuildMenu();
 
-        this.menu.connect("open-state-changed", () => {if (this.menu.isOpen) {this.refreshMenu();}});
+        this.menu.connect("open-state-changed", () => {
+            if (this.menu.isOpen) {this.refreshMenu();}
+        });
     }
 
     /**
@@ -220,7 +219,9 @@ var PhueMenu = GObject.registerClass({
         let colorTemperature;
         let cmd = "";
 
-        this.bridesData = this.hue.checkBridges();
+        if (this.bridesData[bridgeid].length === 0) {
+            return;
+        }
 
         sbridgePath = bridgePath.split("::");
 
@@ -783,6 +784,10 @@ var PhueMenu = GObject.registerClass({
             object = this.refreshMenuObjects[bridgePath]["object"];
             type = this.refreshMenuObjects[bridgePath]["type"];
 
+            if (this.bridesData[bridgeid].length === 0) {
+                continue;
+            }
+
             sbridgePath = bridgePath.split("::");
 
             switch (type) {
@@ -841,6 +846,8 @@ var PhueMenu = GObject.registerClass({
         let oldItems = this.menu._getMenuItems();
 
         this.refreshMenuObjects = {};
+
+        this.bridesData = this.hue.checkBridges();
 
         for (let item in oldItems){
             oldItems[item].destroy();
