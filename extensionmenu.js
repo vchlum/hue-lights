@@ -213,68 +213,63 @@ var PhueMenu = GObject.registerClass({
         let type = data["type"];
         let object = data["object"];
         let bridgePath = data["bridgePath"];
-        let lights;
-        let sbridgePath = [];
+        let parsedBridgePath = [];
         let value;
         let colorTemperature;
-        let cmd = "";
+        let cmd = {};
 
         if (this.bridesData[bridgeid].length === 0) {
             return;
         }
 
-        sbridgePath = bridgePath.split("::");
+        parsedBridgePath = bridgePath.split("::");
 
         switch(type) {
 
             case "switch":
-                sbridgePath[2] = parseInt(sbridgePath[2]);
+                parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
                 value = object.state;
 
-                if (sbridgePath[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
+                if (parsedBridgePath[1] == "groups") {
+                    this.hue.instances[bridgeid].actionGroup(
+                        parsedBridgePath[2],
+                        {"on": value}
+                    );
                 }
 
-                if (sbridgePath[1] == "lights") {
-                    lights = sbridgePath[2];
+                if (parsedBridgePath[1] == "lights") {
+                    this.hue.instances[bridgeid].setLights(
+                        parsedBridgePath[2],
+                        {"on": value}
+                    );
                 }
 
-                this.hue.instances[bridgeid].setLights(lights, {"on": value});
                 break;
 
             case "slider":
 
-                sbridgePath[2] = parseInt(sbridgePath[2]);
+                parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
                 value = Math.round(object.value * 254);
-
-                if (sbridgePath[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
-                    for (let light in lights) {
-                        if (value == 0) {
-                            cmd = {"on": false, "bri": value};
-                        } else {
-                            cmd = {"on": true, "bri": value};
-                        }
-
-                        this.hue.instances[bridgeid].setLights(
-                            parseInt(lights[light]),
-                            cmd
-                        );
-                    }
+                if (value == 0) {
+                    cmd = {"on": false, "bri": value};
+                } else {
+                    cmd = {"on": true, "bri": value};
                 }
 
-                if (sbridgePath[1] == "lights") {
-                    lights = sbridgePath[2];
-                    if (value == 0) {
-                        cmd = {"on": false, "bri": value};
-                    } else {
-                        cmd = {"on": true, "bri": value};
-                    }
+                if (parsedBridgePath[1] == "groups") {
+
+                    this.hue.instances[bridgeid].actionGroup(
+                        parseInt(parsedBridgePath[2]),
+                        cmd
+                    );
+                }
+
+                if (parsedBridgePath[1] == "lights") {
 
                     this.hue.instances[bridgeid].setLights(
-                        lights,
+                        parsedBridgePath[2],
                         cmd
                     );
                 }
@@ -307,7 +302,7 @@ var PhueMenu = GObject.registerClass({
 
             case "set-color":
 
-                sbridgePath[2] = parseInt(sbridgePath[2]);
+                parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
                 value = Utils.getRGBtoHueXY(
                     this.colorPicker.r,
@@ -316,54 +311,36 @@ var PhueMenu = GObject.registerClass({
                 );
                 colorTemperature = this.colorPicker.colorTemperature;
 
-                if (sbridgePath[1] == "groups") {
-                    lights = this.bridesData[bridgeid]["groups"][sbridgePath[2]]["lights"];
-
-                    for (let light in lights) {
-
-                        if (value == 0) {
-                            cmd = {"on": false};
-                        } else {
-                            cmd = {"on": true};
-                        }
-
-                        if (colorTemperature > 0 &&
-                            this.colorPicker.switchWhite.state) {
-
-                            cmd["ct"] = ctToHue[colorTemperature];
-                        } else {
-                            cmd["xy"] = value;
-                        }
-
-                        this.hue.instances[bridgeid].setLights(
-                            parseInt(lights[light]),
-                            cmd
-                        );
-                    }
+                if (value == 0) {
+                    cmd = {"on": false};
+                } else {
+                    cmd = {"on": true};
                 }
 
-                if (sbridgePath[1] == "lights") {
-                    lights = sbridgePath[2];
+                if (colorTemperature > 0 &&
+                    this.colorPicker.switchWhite.state) {
 
-                    if (value == 0) {
-                        cmd = {"on": false};
-                    } else {
-                        cmd = {"on": true};
-                    }
+                    cmd["ct"] = ctToHue[colorTemperature];
+                } else {
+                    cmd["xy"] = value;
+                }
 
-                    if (colorTemperature > 0 &&
-                        this.colorPicker.switchWhite.state) {
+                if (parsedBridgePath[1] == "groups") {
 
-                        cmd["ct"] = ctToHue[colorTemperature];
-                    } else {
-                        cmd["xy"] = value;
-                    }
-
-                    this.hue.instances[bridgeid].setLights(
-                        lights,
+                    this.hue.instances[bridgeid].actionGroup(
+                        parsedBridgePath[2],
                         cmd
                     );
                 }
+
+                if (parsedBridgePath[1] == "lights") {
+
+                    this.hue.instances[bridgeid].setLights(
+                        parsedBridgePath[2],
+                        cmd
+                    );
+                }
+
                 break;
 
             case "scene":
@@ -377,6 +354,7 @@ var PhueMenu = GObject.registerClass({
                     data["groupid"],
                     cmd
                 );
+
                 break;
 
             default:
@@ -771,7 +749,7 @@ var PhueMenu = GObject.registerClass({
         let bridgeid = "";
         let type = "";
         let object = null;
-        let sbridgePath = [];
+        let parsedBridgePath = [];
         let value;
 
         for (bridgeid in this.hue.instances) {
@@ -788,21 +766,21 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
-            sbridgePath = bridgePath.split("::");
+            parsedBridgePath = bridgePath.split("::");
 
             switch (type) {
 
                 case "switch":
 
-                    sbridgePath[2] = parseInt(sbridgePath[2]);
+                    parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
                     value = this.bridesData[bridgeid];
-                    for (let i in sbridgePath) {
+                    for (let i in parsedBridgePath) {
                         if (i == 0) {
                             continue;
                         }
 
-                        value = value[sbridgePath[i]];
+                        value = value[parsedBridgePath[i]];
                     }
 
                     if (object.state !== value) {
@@ -812,15 +790,15 @@ var PhueMenu = GObject.registerClass({
 
                 case "slider":
 
-                    sbridgePath[2] = parseInt(sbridgePath[2]);
+                    parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
                     value = this.bridesData[bridgeid];
-                    for (let i in sbridgePath) {
+                    for (let i in parsedBridgePath) {
                         if (i == 0) {
                             continue;
                         }
 
-                        value = value[sbridgePath[i]];
+                        value = value[parsedBridgePath[i]];
                     }
 
                     value = value/255;
