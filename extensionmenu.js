@@ -261,7 +261,7 @@ var PhueMenu = GObject.registerClass({
                     this.colorPicker.destroy();
                 }
                 this.colorPicker = new ColorPicker.ColorPicker();
-                this.colorPicker.show_all();
+                this.colorPicker.show();
                 this.colorPicker.connect("finish", () => {
                     this.colorPicker = null;
                 });

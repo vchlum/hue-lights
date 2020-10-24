@@ -120,6 +120,19 @@ var ColorPicker =  GObject.registerClass({
     }
 
     /**
+     * Sets attributes of a object to center.
+     * @method _centerObject
+     * @private
+     * @param {Object} object with attributes to set to center
+     */
+    _centerObject(object) {
+        object.x_align = Clutter.ActorAlign.CENTER;
+        object.x_expand = false;
+        object.y_align = Clutter.ActorAlign.CENTER;
+        object.y_expand = false;
+    }
+
+    /**
      * Create main box with content
      * 
      * @method _createMainBox
@@ -129,10 +142,12 @@ var ColorPicker =  GObject.registerClass({
     _createMainBox() {
 
         let box;
+        let label;
         let switchButton;
         let RGB = [0,0,0];
 
         let mainbox = new St.BoxLayout({vertical: true});
+        this._centerObject(mainbox);
 
         /**
          * Grid with colors 
@@ -140,6 +155,7 @@ var ColorPicker =  GObject.registerClass({
         for (let i = 0; i < 13; i++) {
 
             box = new St.BoxLayout({vertical: false});
+            this._centerObject(box);
 
             for (let j = 0; j < 13; j++) {
                 if ( pallete[i][j] === "#000000") {
@@ -152,28 +168,13 @@ var ColorPicker =  GObject.registerClass({
                     parseInt("0x" + pallete[i][j].slice(5, 7), 16)
                 ];
 
-                box.add(
-                    this._createRgbButton(RGB, 0),
-                    {
-                        expand: false,
-                        x_fill: false,
-                        x_align: St.Align.MIDDLE,
-                        y_fill: false,
-                        y_align: St.Align.MIDDLE
-                    }
-                );
+                box.add(this._createRgbButton(RGB, 0));
             }
 
-            mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
+            mainbox.add(box);
         }
 
-        mainbox.add(
-            new PopupMenu.PopupSeparatorMenuItem(),
-            {
-                x_fill: true,
-                x_align: St.Align.MIDDLE
-            }
-        );
+        mainbox.add(new PopupMenu.PopupSeparatorMenuItem());
 
         /**
          * Grid with temperatures of white
@@ -181,48 +182,37 @@ var ColorPicker =  GObject.registerClass({
         for (let i = 0; i < 2; i++) {
 
             box = new St.BoxLayout({vertical: false});
+            this._centerObject(box);
 
             for (let j = 0; j < 12; j++) {
 
                 RGB = Utils.kelvinToRGB(whiteShades[i][j]);
-                box.add(
-                    this._createRgbButton(RGB, whiteShades[i][j]),
-                    {
-                        expand: false,
-                        x_fill: false,
-                        x_align: St.Align.MIDDLE,
-                        y_fill: false,
-                        y_align: St.Align.MIDDLE
-                    }
-                );
+                box.add(this._createRgbButton(RGB, whiteShades[i][j]),);
             }
 
-            mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
+            mainbox.add(box);
         }
 
         box = new St.BoxLayout({vertical: false});
-        box.add(
-            new St.Label({"text": _("Temperature of white:") }),
-            {x_fill: true, x_align: St.Align.MIDDLE}
-        );
+        this._centerObject(box);
+
+        label = new St.Label({"text": _("Temperature of white:") });
+        this._centerObject(label);
+        box.add(label);
 
         this.switchWhite = new PopupMenu.Switch(true);
 
         switchButton = new St.Button({reactive: true, can_focus: true});
-        switchButton.set_x_align(St.Align.MIDDLE);
-        switchButton.set_x_expand(false);
+        this._centerObject(switchButton);
         switchButton.child = this.switchWhite;
         switchButton.connect("button-press-event",  Lang.bind(this, function() {
             this.switchWhite.toggle();
         }));
 
-        box.add(switchButton, {x_fill: false, x_align: St.Align.MIDDLE});
-        mainbox.add(box, {x_fill: false, x_align: St.Align.MIDDLE});
+        box.add(switchButton);
+        mainbox.add(box);
 
-        mainbox.add(
-            new PopupMenu.PopupSeparatorMenuItem(),
-            {x_fill: true, x_align: St.Align.MIDDLE}
-        );
+        mainbox.add(new PopupMenu.PopupSeparatorMenuItem());
 
         /**
          * Brightness slider
@@ -254,7 +244,7 @@ var ColorPicker =  GObject.registerClass({
             this._colorPickedEvent.bind(this, RGB, colorTemperature)
         );
         colorButton.set_size(20, 20);
-
+        this._centerObject(colorButton);
         return colorButton;
     }
 
