@@ -59,11 +59,124 @@ function initTranslations() {
 }
 
 /**
+ * Converts Philips Hue colour temperature of white to
+ * kelvin temperature (2000K - 6500K).
+ * Lights are capable of 153 (6500K) to 500 (2000K).
+ * https://developers.meethue.com/develop/hue-api/lights-api/
+ * https://developers.meethue.com/forum/t/about-the-ct-value/6239/4
+ * 
+ * @method ctToKelvin
+ * @param {Number} ct
+ * @return {Number} temperature in kelvin
+ */
+function ctToKelvin(ct) {
+
+    if (ct < 153) {ct = 153;}
+    if (ct > 500) {ct = 500;}
+
+    return Math.round(6500 - ((ct - 153) / (347 / 4500)));
+}
+
+/**
+ * Converts kelvin temperature (2000K - 6500K) to
+ * Philips Hue colour temperature of white.
+ * Lights are capable of 153 (6500K) to 500 (2000K).
+ * https://developers.meethue.com/develop/hue-api/lights-api/
+ * https://developers.meethue.com/forum/t/about-the-ct-value/6239/4
+ * 
+ * @method kelvinToCt
+ * @param {Number} k temperature in kelvin
+ * @return {Number} ct
+ */
+function kelvinToCt(k) {
+
+    if (k < 2000) {k = 2000;}
+    if (k > 6500) {k = 6500;}
+
+    return Math.round(500 - ((k - 2000) / (4500 / 347)));
+}
+
+/**
+ * Converts kelvin temperature to RGB
+ * https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+ * 
+ * @method kelvinToRGB
+ * @param {Number} kelvin in temperature
+ * @return {Object} array with [R, G, B]
+ */
+function kelvinToRGB(kelvin) {
+    let tmpCalc = 0;
+    let tmpKelvin = kelvin;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+
+    if (tmpKelvin < 1000) {
+        tmpKelvin = 1000;
+    }
+
+    if (tmpKelvin > 40000) {
+        tmpKelvin = 40000;
+    }
+
+    tmpKelvin = tmpKelvin / 100;
+
+    if (tmpKelvin <= 66) {
+        red = 255;
+    } else {
+        tmpCalc = tmpKelvin - 60;
+        tmpCalc = 329.698727446 * Math.pow(tmpCalc, -0.1332047592);
+
+        red = tmpCalc;
+        if (red < 0) {red = 0;}
+        if (red > 255) {red = 255;}
+    }
+
+    if (tmpKelvin <= 66) {
+        tmpCalc = tmpKelvin;
+        tmpCalc = 99.4708025861 * Math.log(tmpCalc) - 161.1195681661;
+
+        green = tmpCalc;
+        if (green < 0) {green = 0;}
+        if (green > 255) {green = 255;}
+    } else {
+        tmpCalc = tmpKelvin - 60;
+        tmpCalc = 288.1221695283 * Math.pow(tmpCalc, -0.0755148492);
+
+        green = tmpCalc;
+        if (green < 0) {green = 0;}
+        if (green > 255) {green = 255;}
+    }
+
+    if (tmpKelvin >= 66) {
+        blue = 255;
+    } else if (tmpKelvin <=19) {
+        blue = 0;
+    } else {
+        tmpCalc = tmpKelvin - 10;
+        tmpCalc = 138.5177312231 * Math.log(tmpCalc) - 305.0447927307;
+
+        blue = tmpCalc;
+        if (blue < 0) {blue = 0;}
+        if (blue > 255) {blue = 255;}
+    }
+
+    return [Math.round(red), Math.round(green), Math.round(blue)];
+}
+
+/**
+ * Converts RGB to xy values for Philips Hue Lights.
  * https://stackoverflow.com/questions/22564187/rgb-to-philips-hue-hsb 
  * https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3 
  * https://developers.meethue.com/develop/application-design-guidance/color-conversion-formulas-rgb-to-xy-and-back/#Color-rgb-to-xy
+ * 
+ * @method colorToHueXY
+ * @param {Number} red
+ * @param {Number} green
+ * @param {Number} blue
+ * @return {Object} array with [x, y]
  */
-function getRGBtoHueXY(cred, cgreen, cblue) {
+function colorToHueXY(cred, cgreen, cblue) {
     // For the hue bulb the corners of the triangle are:
     // -Red: 0.675, 0.322
     // -Green: 0.4091, 0.518

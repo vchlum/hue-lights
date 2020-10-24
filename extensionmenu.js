@@ -58,29 +58,6 @@ const PhueMenuPosition = {
     LEFT: 2
 };
 
-const ctToHue = {
-    1600:500,
-    1800:455,
-    2000:448,
-    2200:430,
-    2400:413,
-    2600:396,
-    2800:378,
-    3000:361,
-    3200:343,
-    3500:326,
-    3800:309,
-    4400:292,
-    4800:274,
-    5200:257,
-    5600:240,
-    6000:222,
-    7000:205,
-    9000:187,
-    10500:170,
-    12000:153
-};
-
 /**
  * PhueMenu class. Provides widget with menu items.
  * 
@@ -304,7 +281,7 @@ var PhueMenu = GObject.registerClass({
 
                 parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
-                value = Utils.getRGBtoHueXY(
+                value = Utils.colorToHueXY(
                     this.colorPicker.r,
                     this.colorPicker.g,
                     this.colorPicker.b
@@ -320,7 +297,7 @@ var PhueMenu = GObject.registerClass({
                 if (colorTemperature > 0 &&
                     this.colorPicker.switchWhite.state) {
 
-                    cmd["ct"] = ctToHue[colorTemperature];
+                    cmd["ct"] = Utils.kelvinToCt(colorTemperature);
                 } else {
                     cmd["xy"] = value;
                 }
