@@ -204,7 +204,7 @@ var Prefs = class HuePrefs {
             }
         );
 
-        for (let bridge in hue.bridges) {
+        for (let bridge in this._hue.bridges) {
             let name = _("unknown name");
 
             if (this._hue.bridges[bridge]["name"] !== undefined) {
@@ -224,7 +224,7 @@ var Prefs = class HuePrefs {
                 1
             );
 
-            if (hue.instances[bridge].isConnected()) {
+            if (this._hue.instances[bridge].isConnected()) {
                 statusWidget = new Gtk.Label({label: _("Connected")});
                 bridgesWidget.attach_next_to(
                     statusWidget,
@@ -235,7 +235,7 @@ var Prefs = class HuePrefs {
                 );
                 tmpWidged = statusWidget;
             } else {
-                connectWidget = new Gtk.Button({label: _("Connect")});
+                connectWidget = new Gtk.Button({label: _("Press bridge button and Connect")});
                 connectWidget.connect(
                     "clicked",
                     this._widgetEventHandler.bind(
@@ -447,31 +447,35 @@ var Prefs = class HuePrefs {
      */
     _widgetEventHandler(data) {
 
-        let bridge;
+        let bridgeid;
         let ip;
 
         switch(data["event"]) {
 
             case "connect-bridge":
 
-                bridge = data["bridgeid"];
+                bridgeid = data["bridgeid"];
                 ip = data["object"].get_text();
-                this._hue.bridges[bridge]["ip"] = ip;
+                this._hue.bridges[bridgeid]["ip"] = ip;
 
                 this._hue.checkBridges();
 
-                this.writeSettings();
                 this._refreshPrefs = true;
+                this.writeSettings();
                 break;
 
             case "remove-bridge":
 
-                bridge = data["bridgeid"];
-                log(`removing hue bridge ${bridge}`);
-                delete this._hue.bridges[bridge];
+                bridgeid = data["bridgeid"];
+                log(`removing hue bridge ${bridgeid}`);
 
-                this.writeSettings();
+                delete this._hue.bridges[bridgeid];
+                if (this._hue.instances[bridgeid] !== undefined) {
+                    delete this._hue.instances[bridgeid];
+                }
+
                 this._refreshPrefs = true;
+                this.writeSettings();
                 break;
 
             case "new-ip":
@@ -493,8 +497,8 @@ var Prefs = class HuePrefs {
                 }
 
                 this._hue.checkBridges();
-                this.writeSettings();
                 this._refreshPrefs = true;
+                this.writeSettings();
                 break;
 
             case "add-ip":
@@ -526,8 +530,8 @@ var Prefs = class HuePrefs {
             case "discovery-bridges":
 
                 this._hue.checkBridges();
-                this.writeSettings();
                 this._refreshPrefs = true;
+                this.writeSettings();
                 break;
 
             case "position-in-panel":

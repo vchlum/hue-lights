@@ -120,6 +120,21 @@ class _Phue {
 
         let discovered = HueApi.discoverBridges();
 
+        /* first, check for deleted bridges */
+        let known;
+        for (let bridgeidInstance in this.instances) {
+            known = false;
+            for (let bridgeid in this.bridges) {
+                if (bridgeid === bridgeidInstance) {
+                    known = true;
+                }
+            }
+
+            if (!known) {
+                delete this.instances[bridgeidInstance];
+            }
+        }
+
         for (let i in discovered) {
             let bridgeid = discovered[i]["id"];
 
