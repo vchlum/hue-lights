@@ -33,6 +33,7 @@
  * THE SOFTWARE.
  */
 
+const Clutter = imports.gi.Clutter;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Hue = Me.imports.phue;
@@ -372,7 +373,7 @@ var PhueMenu = GObject.registerClass({
             );
         }
 
-        light.set_x_align(St.Align.START);
+        light.set_x_align(Clutter.ActorAlign.FILL);
         light.label.set_x_expand(true);
 
         /**
@@ -407,7 +408,7 @@ var PhueMenu = GObject.registerClass({
 
             slider = new Slider.Slider(0);
             slider.set_width(200);
-            slider.set_x_align(St.Align.END);
+            slider.set_x_align(Clutter.ActorAlign.END);
             slider.set_x_expand(false);
             slider.value = 100/254;
 
@@ -452,7 +453,7 @@ var PhueMenu = GObject.registerClass({
         switchButton = new St.Button(
             {reactive: true, can_focus: true}
         );
-        switchButton.set_x_align(St.Align.END);
+        switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
@@ -507,7 +508,8 @@ var PhueMenu = GObject.registerClass({
                     data["scenes"][sceneid]["name"]
                 );
 
-                scene.set_x_align(St.Align.END);
+                scene.x_align = Clutter.ActorAlign.CENTER;
+                scene.x_expand = true;
                 scene.label.set_x_expand(false);
 
                 scene.connect(
@@ -592,7 +594,7 @@ var PhueMenu = GObject.registerClass({
 
         switchBox = new PopupMenu.Switch(false);
         switchButton = new St.Button({reactive: true, can_focus: true});
-        switchButton.set_x_align(St.Align.START);
+        switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
