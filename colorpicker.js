@@ -102,7 +102,6 @@ var ColorPicker =  GObject.registerClass({
             : this.dialogLayout;
 
         this.slider = null;
-        this.brightness = null;
         this.switchWhite = null;
         this.colorTemperature = 0;
         this.pickedcolor = 0;
@@ -117,6 +116,7 @@ var ColorPicker =  GObject.registerClass({
         }]);
 
         this.contentLayout.add(this._createMainBox());
+        this.brightness = this.slider;
     }
 
     /**
