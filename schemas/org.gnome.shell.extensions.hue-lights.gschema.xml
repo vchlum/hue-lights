@@ -23,5 +23,9 @@
       <default>"right"</default>
       <summary>Position in Panel</summary>
     </key>
+    <key name="connection-timeout" type="i">
+      <default>2</default>
+      <summary>Connection timeout</summary>
+    </key>
   </schema>
 </schemalist>

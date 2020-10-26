@@ -86,11 +86,13 @@ var PhueMenu = GObject.registerClass({
             this.readSettings();
             this.setPositionInPanel();
             this.rebuildMenu();
+            this.hue.setConnectionTimeout(this._connectionTimeout);
         }));
 
         this.hue = new Hue.Phue();
 
         this.readSettings();
+        this.hue.setConnectionTimeout(this._connectionTimeout);
         this._indicatorPositionBackUp = -1;
         this.setPositionInPanel();
 
@@ -130,6 +132,10 @@ var PhueMenu = GObject.registerClass({
 
         this._showScenes = this._settings.get_boolean(
             Utils.HUELIGHTS_SETTINGS_SHOWSCENES
+        );
+
+        this._connectionTimeout = this._settings.get_int(
+            Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT
         );
     }
 
@@ -184,6 +190,13 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         {"on": value}
                     );
+
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to switch the group")
+                        );
+                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -191,6 +204,13 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         {"on": value}
                     );
+                    
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to switch the light")
+                        );
+                    }
                 }
 
                 break;
@@ -218,6 +238,13 @@ var PhueMenu = GObject.registerClass({
                         parseInt(parsedBridgePath[2]),
                         cmd
                     );
+
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to set the brightness of the group")
+                        );
+                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -226,6 +253,13 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
+
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to set the brightness of the light")
+                        );
+                    }
                 }
 
                 break;
@@ -289,6 +323,13 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
+                    
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to set the color of the group")
+                        );
+                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -297,6 +338,13 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
+
+                    if (this.hue.instances[bridgeid].checkError()) {
+                        Main.notify(
+                            _("Hue Lights - please check the connection"),
+                            _("Failed to set the color of the light")
+                        );
+                    }
                 }
 
                 break;
@@ -312,6 +360,13 @@ var PhueMenu = GObject.registerClass({
                     data["groupid"],
                     cmd
                 );
+
+                if (this.hue.instances[bridgeid].checkError()) {
+                    Main.notify(
+                        _("Hue Lights - please check the connection"),
+                        _("Failed to set the scene")
+                    );
+                }
 
                 break;
 
@@ -712,7 +767,20 @@ var PhueMenu = GObject.registerClass({
         let value;
 
         for (bridgeid in this.hue.instances) {
-            this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAll();
+            if (!this.hue.instances[bridgeid].isConnected()) {
+                continue;
+            }
+
+            let tmpdata = this.hue.instances[bridgeid].getAll();
+            if (this.hue.instances[bridgeid].checkError()) {
+                Main.notify(
+                    _("Hue Lights - please check the connection"),
+                    _("Failed to connect to the bridge")
+                );
+                return;
+            }
+
+            this.bridesData[bridgeid] = tmpdata;
         }
 
         for (let bridgePath in this.refreshMenuObjects) {
@@ -791,6 +859,10 @@ var PhueMenu = GObject.registerClass({
         }
 
         for (let bridgeid in this.hue.instances) {
+
+            if (!this.hue.instances[bridgeid].isConnected()){
+                continue;
+            }
 
             bridgeItems = this._createMenuBridge(bridgeid);
 

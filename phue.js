@@ -51,6 +51,22 @@ class _Phue {
         this.bridges = {};
         this.instances = {};
         this.data = {};
+        this._connectionTimeout = 2;
+    }
+
+    /**
+     * Set connection timeout for all bridges
+     * 
+     * @method setConnectionTimeout
+     * @param {Number} sec timeout in seconds
+     */
+    setConnectionTimeout(sec) {
+
+        this._connectionTimeout = sec;
+
+        for (let i in this.instances) {
+            this.instances[i].setConnectionTimeout(sec);
+        }
     }
 
     /**
@@ -64,6 +80,10 @@ class _Phue {
     _checkBridge(bridgeid) {
 
         let res = this.instances[bridgeid].getConfig();
+
+        if (this.instances[bridgeid].checkError()) {
+            return;
+        }
 
         if (res["name"] !== undefined) {
             this.bridges[bridgeid]["name"] = res["name"];
@@ -87,13 +107,24 @@ class _Phue {
 
         let instance = new HueApi.PhueBridge(ip);
 
-        let res = instance.connectBridge();
+        instance.setConnectionTimeout(this._connectionTimeout);
+
+        let res = instance.firstConnectBridge();
+
+        if (instance.checkError()) {
+            return false;
+        }
 
         if (res.length > 0 && "success" in res[0]) {
             let username = res[0]["success"]["username"];
             log(`new username: ${username} for ip: ${ip}`);
 
             res = instance.getConfig();
+
+            if (instance.checkError()) {
+                return false;
+            }
+
             let bridgeid = res["bridgeid"].toLowerCase();
 
             this.bridges[bridgeid] = {
@@ -118,10 +149,12 @@ class _Phue {
      */
     checkBridges() {
 
+        let known;
+        let errs;
+
         let discovered = HueApi.discoverBridges();
 
         /* first, check for deleted bridges */
-        let known;
         for (let bridgeidInstance in this.instances) {
             known = false;
             for (let bridgeid in this.bridges) {
@@ -153,6 +186,9 @@ class _Phue {
 
             if (this.instances[bridgeid] === undefined) {
                 instance = new HueApi.PhueBridge(this.bridges[bridgeid]["ip"]);
+
+                instance.setConnectionTimeout(this._connectionTimeout);
+
                 this.instances[bridgeid] = instance;
             } else {
                 instance = this.instances[bridgeid];
@@ -164,8 +200,27 @@ class _Phue {
 
             this._checkBridge(bridgeid);
 
-            if (!instance.isConnected()) {
-                let res = instance.connectBridge();
+            /**
+             * if error here, maybe bridge button is pressed
+             * for authorization
+             */
+            if (instance.checkError()) {
+                errs = instance.getError();
+
+                if (errs.length !== 1) {
+                    continue;
+                }
+
+                if (errs[0]["type"] === undefined) {
+                    continue;
+                }
+
+                /* try to connect only if error type 1 - unauthorized user */
+                if (errs[0]["type"] !== 1) {
+                    continue;
+                }
+
+                let res = instance.firstConnectBridge();
 
                 if (res.length > 0 && "success" in res[0]) {
                     let username = res[0]["success"]["username"];
@@ -175,10 +230,6 @@ class _Phue {
 
                     this._checkBridge(bridgeid);
                 }
-            }
-
-            if (instance.isConnected()) {
-                /* I am connected */
             }
         }
 

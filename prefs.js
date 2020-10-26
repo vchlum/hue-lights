@@ -104,6 +104,7 @@ var Prefs = class HuePrefs {
         this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
+        this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
     }
 
     /**
@@ -166,6 +167,13 @@ var Prefs = class HuePrefs {
             new Gtk.Label({label: _("General settings")})
         );
 
+        let pageAdvanced = this._buildAdvancedWidget();
+        pageAdvanced.border_width = 10;
+        notebook.append_page(
+            pageAdvanced,
+            new Gtk.Label({label: _("Advanced settings")})
+        );
+
         let pageAbout = this._buildAboutWidget()
         pageAbout.border_width = 10;
         notebook.append_page(
@@ -226,6 +234,16 @@ var Prefs = class HuePrefs {
 
             if (this._hue.instances[bridge].isConnected()) {
                 statusWidget = new Gtk.Label({label: _("Connected")});
+                bridgesWidget.attach_next_to(
+                    statusWidget,
+                    ipWidget,
+                    Gtk.PositionType.RIGHT,
+                    1,
+                    1
+                );
+                tmpWidged = statusWidget;
+            } else if (this._hue.bridges[bridge]["username"] !== undefined) {
+                statusWidget = new Gtk.Label({label: _("Unreachable")});
                 bridgesWidget.attach_next_to(
                     statusWidget,
                     ipWidget,
@@ -416,11 +434,64 @@ var Prefs = class HuePrefs {
     }
 
     /**
-     * Create the widget with 'About'.
+     * Create the widget with advanced settings.
+     * 
+     * @method _buildAdvancedWidget
+     * @private
+     * @return {Object} the widget with advancedsettings
+     */
+    _buildAdvancedWidget() {
+
+        let top = 1;
+        let labelWidget = null;
+
+        let advancedWidget = new Gtk.Grid(
+            {
+                hexpand: true,
+                vexpand: true,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+
+        labelWidget = new Gtk.Label(
+            {label: _("Connection timeout (seconds):")}
+        );
+        advancedWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let connectionTimeoutWidget = new Gtk.ComboBoxText();
+        connectionTimeoutWidget.append_text("1");
+        connectionTimeoutWidget.append_text("2");
+        connectionTimeoutWidget.append_text("3");
+        connectionTimeoutWidget.append_text("4");
+        connectionTimeoutWidget.append_text("5");
+        connectionTimeoutWidget.set_active(this._connectionTimeout - 1);
+        connectionTimeoutWidget.connect(
+            "changed",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "connection-timeout", "object": connectionTimeoutWidget}
+            )
+        )
+        advancedWidget.attach_next_to(
+            connectionTimeoutWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        return advancedWidget;
+    }
+
+    /**
+     * Create the widget 'About'.
      * 
      * @method _buildBridgesWidget
      * @private
-     * @return {Object} the widget with 'about'
+     * @return {Object} the widget 'about'
      */
     _buildAboutWidget() {
 
@@ -558,6 +629,15 @@ var Prefs = class HuePrefs {
                 this._settings.set_boolean(
                     Utils.HUELIGHTS_SETTINGS_SHOWSCENES,
                     this._showScenes
+                );
+                break;
+
+            case "connection-timeout":
+
+                this._connectionTimeout = data["object"].get_active() + 1;
+                this._settings.set_int(
+                    Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT,
+                    this._connectionTimeout
                 );
                 break;
 

@@ -93,17 +93,53 @@ class _PhueBridge {
 
         this._bridgeSession = Soup.Session.new();
         this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
-        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 5);
+        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
     }
 
     /**
-     * Check if any error recently occured (based on input data dictionary).
+     * Set connection timeout
+     * 
+     * @method setConnectionTimeout
+     * @param {Number} sec timeout in seconds
+     */
+    setConnectionTimeout(sec) {
+
+        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, sec);
+    }
+
+    /**
+     * Check if error occured in last action.
+     * 
+     * @method checkError
+     * @return {Boolean} true if error occured else false 
+     */
+    checkError() {
+
+        if (this._bridgeError.length > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns error of last action
+     * 
+     * @method getError
+     * @return {Object} array of errors
+     */
+    getError() {
+        return this._bridgeError;
+    }
+
+    /**
+     * Check if any error occured (based on input data dictionary).
      * 
      * @method _checkBridgeError
      * @private
      * @param {Object} dictionary with data to check
      * @param {Boolean} should the error tag be unset before processing?
-     * @return {Boolean|Object} false on OK, dictionary with errors on error
+     * @return {Object} dictionary with errors on error
      */
     _checkBridgeError(data, resetError = true) {
 
@@ -126,8 +162,13 @@ class _PhueBridge {
             }
         }
 
-        if (this._bridgeError.length === 0) {
-            return false;
+        if(data === undefined || data.length === 0) {
+            this._bridgeError.push({
+                "type": -1,
+                "description": "no data provided"
+            });
+
+            this._bridgeConnected = false;
         }
 
         return this._bridgeError;
@@ -155,11 +196,13 @@ class _PhueBridge {
         let statusCode = this._bridgeSession.send_message(msg);
         if (statusCode === Soup.Status.OK) {
             try {
+                this._bridgeConnected = true;
                 return JSON.parse(msg.response_body.data);
             } catch {
                 return [];
             }
         }
+
         return [];
 
     }
@@ -229,7 +272,14 @@ class _PhueBridge {
 
         username = `gnome-extension-hue-lights#${hostname}`;
 
-        return this._bridgePOST(this._bridgeUrl, {"devicetype": username});
+        let res = this._bridgePOST(this._bridgeUrl, {"devicetype": username});
+        this._checkBridgeError(res);
+        if (this.checkError()) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        return res;
     }
 
     /**
@@ -266,42 +316,29 @@ class _PhueBridge {
     }
 
     /**
-     * Check if the bridge is connected.
+     * True if the last reply of the bridge was OK.
      * 
      * @method isConnected
      * @return {Boolean} true if connected, false otherwise
      */
     isConnected() {
 
-        let res = this.getConfig();
-
-        if (res["zigbeechannel"] === undefined) {
-            this._bridgeConnected = false;
-            return this._bridgeConnected
-        }
-
-        this._bridgeConnected = true;
         return this._bridgeConnected
     }
 
     /**
      * Try to connect to the bridge. Create the username if necessary.
      * 
-     * @method connectBridge
+     * @method firstConnectBridge
      * @return {Object} JSON with response
      */
-   connectBridge() {
+    firstConnectBridge() {
 
         let data = this._createUser();
 
-
-        if (this._checkBridgeError(data)) {
-            log(JSON.stringify(this._bridgeError));
+        if (this.checkError()) {
+            this._bridgeConnected = false;
             return this._bridgeError;
-        }
-
-        if (data.length === 0) {
-            return [];
         }
 
         if (data[0]["success"] !== undefined) {
@@ -331,10 +368,13 @@ class _PhueBridge {
 
         this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${userName}/${data}`);
 
-        if (this._checkBridgeError(this._bridgeData)) {
+        this._checkBridgeError(this._bridgeData);
+        if (this.checkError()) {
             log(JSON.stringify(this._bridgeError));
             return [];
         }
+
+        this._bridgeConnected = true;
 
         return this._bridgeData;
     }
@@ -347,7 +387,9 @@ class _PhueBridge {
      */
     getAll() {
 
-        if (this._getData("") === [] ) {
+        this._getData("");
+
+        if (this.checkError()) {
             return [];
         }
 
@@ -478,10 +520,13 @@ class _PhueBridge {
             case "number":
                 url = `${this._bridgeUrl}/${this._userName}/lights/${lights.toString()}/state`;
                 res = this._bridgePUT(url, data)
-                if (this._checkBridgeError(res)) {
+
+                this._checkBridgeError(res);
+                if (this.checkError()) {
                     log(JSON.stringify(this._bridgeError));
                     return this._bridgeError;
                 }
+
                 return res;
 
             case "object":
@@ -490,7 +535,8 @@ class _PhueBridge {
                     url = `${this._bridgeUrl}/${this._userName}/lights/${lights[light].toString()}/state`;
                     res = this._bridgePUT(url, data)
 
-                    if (this._checkBridgeError(res)) {
+                    this._checkBridgeError(res);
+                    if (this.checkError()) {
                         log(JSON.stringify(this._bridgeError));
                         return this._bridgeError;
                     }
@@ -519,10 +565,14 @@ class _PhueBridge {
 
         url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}/action`;
         res = this._bridgePUT(url, data)
-        if (this._checkBridgeError(res)) {
+
+        this._checkBridgeError(res);
+        if (this.checkError()) {
             log(JSON.stringify(this._bridgeError));
             return this._bridgeError;
         }
+
+        return res;
     }
 }
 
