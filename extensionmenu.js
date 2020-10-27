@@ -83,9 +83,10 @@ var PhueMenu = GObject.registerClass({
         this.refreshMenuObjects = {};
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         this._settings.connect("changed", Lang.bind(this, function() {
-            this.readSettings();
+            if (this.readSettings()) {
+                this.rebuildMenu();
+            }
             this.setPositionInPanel();
-            this.rebuildMenu();
             this.hue.setConnectionTimeout(this._connectionTimeout);
         }));
 
@@ -115,28 +116,67 @@ var PhueMenu = GObject.registerClass({
      * Reads settings into class variables.
      * 
      * @method readSettings
+     * @return {Boolean} True if the menu needs rebuild.
      */
     readSettings() {
+
+        let menuNeedsRebuild = false;
+        let tmpVal;
+
+        /**
+         * this.hue.bridges needs rebuild
+         */
+        tmpVal = JSON.stringify(this.hue.bridges);
 
         this.hue.bridges = this._settings.get_value(
             Utils.HUELIGHTS_SETTINGS_BRIDGES
         ).deep_unpack();
 
-        this._indicatorPosition = this._settings.get_enum(
-            Utils.HUELIGHTS_SETTINGS_INDICATOR
-        );
+        if (tmpVal !== JSON.stringify(this.hue.bridges)) {
+            menuNeedsRebuild = true;
+        }
+
+        /**
+         * this._zonesFirst needs rebuild
+         */
+        tmpVal = this._zonesFirst;
 
         this._zonesFirst = this._settings.get_boolean(
             Utils.HUELIGHTS_SETTINGS_ZONESFIRST
         );
 
+        if (tmpVal !== this._zonesFirst) {
+            menuNeedsRebuild = true;
+        }
+
+        /**
+         * this._showScenes needs rebuild
+         */
+        tmpVal = this._showScenes;
+
         this._showScenes = this._settings.get_boolean(
             Utils.HUELIGHTS_SETTINGS_SHOWSCENES
         );
 
+        if (tmpVal !== this._showScenes) {
+            menuNeedsRebuild = true;
+        }
+
+        /**
+         * this._indicatorPosition doesn't need rebuild
+         */
+        this._indicatorPosition = this._settings.get_enum(
+            Utils.HUELIGHTS_SETTINGS_INDICATOR
+        );
+
+        /**
+         * this._connectionTimeout doesn't need rebuild
+         */
         this._connectionTimeout = this._settings.get_int(
             Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT
         );
+
+        return menuNeedsRebuild;
     }
 
     /**
