@@ -529,6 +529,12 @@ var Prefs = class HuePrefs {
 
         top++;
 
+        /* find some valid notifyLightId - if possible */
+        for (let i in this._notifyLights) {
+            notifyLightId = i;
+            break;
+        }
+
         /**
          * Brightness for notification light
          */
