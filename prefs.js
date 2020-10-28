@@ -473,7 +473,11 @@ var Prefs = class HuePrefs {
         let lightNotifyMenu = new Gtk.Menu();
         lightNotifyMenuBUtton.set_popup(lightNotifyMenu);
 
-        for (let bridgeid in this._hue.bridges) {
+        for (let bridgeid in this._hue.instances) {
+
+            if (this._hue.data[bridgeid] === undefined) {
+                continue;
+            }
 
             for (let groupid in this._hue.data[bridgeid]["groups"]) {
 

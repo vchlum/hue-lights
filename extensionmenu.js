@@ -108,7 +108,12 @@ var PhueMenu = GObject.registerClass({
         this.rebuildMenu();
 
         this.menu.connect("open-state-changed", () => {
-            if (this.menu.isOpen) {this.refreshMenu();}
+            if (this.menu.isOpen) {
+                for (let i in this.hue.instances) {
+                        this.hue.instances[i].enableAsyncRequest();
+                        this.hue.instances[i].getAll();
+                }
+            }
         });
     }
 
@@ -420,7 +425,7 @@ var PhueMenu = GObject.registerClass({
             default:
         }
 
-        this.refreshMenu();
+        /* don't call this.refreshMenu() now... it will by called async */
     }
 
     /**
@@ -910,6 +915,14 @@ var PhueMenu = GObject.registerClass({
             if (!this.hue.instances[bridgeid].isConnected()){
                 continue;
             }
+
+            this.hue.instances[bridgeid].disconnectAll;
+            this.hue.instances[bridgeid].connect(
+                'data-ready',
+                () => {
+                    this.refreshMenu();
+                }
+            );
 
             bridgeItems = this._createMenuBridge(bridgeid);
 

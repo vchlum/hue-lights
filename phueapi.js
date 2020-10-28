@@ -37,6 +37,7 @@ const Soup = imports.gi.Soup;
 const Json = imports.gi.Json;
 const GLib = imports.gi.GLib;
 const ByteArray = imports.byteArray;
+const GObject = imports.gi.GObject;
 
 /**
   * Check all bridges in the local network.
@@ -68,13 +69,22 @@ function discoverBridges() {
  * @param {String} ip address
  * @return {Object} instance
  */
-class _PhueBridge {
+var PhueBridge =  GObject.registerClass({
+    GTypeName: "PhueBridge",
+    Properties: {
+        'ip': GObject.ParamSpec.string('ip', 'ip', 'ip', GObject.ParamFlags.READWRITE, null),
+    },
+    Signals: {
+        'data-ready': {}
+    }
+}, class PhueBridge extends GObject.Object {
 
-    constructor(ip) {
-
+    _init(props={}) {
+        super._init(props);
         this._bridgeConnected = false;
         this._userName = "";
 
+        this._data = [];
         this._bridgeData = [];
         this._lightsData = [];
         this._groupsData = [];
@@ -84,16 +94,26 @@ class _PhueBridge {
         this._rulesData = [];
         this._sensorsData = [];
         this._resourcelinksData = [];
-
         this._bridgeError = [];
 
-        this._ip = ip;
-        this._baseUrl = `http://${ip}`;
+        this._baseUrl = `http://${this._ip}`;
         this._bridgeUrl = `${this._baseUrl}/api`;
 
         this._bridgeSession = Soup.Session.new();
         this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
+
+        this._asyncRequest = false;
+    }
+
+    set ip(value) {
+        this._ip = value;
+        this._baseUrl = `http://${this._ip}`;
+        this._bridgeUrl = `${this._baseUrl}/api`;
+    }
+
+    get ip() {
+        this._ip;
     }
 
     /**
@@ -105,6 +125,28 @@ class _PhueBridge {
     setConnectionTimeout(sec) {
 
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, sec);
+    }
+
+    /**
+     * Disconect all signals
+     * 
+     * @method disconnectAll
+     */
+    disconnectAll() {
+        for (let id of this._signals) {
+            this._container.disconnect(id);
+        }
+
+        this._signals = [];
+    }
+
+    /**
+     * Sets the _asyncRequest to true
+     * 
+     * @method enableAsyncRequest
+     */
+    enableAsyncRequest() {
+        this._asyncRequest = true;
     }
 
     /**
@@ -142,6 +184,11 @@ class _PhueBridge {
      * @return {Object} dictionary with errors on error
      */
     _checkBridgeError(data, resetError = true) {
+        if (this._asyncRequest) {
+            this._asyncRequest = false;
+            this._bridgeError = [];
+            return this._bridgeError;
+        }
 
         if (resetError) {
             this._bridgeError = [];
@@ -193,17 +240,35 @@ class _PhueBridge {
             msg.set_request('application/gnome-extension', 2, data);
         }
 
+        if (this._asyncRequest) {
+            this._data = [];
+
+            this._bridgeSession.queue_message(msg, (sess, mess) => {
+                if (mess.status_code === Soup.Status.OK) {
+                    try {
+                        this._bridgeConnected = true;
+                        this._data = JSON.parse(mess.response_body.data);
+                        this.emit('data-ready');
+                    } catch {
+                        this._data = [];
+                    }
+                }
+            });
+
+            return []
+        }
+
         let statusCode = this._bridgeSession.send_message(msg);
         if (statusCode === Soup.Status.OK) {
             try {
                 this._bridgeConnected = true;
-                return JSON.parse(msg.response_body.data);
+                this._data = JSON.parse(msg.response_body.data);
             } catch {
                 return [];
             }
         }
 
-        return [];
+        return this._data;
 
     }
 
@@ -515,6 +580,8 @@ class _PhueBridge {
         let url = "";
         let res = [];
 
+        this._asyncRequest = true;
+
         switch (typeof(lights)) {
 
             case "number":
@@ -560,6 +627,9 @@ class _PhueBridge {
      * @return {Object} JSON output data
      */
     actionGroup(groupId, data) {
+
+        this._asyncRequest = true;
+
         let url = "";
         let res = [];
 
@@ -574,21 +644,4 @@ class _PhueBridge {
 
         return res;
     }
-}
-
-/**
- * PhueBridge API class for one bridge.
- *
- * @class PhueBridge
- * @constructor
- * @param {String} ip address
- * @return {Object} instance
- */
-var PhueBridge = class PhueBridge extends _PhueBridge {
-
-    constructor(params) {
-        super(params);
-
-        Object.assign(this, params);
-    }
-};
+})

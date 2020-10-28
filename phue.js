@@ -103,9 +103,9 @@ class _Phue {
      * @param {String} ip IP address of a new bridge
      * @return {Boolean} success of adding
      */
-    addBridgeManual(ip) {
+    addBridgeManual(ipAddress) {
 
-        let instance = new HueApi.PhueBridge(ip);
+        let instance = new HueApi.PhueBridge({ip: ipAddress});
 
         instance.setConnectionTimeout(this._connectionTimeout);
 
@@ -117,7 +117,7 @@ class _Phue {
 
         if (res.length > 0 && "success" in res[0]) {
             let username = res[0]["success"]["username"];
-            log(`new username: ${username} for ip: ${ip}`);
+            log(`new username: ${username} for ip: ${ipAddress}`);
 
             res = instance.getConfig();
 
@@ -128,7 +128,7 @@ class _Phue {
             let bridgeid = res["bridgeid"].toLowerCase();
 
             this.bridges[bridgeid] = {
-                "ip": ip,
+                "ip": ipAddress,
                 "username": username,
                 "name": res["name"],
                 "mac": res["mac"]
@@ -185,7 +185,7 @@ class _Phue {
             let instance;
 
             if (this.instances[bridgeid] === undefined) {
-                instance = new HueApi.PhueBridge(this.bridges[bridgeid]["ip"]);
+                instance = new HueApi.PhueBridge({ip: this.bridges[bridgeid]["ip"]});
 
                 instance.setConnectionTimeout(this._connectionTimeout);
 
