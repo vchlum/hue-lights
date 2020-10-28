@@ -35,6 +35,7 @@
 
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
+const Gdk = imports.gi.Gdk;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
@@ -105,6 +106,7 @@ var Prefs = class HuePrefs {
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
+        this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
     }
 
     /**
@@ -123,6 +125,21 @@ var Prefs = class HuePrefs {
         );
     }
 
+    /**
+     * Wite setting for lights used for notification
+     * 
+     * @method writeNotifyLightsSettings
+     */
+    writeNotifyLightsSettings() {
+
+    this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE,
+                this._notifyLights
+            )
+        );
+    }
     /**
      * Get the main witget for prefs.
      * 
@@ -341,6 +358,9 @@ var Prefs = class HuePrefs {
             }
         );
 
+        /**
+         * Position in panel
+         */
         labelWidget = new Gtk.Label(
             {label: _("Indicator position in panel:")}
         );
@@ -368,6 +388,9 @@ var Prefs = class HuePrefs {
 
         top++;
 
+        /**
+         * Show zones first
+         */
         labelWidget = new Gtk.Label(
             {label: _("Show zones first:")}
         );
@@ -399,6 +422,9 @@ var Prefs = class HuePrefs {
 
         top++;
 
+        /**
+         * Show zones in group menu
+         */
         labelWidget = new Gtk.Label(
             {label: _("Show scenes in group menu:")}
         );
@@ -428,6 +454,146 @@ var Prefs = class HuePrefs {
             1
         );
 
+        top++;
+        generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        top++;
+
+        /**
+         * Blink light notification
+         */
+        let notifyLightId = undefined;
+
+        labelWidget = new Gtk.Label(
+            {label: _("Light to blink on notify:")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        /* list all lights in menu wich checkboxes*/
+        let lightNotifyMenuBUtton = new Gtk.MenuButton({label: _("Select lights")});
+        let lightNotifyMenu = new Gtk.Menu();
+        lightNotifyMenuBUtton.set_popup(lightNotifyMenu);
+
+        for (let bridgeid in this._hue.bridges) {
+
+            for (let groupid in this._hue.data[bridgeid]["groups"]) {
+
+                if (this._hue.data[bridgeid]["groups"][groupid]["type"] !== "Room") {
+                    continue;
+                }
+
+                for (let l in this._hue.data[bridgeid]["groups"][groupid]["lights"]) {
+                    let lightid = parseInt(this._hue.data[bridgeid]["groups"][groupid]["lights"][l]);
+
+                    notifyLightId = `${bridgeid}::${lightid}`;
+
+                    let lightName = this._hue.data[bridgeid]["lights"][lightid]["name"];
+                    let groupName = this._hue.data[bridgeid]["groups"][groupid]["name"];
+
+                    let lightNotifyMenuItem = new Gtk.CheckMenuItem({label:`${groupName} - ${lightName}`});
+                    for (let i in this._notifyLights) {
+                        if (notifyLightId == i) {
+                            lightNotifyMenuItem.active = true;
+                        }
+                    }
+                    lightNotifyMenuItem.connect(
+                        "toggled",
+                        this._widgetEventHandler.bind(
+                            this,
+                            {
+                                "event": "notify-light-toggled",
+                                "notify-lightid": notifyLightId,
+                                "object": lightNotifyMenuItem
+                            }
+                        )
+                    )
+                    lightNotifyMenu.append(lightNotifyMenuItem);
+                }
+
+            }
+
+        }
+
+        lightNotifyMenu.show_all();
+
+        generalWidget.attach_next_to(
+            lightNotifyMenuBUtton,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        /**
+         * Brightness for notification light
+         */
+        let briVal = 254;
+        if (notifyLightId !== undefined &&
+            this._notifyLights[notifyLightId] !== undefined &&
+            this._notifyLights[notifyLightId]["bri"] !== undefined) {
+
+            briVal = this._notifyLights[notifyLightId]["bri"];
+        }
+
+        let adj = new Gtk.Adjustment({value : 1.0, lower: 0, upper: 254, step_increment : 1, page_increment : 20, page_size : 0});
+        let brightnessNotifyWidget = new Gtk.ScaleButton({
+            label: _("Brightness"),
+            adjustment : adj
+        });
+        brightnessNotifyWidget.value = briVal;
+        brightnessNotifyWidget.connect(
+            "value-changed",
+            this._widgetEventHandler.bind(
+                this, 
+                {
+                    "event": "notify-light-brightness",
+                    "object": brightnessNotifyWidget
+                }
+            )
+        )
+        generalWidget.attach(brightnessNotifyWidget, 1, top, 1, 1);
+
+        /**
+         * Color for notification light
+         */
+        let colorButtonNotifyWidget = new Gtk.ColorButton();
+        let notifyLightColor = new Gdk.RGBA();
+
+        notifyLightColor.red = 1.0;
+        notifyLightColor.green = 1.0;
+        notifyLightColor.blue = 1.0;
+        if (notifyLightId !== undefined &&
+            this._notifyLights[notifyLightId] !== undefined &&
+            this._notifyLights[notifyLightId]["r"] !== undefined) {
+
+            notifyLightColor.red = this._notifyLights[notifyLightId]["r"] / 255;
+            notifyLightColor.green = this._notifyLights[notifyLightId]["g"] / 255;
+            notifyLightColor.blue = this._notifyLights[notifyLightId]["b"] / 255;
+        }
+        notifyLightColor.alpha = 1.0;
+        colorButtonNotifyWidget.set_rgba(notifyLightColor);
+        colorButtonNotifyWidget.connect(
+            "color-set",
+            this._widgetEventHandler.bind(
+                this, 
+                {
+                    "event": "notify-light-color",
+                    "object": colorButtonNotifyWidget
+                }
+            )
+        )
+
+        generalWidget.attach_next_to(
+            colorButtonNotifyWidget,
+            brightnessNotifyWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+        generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
         top++;
 
         return generalWidget;
@@ -520,6 +686,7 @@ var Prefs = class HuePrefs {
 
         let bridgeid;
         let ip;
+        let lightId;
 
         switch(data["event"]) {
 
@@ -639,6 +806,86 @@ var Prefs = class HuePrefs {
                     Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT,
                     this._connectionTimeout
                 );
+                break;
+
+
+            case "notify-light-toggled":
+
+                let lightId = data["notify-lightid"];
+
+                if (data["object"].active) {
+                    let notifyData = {};
+                    if (this._notifyLights[lightId] !== undefined) {
+                        notifyData = this._notifyLights[lightId];
+                    }
+
+                    /* if no data provided, check if some other light has some data */
+                    if (Object.keys(notifyData).length === 0) {
+                        for (let i in this._notifyLights) {
+                            if (Object.keys(this._notifyLights[i]).length > 0) {
+                                notifyData = this._notifyLights[i];
+                                break;
+                            }
+                        }
+                    }
+
+                    this._notifyLights[lightId] = notifyData;
+
+                    /**
+                     * we are done, but let me check if too many lights selected
+                     */
+                    if (Object.keys(this._notifyLights).length > 5) {
+                        let dialogTooManyLights = new Gtk.Dialog(
+                            {
+                                modal: true,
+                                title: _("Too many lights selected")
+                            }
+                        );
+                        dialogTooManyLights.get_content_area().add(new Gtk.Label(
+                            {label: _("Please select max. 5 lights.\nMore then 5 lights can cause performance issues.")}
+                        ));
+                        dialogTooManyLights.show_all();
+
+                    }
+
+                } else {
+                    if (this._notifyLights[lightId] !== undefined) {
+                        delete this._notifyLights[lightId];
+                    }
+                }
+
+                this.writeNotifyLightsSettings();
+                break;
+
+            case "notify-light-brightness":
+
+                for (let i in this._notifyLights){
+
+                    if (this._notifyLights[i] === undefined) {
+                        this._notifyLights[i] = {};
+                    }
+
+                    this._notifyLights[i]["bri"] = Math.round(data["object"].value);
+                }
+
+                this.writeNotifyLightsSettings();
+                break;
+
+            case "notify-light-color":
+
+                for (let i in this._notifyLights){
+
+                    if (this._notifyLights[i] === undefined) {
+                        this._notifyLights[i] = {};
+                    }
+
+                    let notifyLightColor = data["object"].get_rgba();
+                    this._notifyLights[i]["r"] = Math.round(notifyLightColor.red * 255);
+                    this._notifyLights[i]["g"] = Math.round(notifyLightColor.green * 255);
+                    this._notifyLights[i]["b"] = Math.round(notifyLightColor.blue * 255);
+                }
+
+                this.writeNotifyLightsSettings();
                 break;
 
             case undefined:

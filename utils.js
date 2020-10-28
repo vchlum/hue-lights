@@ -37,6 +37,7 @@ const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
@@ -47,6 +48,8 @@ var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
+var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
+var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
 
 /**
  * Translations initialization.

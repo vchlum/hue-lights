@@ -48,7 +48,7 @@ const Gio = imports.gi.Gio;
 const GObject = imports.gi.GObject;
 const Lang = imports.lang;
 const Slider = imports.ui.slider;
-const Atk = imports.gi.Atk;
+const GLib = imports.gi.GLib;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
@@ -175,6 +175,13 @@ var PhueMenu = GObject.registerClass({
         this._connectionTimeout = this._settings.get_int(
             Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT
         );
+
+        /**
+         * this._notifyLights doesn't need rebuild
+         */
+        this._notifyLights = this._settings.get_value(
+            Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS
+        ).deep_unpack();
 
         return menuNeedsRebuild;
     }
@@ -984,5 +991,147 @@ var PhueMenu = GObject.registerClass({
         }
 
         this._indicatorPositionBackUp = this._indicatorPosition;
+    }
+
+    /**
+     * Backup light settings before running notification
+     * 
+     * @method notifyGetLight
+     * @param {Number} bridgeid 
+     * @param {NUmber} lightid 
+     * @return {Object} command for light recovery
+     */
+    notifyBackupLight(bridgeid, lightid) {
+
+        let cmd = {"transitiontime": 1};
+
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            return undefined;
+        }
+
+        let light = this.hue.instances[bridgeid].getLights();
+
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            return undefined;
+        }
+
+        light = light[lightid]["state"];
+
+        cmd["on"] = light["on"];
+
+        cmd["bri"] = light["bri"];
+
+        if (light["colormode"] == "ct") {
+            cmd["ct"] = light["ct"];
+        }
+
+        if (light["colormode"] == "xy") {
+            cmd["xy"] = light["xy"];
+        }
+
+        return cmd;
+    }
+
+    /**
+     * Restore lights after running notification
+     * 
+     * @method notifySetLight
+     * @param {Number} bridgeid 
+     * @param {Number} lightid 
+     * @param {Object} cmd for light recovery
+     */
+    notifyRestoreLight(bridgeid, lightid, cmd) {
+
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            return;
+        }
+ 
+        this.hue.instances[bridgeid].setLights(
+            lightid,
+            cmd
+        );
+    }
+
+
+    /**
+     * Start light notification
+     * 
+     * @method startNotify
+     */
+    startNotify() {
+
+        return new Promise(resolve => {
+            this.oldNotifylight = {};
+
+            for (let i in this._notifyLights) {
+
+                let bridgeid = i.split("::")[0];
+                let lightid = parseInt(i.split("::")[1]);
+
+                if (!this.hue.instances[bridgeid].isConnected()) {
+                    continue;
+                }
+
+                this.oldNotifylight[i] = this.notifyBackupLight(bridgeid, lightid);
+
+                let bri = 255;
+                if (this._notifyLights[i]["bri"] !== undefined) {
+                    bri = this._notifyLights[i]["bri"];
+                }
+
+                let r = 255;
+                let g = 255;
+                let b = 255;
+                if (this._notifyLights[i]["r"] !== undefined) {
+                    r = this._notifyLights[i]["r"];
+                    g = this._notifyLights[i]["g"];
+                    b = this._notifyLights[i]["b"];
+                }
+
+                let xy = Utils.colorToHueXY(r, g, b);
+
+                this.hue.instances[bridgeid].setLights(
+                    lightid,
+                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 1 }
+                );
+
+            }
+
+            GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+                this.endNotify();
+                return GLib.SOURCE_REMOVE;
+            });
+            resolve();
+        })
+    }
+
+
+    /**
+     * End light notification
+     * 
+     * @method endNotify
+     */
+    endNotify() {
+
+        if (this.oldNotifylight === undefined) {
+            return;
+        }
+
+        for (let i in this._notifyLights) {
+
+            let bridgeid = i.split("::")[0];
+            let lightid = parseInt(i.split("::")[1]);
+
+            if (this.oldNotifylight[i] !== undefined) {
+                this.notifyRestoreLight(bridgeid, lightid, this.oldNotifylight[i]);
+            }
+        }
+
+        this.oldNotifylight = undefined;
+    }
+
+
+    async runNotify() {
+        await this.startNotify();
     }
 });

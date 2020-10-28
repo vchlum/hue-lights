@@ -6,7 +6,9 @@
     <value value="2" nick="left"/>
   </enum>
   <schema id="org.gnome.shell.extensions.hue-lights" path="/org/gnome/shell/extensions/hue-lights/">
+
     <!-- See also: https://developer.gnome.org/glib/stable/gvariant-format-strings.html -->
+
     <key name="bridges" type="a{sa{ss}}">
       <default>{}</default>
       <summary>All bridges</summary>
@@ -26,6 +28,10 @@
     <key name="connection-timeout" type="i">
       <default>2</default>
       <summary>Connection timeout</summary>
+    </key>
+    <key name="notify-lights" type="a{sa{si}}">
+      <default>{}</default>
+      <summary>Lights used for notifications</summary>
     </key>
   </schema>
 </schemalist>

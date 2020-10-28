@@ -38,8 +38,26 @@ const Me = ExtensionUtils.getCurrentExtension();
 const HueMenu = Me.imports.extensionmenu;
 const Utils = Me.imports.utils;
 const Main = imports.ui.main;
+const MessageTray = imports.ui.messageTray;
 
 var hueLightsMenu; /* main widget */
+
+let origCreateBanner;
+
+/**
+ * Function to substitute original createBanner.
+ * 
+ * @method createBannerHue
+ */
+function createBannerHue() {
+
+    if (hueLightsMenu !== null) {
+
+        hueLightsMenu.runNotify();
+    }
+
+    return this.source.createBanner(this);
+}
 
 /**
  * This function is called once when your extension is loaded, not enabled.
@@ -49,6 +67,9 @@ var hueLightsMenu; /* main widget */
 function init() {
 
     Utils.initTranslations();
+
+    origCreateBanner = MessageTray.Notification.prototype.createBanner;
+    MessageTray.Notification.prototype.createBanner = createBannerHue;
 
     log(`initializing ${Me.metadata.name} version ${Me.metadata.version}`);
 }
@@ -74,6 +95,8 @@ function enable() {
  * @method disable
  */
 function disable() {
+
+    MessageTray.Notification.prototype.createBanner = origCreateBanner;
 
     hueLightsMenu.destroy();
 
