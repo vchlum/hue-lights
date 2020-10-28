@@ -104,6 +104,7 @@ var PhueBridge =  GObject.registerClass({
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
 
         this._asyncRequest = false;
+        this._msg_priority = Soup.MessagePriority.NORMAL;
     }
 
     set ip(value) {
@@ -134,7 +135,7 @@ var PhueBridge =  GObject.registerClass({
      */
     disconnectAll() {
         for (let id of this._signals) {
-            this._container.disconnect(id);
+            this.disconnect(id);
         }
 
         this._signals = [];
@@ -147,6 +148,10 @@ var PhueBridge =  GObject.registerClass({
      */
     enableAsyncRequest() {
         this._asyncRequest = true;
+    }
+
+    setMsgPriorityVeryLow() {
+        this._msg_priority = Soup.MessagePriority.VERY_LOW;
     }
 
     /**
@@ -235,6 +240,9 @@ var PhueBridge =  GObject.registerClass({
 
         let msg = Soup.Message.new(method, url);
 
+        msg.priority = this._msg_priority;
+        this._msg_priority = Soup.MessagePriority.NORMAL;
+
         if (data !== null) {
             data = JSON.stringify(data);
             msg.set_request('application/gnome-extension', 2, data);
@@ -248,7 +256,10 @@ var PhueBridge =  GObject.registerClass({
                     try {
                         this._bridgeConnected = true;
                         this._data = JSON.parse(mess.response_body.data);
-                        this.emit('data-ready');
+
+                        if (mess.priority !== Soup.MessagePriority.VERY_LOW) {
+                            this.emit('data-ready');
+                        }
                     } catch {
                         this._data = [];
                     }

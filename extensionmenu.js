@@ -1059,6 +1059,7 @@ var PhueMenu = GObject.registerClass({
             return;
         }
  
+        this.hue.instances[bridgeid].setMsgPriorityVeryLow();
         this.hue.instances[bridgeid].setLights(
             lightid,
             cmd
@@ -1103,6 +1104,7 @@ var PhueMenu = GObject.registerClass({
 
                 let xy = Utils.colorToHueXY(r, g, b);
 
+                this.hue.instances[bridgeid].setMsgPriorityVeryLow();
                 this.hue.instances[bridgeid].setLights(
                     lightid,
                     {"on": true, "bri":bri, "xy":xy, "transitiontime": 1 }

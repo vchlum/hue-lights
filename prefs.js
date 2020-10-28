@@ -841,23 +841,6 @@ var Prefs = class HuePrefs {
 
                     this._notifyLights[lightId] = notifyData;
 
-                    /**
-                     * we are done, but let me check if too many lights selected
-                     */
-                    if (Object.keys(this._notifyLights).length > 5) {
-                        let dialogTooManyLights = new Gtk.Dialog(
-                            {
-                                modal: true,
-                                title: _("Too many lights selected")
-                            }
-                        );
-                        dialogTooManyLights.get_content_area().add(new Gtk.Label(
-                            {label: _("Please select max. 5 lights.\nMore then 5 lights can cause performance issues.")}
-                        ));
-                        dialogTooManyLights.show_all();
-
-                    }
-
                 } else {
                     if (this._notifyLights[lightId] !== undefined) {
                         delete this._notifyLights[lightId];
