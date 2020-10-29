@@ -47,11 +47,12 @@ const HueApi = Me.imports.phueapi;
  */
 class _Phue {
 
-    constructor() {
+    constructor(asyncMode) {
         this.bridges = {};
         this.instances = {};
         this.data = {};
         this._connectionTimeout = 2;
+        this._asyncMode = asyncMode;
     }
 
     /**
@@ -66,6 +67,21 @@ class _Phue {
 
         for (let i in this.instances) {
             this.instances[i].setConnectionTimeout(sec);
+        }
+    }
+
+    enableAsyncMode() {
+        this._asyncMode = true;
+        for (let i in this.instances) {
+            this.instances[i].enableAsyncRequest();
+        }
+    }
+
+    disableAsyncMode() {
+        this._asyncMode = false;
+
+        for (let i in this.instances) {
+            this.instances[i].disableAsyncRequest();
         }
     }
 
@@ -106,6 +122,10 @@ class _Phue {
     addBridgeManual(ipAddress) {
 
         let instance = new HueApi.PhueBridge({ip: ipAddress});
+
+        if (this._asyncMode) {
+            instance.enableAsyncRequest();
+        }
 
         instance.setConnectionTimeout(this._connectionTimeout);
 
@@ -186,6 +206,10 @@ class _Phue {
 
             if (this.instances[bridgeid] === undefined) {
                 instance = new HueApi.PhueBridge({ip: this.bridges[bridgeid]["ip"]});
+
+                if (this._asyncMode) {
+                    instance.enableAsyncRequest();
+                }
 
                 instance.setConnectionTimeout(this._connectionTimeout);
 

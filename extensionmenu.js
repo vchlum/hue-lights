@@ -37,6 +37,7 @@ const Clutter = imports.gi.Clutter;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Hue = Me.imports.phue;
+const PhueRequestype = Me.imports.phueapi.PhueRequestype;
 const Utils = Me.imports.utils;
 const ColorPicker = Me.imports.colorpicker;
 const Util = imports.misc.util;
@@ -81,6 +82,8 @@ var PhueMenu = GObject.registerClass({
         super._init(0.0, Me.metadata.name, false);
 
         this.refreshMenuObjects = {};
+        this.oldNotifylight = {};
+
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         this._settings.connect("changed", Lang.bind(this, function() {
             if (this.readSettings()) {
@@ -90,7 +93,7 @@ var PhueMenu = GObject.registerClass({
             this.hue.setConnectionTimeout(this._connectionTimeout);
         }));
 
-        this.hue = new Hue.Phue();
+        this.hue = new Hue.Phue(true);
 
         this.readSettings();
         this.hue.setConnectionTimeout(this._connectionTimeout);
@@ -110,7 +113,7 @@ var PhueMenu = GObject.registerClass({
         this.menu.connect("open-state-changed", () => {
             if (this.menu.isOpen) {
                 for (let i in this.hue.instances) {
-                        this.hue.instances[i].enableAsyncRequest();
+                        /* this will invoke this.refreshMenu via "all-data" */
                         this.hue.instances[i].getAll();
                 }
             }
@@ -771,7 +774,7 @@ var PhueMenu = GObject.registerClass({
         let items = [];
         let data = {};
 
-        data = this.hue.instances[bridgeid].getAll();
+        data = this.bridesData[bridgeid];
 
         if (data["config"] === undefined) {
             return [];
@@ -817,23 +820,6 @@ var PhueMenu = GObject.registerClass({
         let object = null;
         let parsedBridgePath = [];
         let value;
-
-        for (bridgeid in this.hue.instances) {
-            if (!this.hue.instances[bridgeid].isConnected()) {
-                continue;
-            }
-
-            let tmpdata = this.hue.instances[bridgeid].getAll();
-            if (this.hue.instances[bridgeid].checkError()) {
-                Main.notify(
-                    _("Hue Lights - please check the connection"),
-                    _("Failed to connect to the bridge")
-                );
-                return;
-            }
-
-            this.bridesData[bridgeid] = tmpdata;
-        }
 
         for (let bridgePath in this.refreshMenuObjects) {
 
@@ -904,7 +890,9 @@ var PhueMenu = GObject.registerClass({
 
         this.refreshMenuObjects = {};
 
+        this.hue.disableAsyncMode();
         this.bridesData = this.hue.checkBridges();
+        this.hue.enableAsyncMode();
 
         for (let item in oldItems){
             oldItems[item].destroy();
@@ -918,9 +906,32 @@ var PhueMenu = GObject.registerClass({
 
             this.hue.instances[bridgeid].disconnectAll;
             this.hue.instances[bridgeid].connect(
-                'data-ready',
+                "change-occured",
                 () => {
+                    /* ask for async all data,
+                     * which will invoke refreshMenu*/
+                    this.hue.instances[bridgeid].getAll();
+                }
+            );
+
+            this.hue.instances[bridgeid].connect(
+                "all-data",
+                () => {
+                    if (this.hue.instances[bridgeid].isConnected()) {
+                        this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
+                    }
+
                     this.refreshMenu();
+                }
+            );
+
+            this.hue.instances[bridgeid].connect(
+                "lights-data",
+                () => {
+                    this.checkNotifications(
+                        bridgeid,
+                        this.hue.instances[bridgeid].getAsyncData()
+                    );
                 }
             );
 
@@ -1007,86 +1018,65 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
-     * Backup light settings before running notification
+     * Backup light settings from requested bridge
+     * before running notification
      * 
      * @method notifyGetLight
-     * @param {Number} bridgeid 
-     * @param {NUmber} lightid 
-     * @return {Object} command for light recovery
+     * @param {String} reqBridgeid
+     * @param {Object} lights data
      */
-    notifyBackupLight(bridgeid, lightid) {
+    notifyBackupLight(reqBridgeid, dataLights) {
 
-        let cmd = {"transitiontime": 1};
+        let cmd = {};
+        let lightState;
 
-        if (!this.hue.instances[bridgeid].isConnected()) {
-            return undefined;
+        for (let i in this._notifyLights) {
+
+            let bridgeid = i.split("::")[0];
+            let lightid = parseInt(i.split("::")[1]);
+
+            if (bridgeid !== reqBridgeid) {
+                continue;
+            }
+
+            lightState = dataLights[lightid]["state"];
+
+            cmd = {"transitiontime": 1};
+
+            cmd["on"] = lightState["on"];
+
+            cmd["bri"] = lightState["bri"];
+
+            if (lightState["colormode"] == "ct") {
+                cmd["ct"] = lightState["ct"];
+            }
+
+            if (lightState["colormode"] == "xy") {
+                cmd["xy"] = lightState["xy"];
+            }
+
+            this.oldNotifylight[i] = cmd;
         }
-
-        let light = this.hue.instances[bridgeid].getLights();
-
-        if (!this.hue.instances[bridgeid].isConnected()) {
-            return undefined;
-        }
-
-        light = light[lightid]["state"];
-
-        cmd["on"] = light["on"];
-
-        cmd["bri"] = light["bri"];
-
-        if (light["colormode"] == "ct") {
-            cmd["ct"] = light["ct"];
-        }
-
-        if (light["colormode"] == "xy") {
-            cmd["xy"] = light["xy"];
-        }
-
-        return cmd;
     }
 
     /**
-     * Restore lights after running notification
-     * 
-     * @method notifySetLight
-     * @param {Number} bridgeid 
-     * @param {Number} lightid 
-     * @param {Object} cmd for light recovery
-     */
-    notifyRestoreLight(bridgeid, lightid, cmd) {
-
-        if (!this.hue.instances[bridgeid].isConnected()) {
-            return;
-        }
- 
-        this.hue.instances[bridgeid].setMsgPriorityVeryLow();
-        this.hue.instances[bridgeid].setLights(
-            lightid,
-            cmd
-        );
-    }
-
-
-    /**
-     * Start light notification
+     * Start light notification on a bridge
      * 
      * @method startNotify
+     * @param {String} requested bridge
      */
-    startNotify() {
+    startNotify(reqBirdgeid) {
 
         return new Promise(resolve => {
-            this.oldNotifylight = {};
 
             for (let i in this._notifyLights) {
 
                 let bridgeid = i.split("::")[0];
                 let lightid = parseInt(i.split("::")[1]);
 
-                if (!this.hue.instances[bridgeid].isConnected()) {
+                if (reqBirdgeid !== bridgeid) {
                     continue;
                 }
-
-                this.oldNotifylight[i] = this.notifyBackupLight(bridgeid, lightid);
 
                 let bri = 255;
                 if (this._notifyLights[i]["bri"] !== undefined) {
@@ -1104,16 +1094,16 @@ var PhueMenu = GObject.registerClass({
 
                 let xy = Utils.colorToHueXY(r, g, b);
 
-                this.hue.instances[bridgeid].setMsgPriorityVeryLow();
                 this.hue.instances[bridgeid].setLights(
                     lightid,
-                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 1 }
+                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 1 },
+                    PhueRequestype.NO_RESPONSE_NEED
                 );
 
             }
 
             GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
-                this.endNotify();
+                this.endNotify(reqBirdgeid);
                 return GLib.SOURCE_REMOVE;
             });
             resolve();
@@ -1122,11 +1112,12 @@ var PhueMenu = GObject.registerClass({
 
 
     /**
-     * End light notification
+     * End light notification on a bridge
      * 
      * @method endNotify
+     * @param {String} requested bridge
      */
-    endNotify() {
+    endNotify(reqBirdgeid) {
 
         if (this.oldNotifylight === undefined) {
             return;
@@ -1137,16 +1128,52 @@ var PhueMenu = GObject.registerClass({
             let bridgeid = i.split("::")[0];
             let lightid = parseInt(i.split("::")[1]);
 
+            if (reqBirdgeid !== bridgeid) {
+                continue;
+            }
+
             if (this.oldNotifylight[i] !== undefined) {
-                this.notifyRestoreLight(bridgeid, lightid, this.oldNotifylight[i]);
+                this.hue.instances[bridgeid].setLights(
+                    lightid,
+                    this.oldNotifylight[i],
+                    PhueRequestype.NO_RESPONSE_NEED
+                );
             }
         }
-
-        this.oldNotifylight = undefined;
     }
 
+    /**
+     * Check if notification should run on bridge
+     * 
+     * @method checkNotifications
+     * @param {String} bridge
+     * @param {Object} lights data
+     */
+    async checkNotifications(birdgeid, dataLights) {
 
-    async runNotify() {
-        await this.startNotify();
+        if (this._waitingNotification) {
+
+            this.notifyBackupLight(birdgeid, dataLights);
+            await this.startNotify(birdgeid);
+
+            this._waitingNotification = false;
+        }
+    }
+
+    /**
+     * A notification occured in the system.
+     * Ask to get lights from all bridges.
+     * It will invoke checkNotifications() for all bridges
+     * 
+     * @method runNotify
+     */
+    runNotify() {
+
+        this._waitingNotification = true;
+
+        for (let i in this.hue.instances) {
+
+            this.hue.instances[i].getLights();
+        }
     }
 });

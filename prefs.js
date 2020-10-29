@@ -897,7 +897,7 @@ function init() {
 
     Utils.initTranslations();
 
-    hue = new Hue.Phue();
+    hue = new Hue.Phue(false);
 
     log(`initializing ${Me.metadata.name} Preferences`);
 }

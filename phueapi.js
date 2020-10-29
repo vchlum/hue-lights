@@ -60,6 +60,34 @@ function discoverBridges() {
     return [];
 }
 
+var PhueRequestype = {
+    NO_RESPONSE_NEED: 0,
+    CHANGE_OCCURED: 1,
+    ALL_DATA: 2,
+    LIGHTS_DATA: 3,
+    GROUPS_DATA: 4,
+    CONFIG_DATA: 5,
+    SCHEDULES_DATA: 6,
+    SCENES_DATA: 7,
+    RULES_DATA: 8,
+    SENSORS_DATA: 9,
+    RESOURCE_LINKS_DATA: 10,
+    NEW_USER: 11
+};
+
+
+var PhueMessage = class PhueMessage extends Soup.Message {
+
+    constructor(params) {
+
+        super(params);
+
+        this.requestHueType = PhueRequestype.NO_RESPONSE_NEED;
+
+        Object.assign(this, params);
+    }
+};
+
 /**
  * _PhueBridge API class for one bridge.
  *
@@ -72,10 +100,19 @@ function discoverBridges() {
 var PhueBridge =  GObject.registerClass({
     GTypeName: "PhueBridge",
     Properties: {
-        'ip': GObject.ParamSpec.string('ip', 'ip', 'ip', GObject.ParamFlags.READWRITE, null),
+        "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),
     },
     Signals: {
-        'data-ready': {}
+        "change-occured": {},
+        "all-data": {},
+        "lights-data": {},
+        "groups-data": {},
+        "config-data": {},
+        "schedules-data": {},
+        "scenes-data": {},
+        "rules-data":{},
+        "sensors-data": {},
+        "resource-links-data": {}
     }
 }, class PhueBridge extends GObject.Object {
 
@@ -104,7 +141,6 @@ var PhueBridge =  GObject.registerClass({
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
 
         this._asyncRequest = false;
-        this._msg_priority = Soup.MessagePriority.NORMAL;
     }
 
     set ip(value) {
@@ -142,7 +178,7 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
-     * Sets the _asyncRequest to true
+     * Enables async http requests
      * 
      * @method enableAsyncRequest
      */
@@ -150,8 +186,23 @@ var PhueBridge =  GObject.registerClass({
         this._asyncRequest = true;
     }
 
-    setMsgPriorityVeryLow() {
-        this._msg_priority = Soup.MessagePriority.VERY_LOW;
+    /**
+     * Disables async http requests
+     * 
+     * @method enableAsyncRequest
+     */
+    disableAsyncRequest() {
+        this._asyncRequest = false;
+    }
+
+    /**
+     * Returns data after the async request.
+     * 
+     * @method getAsyncData
+     * @return {Object} dictionary with data
+     */
+    getAsyncData() {
+        return this._data;
     }
 
     /**
@@ -190,7 +241,6 @@ var PhueBridge =  GObject.registerClass({
      */
     _checkBridgeError(data, resetError = true) {
         if (this._asyncRequest) {
-            this._asyncRequest = false;
             this._bridgeError = [];
             return this._bridgeError;
         }
@@ -236,16 +286,15 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} input data in case of supported method
      * @return {Object} JSON with response
      */
-    _requestJson(method, url, data) {
+    _requestJson(method, url, requestHueType, data) {
 
-        let msg = Soup.Message.new(method, url);
+        let msg = PhueMessage.new(method, url);
 
-        msg.priority = this._msg_priority;
-        this._msg_priority = Soup.MessagePriority.NORMAL;
+        msg.requestHueType = requestHueType;
 
         if (data !== null) {
             data = JSON.stringify(data);
-            msg.set_request('application/gnome-extension', 2, data);
+            msg.set_request("application/gnome-extension", 2, data);
         }
 
         if (this._asyncRequest) {
@@ -257,9 +306,67 @@ var PhueBridge =  GObject.registerClass({
                         this._bridgeConnected = true;
                         this._data = JSON.parse(mess.response_body.data);
 
-                        if (mess.priority !== Soup.MessagePriority.VERY_LOW) {
-                            this.emit('data-ready');
+                        switch (mess.requestHueType) {
+
+                            case PhueRequestype.CHANGE_OCCURED:
+                                this._bridgeData = this._data;
+                                this.emit("change-occured");
+                                break;
+
+                            case PhueRequestype.ALL_DATA:
+                                this._bridgeData = this._data;
+                                this.emit("all-data");
+                                break;
+
+                            case PhueRequestype.LIGHTS_DATA:
+                                this._lightsData = this._data;
+                                this.emit("lights-data");
+                                break;
+
+                            case PhueRequestype.GROUPS_DATA:
+                                this._groupsData = this._data;
+                                this.emit("groups-data");
+                                break;
+
+                            case PhueRequestype.CONFIG_DATA:
+                                this._configData = this._data;
+                                this.emit("config-data");
+                                break;
+
+                            case PhueRequestype.SCHEDULES_DATA:
+                                this._schedulesData = this._data;
+                                this.emit("schedules-data");
+                                break;
+
+                            case PhueRequestype.SCENES_DATA:
+                                this._scenesData = this._data;
+                                this.emit("scenes-data");
+                                break;
+
+                            case PhueRequestype.RULES_DATA:
+                                this._rulesData = this._data;
+                                this.emit("rules-data");
+                                break;
+
+                            case PhueRequestype.SENSORS_DATA:
+                                this._sensorsData = this._data;
+                                this.emit("sensors-data");
+                                break;
+
+                            case PhueRequestype.RESOURCE_LINKS_DATA:
+                                this._resourcelinksData = this._data;
+                                this.emit("resource-links-data");
+                                break;
+
+                            case PhueRequestype.NO_RESPONSE_NEED:
+                                /* no signal emitted, request does not need response */
+                                break;
+
+                            default:
                         }
+
+                        return
+
                     } catch {
                         this._data = [];
                     }
@@ -292,9 +399,9 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} input data
      * @return {Object} JSON with response
      */
-    _bridgePOST(url, data) {
+    _bridgePOST(url, requestHueType, data) {
 
-        return this._requestJson("POST", url, data);
+        return this._requestJson("POST", url, requestHueType, data);
     }
 
     /**
@@ -306,9 +413,9 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} input data
      * @return {Object} JSON with response
      */
-    _bridgePUT(url, data) {
+    _bridgePUT(url, requestHueType, data) {
 
-        return this._requestJson("PUT", url, data);
+        return this._requestJson("PUT", url, requestHueType, data);
     }
 
     /**
@@ -319,9 +426,9 @@ var PhueBridge =  GObject.registerClass({
      * @param {Boolean} url to be requested
      * @return {Object} JSON with response
      */
-    _bridgeGET(url) {
+    _bridgeGET(url, requestHueType) {
 
-        return this._requestJson("GET", url, null);
+        return this._requestJson("GET", url, requestHueType, null);
     }
 
     /**
@@ -348,7 +455,8 @@ var PhueBridge =  GObject.registerClass({
 
         username = `gnome-extension-hue-lights#${hostname}`;
 
-        let res = this._bridgePOST(this._bridgeUrl, {"devicetype": username});
+        let requestHueType = PhueRequestype.NEW_USER;
+        let res = this._bridgePOST(this._bridgeUrl, requestHueType, {"devicetype": username});
         this._checkBridgeError(res);
         if (this.checkError()) {
             log(JSON.stringify(this._bridgeError));
@@ -434,7 +542,7 @@ var PhueBridge =  GObject.registerClass({
      * @private
      * @return {Object} JSON data
      */
-    _getData(data) {
+    _getData(data, requestHueType) {
 
         let userName = this._userName;
 
@@ -442,7 +550,7 @@ var PhueBridge =  GObject.registerClass({
             userName = "unknown";
         }
 
-        this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${userName}/${data}`);
+        this._bridgeData = this._bridgeGET(`${this._bridgeUrl}/${userName}/${data}`, requestHueType);
 
         this._checkBridgeError(this._bridgeData);
         if (this.checkError()) {
@@ -461,9 +569,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getAll
      * @return {Object} JSON data
      */
-    getAll() {
+    getAll(requestHueType = PhueRequestype.ALL_DATA) {
 
-        this._getData("");
+        this._getData("", requestHueType);
 
         if (this.checkError()) {
             return [];
@@ -487,9 +595,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getLights
      * @return {Object} JSON data
      */
-    getLights() {
+    getLights(requestHueType = PhueRequestype.LIGHTS_DATA) {
 
-        this._lightsData = this._getData("lights");
+        this._lightsData = this._getData("lights", requestHueType);
         return this._lightsData;
     }
 
@@ -499,9 +607,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getGroups
      * @return {Object} JSON data
      */
-    getGroups() {
+    getGroups(requestHueType = PhueRequestype.GROUPS_DATA) {
 
-        this._groupsData = this._getData("groups");
+        this._groupsData = this._getData("groups", requestHueType);
         return this._groupsData;
     }
 
@@ -511,9 +619,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getConfig
      * @return {Object} JSON data
      */
-    getConfig() {
+    getConfig(requestHueType = PhueRequestype.CONFIG_DATA) {
 
-        this._configData = this._getData("config");
+        this._configData = this._getData("config", requestHueType);
         return this._configData;
     }
 
@@ -523,9 +631,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getSchedules
      * @return {Object} JSON data
      */
-    getSchedules() {
+    getSchedules(requestHueType = PhueRequestype.SCHEDULES_DATA) {
 
-        this._schedulesData = this._getData("schedules");
+        this._schedulesData = this._getData("schedules", requestHueType);
         return this._schedulesData;
     }
 
@@ -535,9 +643,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getScenes
      * @return {Object} JSON data
      */
-    getScenes() {
+    getScenes(requestHueType = PhueRequestype.SCENES_DATA) {
 
-        this._scenesData = this._getData("scenes");
+        this._scenesData = this._getData("scenes", requestHueType);
         return this._scenesData;
     }
 
@@ -547,9 +655,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getRules
      * @return {Object} JSON data
      */
-    getRules() {
+    getRules(requestHueType = PhueRequestype.RULES_DATA) {
 
-        this._rulesData = this._getData("rules");
+        this._rulesData = this._getData("rules", requestHueType);
         return this._rulesData;
     }
 
@@ -559,9 +667,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getSensors
      * @return {Object} JSON data
      */
-    getSensors() {
+    getSensors(requestHueType = PhueRequestype.SENSORS_DATA) {
 
-        this._sensorsData = this._getData("sensors");
+        this._sensorsData = this._getData("sensors", requestHueType);
         return this._sensorsData;
     }
 
@@ -571,9 +679,9 @@ var PhueBridge =  GObject.registerClass({
      * @method getResourcelinks
      * @return {Object} JSON data
      */
-    getResourcelinks() {
+    getResourcelinks(requestHueType = PhueRequestype.RESOURCE_LINKS_DATA) {
 
-        this._resourcelinksData = this._getData("resourcelinks");
+        this._resourcelinksData = this._getData("resourcelinks", requestHueType);
         return this._resourcelinksData;
     }
 
@@ -586,18 +694,16 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} JSON input data
      * @return {Object} JSON output data
      */
-    setLights(lights, data) {
+    setLights(lights, data, requestHueType = PhueRequestype.CHANGE_OCCURED) {
 
         let url = "";
         let res = [];
-
-        this._asyncRequest = true;
 
         switch (typeof(lights)) {
 
             case "number":
                 url = `${this._bridgeUrl}/${this._userName}/lights/${lights.toString()}/state`;
-                res = this._bridgePUT(url, data)
+                res = this._bridgePUT(url, requestHueType, data);
 
                 this._checkBridgeError(res);
                 if (this.checkError()) {
@@ -610,8 +716,16 @@ var PhueBridge =  GObject.registerClass({
             case "object":
                 let result = [];
                 for (let light in lights) {
+
+                    /* change only for last light */
+                    if (light + 1 == lights.length) {
+                        requestHueType = PhueRequestype.CHANGE_OCCURED;
+                    } else {
+                        requestHueType = PhueRequestype.NO_RESPONSE_NEED;
+                    }
+
                     url = `${this._bridgeUrl}/${this._userName}/lights/${lights[light].toString()}/state`;
-                    res = this._bridgePUT(url, data)
+                    res = this._bridgePUT(url, requestHueType, data);
 
                     this._checkBridgeError(res);
                     if (this.checkError()) {
@@ -637,15 +751,13 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} JSON input data
      * @return {Object} JSON output data
      */
-    actionGroup(groupId, data) {
-
-        this._asyncRequest = true;
+    actionGroup(groupId, data, requestHueType = PhueRequestype.CHANGE_OCCURED) {
 
         let url = "";
         let res = [];
 
         url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}/action`;
-        res = this._bridgePUT(url, data)
+        res = this._bridgePUT(url, requestHueType, data)
 
         this._checkBridgeError(res);
         if (this.checkError()) {
