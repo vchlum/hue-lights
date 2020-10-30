@@ -83,6 +83,7 @@ var PhueMenu = GObject.registerClass({
 
         this.refreshMenuObjects = {};
         this.oldNotifylight = {};
+        this.bridgeInProblem = {}
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         this._settings.connect("changed", Lang.bind(this, function() {
@@ -245,13 +246,6 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         {"on": value}
                     );
-
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to switch the group")
-                        );
-                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -259,13 +253,6 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         {"on": value}
                     );
-                    
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to switch the light")
-                        );
-                    }
                 }
 
                 break;
@@ -293,13 +280,6 @@ var PhueMenu = GObject.registerClass({
                         parseInt(parsedBridgePath[2]),
                         cmd
                     );
-
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to set the brightness of the group")
-                        );
-                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -308,13 +288,6 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
-
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to set the brightness of the light")
-                        );
-                    }
                 }
 
                 break;
@@ -378,13 +351,6 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
-                    
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to set the color of the group")
-                        );
-                    }
                 }
 
                 if (parsedBridgePath[1] == "lights") {
@@ -393,13 +359,6 @@ var PhueMenu = GObject.registerClass({
                         parsedBridgePath[2],
                         cmd
                     );
-
-                    if (this.hue.instances[bridgeid].checkError()) {
-                        Main.notify(
-                            _("Hue Lights - please check the connection"),
-                            _("Failed to set the color of the light")
-                        );
-                    }
                 }
 
                 break;
@@ -415,13 +374,6 @@ var PhueMenu = GObject.registerClass({
                     data["groupid"],
                     cmd
                 );
-
-                if (this.hue.instances[bridgeid].checkError()) {
-                    Main.notify(
-                        _("Hue Lights - please check the connection"),
-                        _("Failed to set the scene")
-                    );
-                }
 
                 break;
 
@@ -809,6 +761,28 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Check if light related to the brightness is off.
+     * Thus the  brightness should be off.
+     * 
+     * @param {bridgeid} bridgeid
+     * @param {Object} parsedBridgePath
+     */
+    checkLightOfBrightness(bridgeid, p) {
+
+        if (p[1] == "lights") {
+            let light = this.bridesData[bridgeid]["lights"][p[2]];
+            return light["state"]["on"];
+        }
+
+        if (p[1] == "groups") {
+            let group = this.bridesData[bridgeid]["groups"][p[2]];
+            return group["state"]["all_on"];
+        }
+
+        return true;
+    }
+
+    /**
      * If change happened, the controls in menu are refreshed.
      * 
      * @method refreshMenu
@@ -868,6 +842,10 @@ var PhueMenu = GObject.registerClass({
 
                     value = value/255;
 
+                    if (!this.checkLightOfBrightness(bridgeid, parsedBridgePath)) {
+                        value = 0;
+                    }
+
                     if (object.value !== value) {
                         object.value = value;
                     }
@@ -921,6 +899,15 @@ var PhueMenu = GObject.registerClass({
                         this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
                     }
 
+                    if (this.bridgeInProblem[bridgeid] !== undefined &&
+                        this.bridgeInProblem[bridgeid]) {
+                            Main.notify(
+                                _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                                _("Connection to Philips Hue bridge restored")
+                            );
+                    }
+                    this.bridgeInProblem[bridgeid] = false;
+
                     this.refreshMenu();
                 }
             );
@@ -932,6 +919,25 @@ var PhueMenu = GObject.registerClass({
                         bridgeid,
                         this.hue.instances[bridgeid].getAsyncData()
                     );
+                }
+            );
+
+
+            this.hue.instances[bridgeid].connect(
+                "connection-problem",
+                () => {
+                    if (this.bridgeInProblem[bridgeid] !== undefined &&
+                        this.bridgeInProblem[bridgeid]) {
+                        /* already noticed */
+                        return;
+                        }
+
+                    Main.notify(
+                        _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                        _("Please check the connection to Philips Hue bridge ")
+                    );
+
+                    this.bridgeInProblem[bridgeid] = true;
                 }
             );
 
@@ -1172,6 +1178,9 @@ var PhueMenu = GObject.registerClass({
         this._waitingNotification = true;
 
         for (let i in this.hue.instances) {
+            if (!this.hue.instances[i].isConnected()) {
+                continue;
+            }
 
             this.hue.instances[i].getLights();
         }

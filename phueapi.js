@@ -112,7 +112,8 @@ var PhueBridge =  GObject.registerClass({
         "scenes-data": {},
         "rules-data":{},
         "sensors-data": {},
-        "resource-links-data": {}
+        "resource-links-data": {},
+        "connection-problem": {}
     }
 }, class PhueBridge extends GObject.Object {
 
@@ -368,7 +369,17 @@ var PhueBridge =  GObject.registerClass({
                         return
 
                     } catch {
+                        this._bridgeConnected = false;
                         this._data = [];
+                        if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
+                            this.emit("connection-problem");
+                        }
+                    }
+                } else {
+                    this._bridgeConnected = false;
+                    this._data = [];
+                    if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
+                        this.emit("connection-problem");
                     }
                 }
             });
@@ -557,8 +568,6 @@ var PhueBridge =  GObject.registerClass({
             log(JSON.stringify(this._bridgeError));
             return [];
         }
-
-        this._bridgeConnected = true;
 
         return this._bridgeData;
     }

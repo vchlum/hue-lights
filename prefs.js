@@ -475,7 +475,8 @@ var Prefs = class HuePrefs {
 
         for (let bridgeid in this._hue.instances) {
 
-            if (this._hue.data[bridgeid] === undefined) {
+            if (this._hue.data[bridgeid] === undefined ||
+                this._hue.data[bridgeid]["groups"] === undefined) {
                 continue;
             }
 
