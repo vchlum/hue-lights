@@ -62,7 +62,7 @@ function discoverBridges() {
 
 var PhueRequestype = {
     NO_RESPONSE_NEED: 0,
-    CHANGE_OCCURED: 1,
+    CHANGE_OCCURRED: 1,
     ALL_DATA: 2,
     LIGHTS_DATA: 3,
     GROUPS_DATA: 4,
@@ -103,7 +103,7 @@ var PhueBridge =  GObject.registerClass({
         "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),
     },
     Signals: {
-        "change-occured": {},
+        "change-occurred": {},
         "all-data": {},
         "lights-data": {},
         "groups-data": {},
@@ -207,10 +207,10 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
-     * Check if error occured in last action.
+     * Check if error occurred in last action.
      * 
      * @method checkError
-     * @return {Boolean} true if error occured else false 
+     * @return {Boolean} true if error occurred else false
      */
     checkError() {
 
@@ -232,7 +232,7 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
-     * Check if any error occured (based on input data dictionary).
+     * Check if any error occurred (based on input data dictionary).
      * 
      * @method _checkBridgeError
      * @private
@@ -309,9 +309,9 @@ var PhueBridge =  GObject.registerClass({
 
                         switch (mess.requestHueType) {
 
-                            case PhueRequestype.CHANGE_OCCURED:
+                            case PhueRequestype.CHANGE_OCCURRED:
                                 this._bridgeData = this._data;
-                                this.emit("change-occured");
+                                this.emit("change-occurred");
                                 break;
 
                             case PhueRequestype.ALL_DATA:
@@ -703,7 +703,7 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} JSON input data
      * @return {Object} JSON output data
      */
-    setLights(lights, data, requestHueType = PhueRequestype.CHANGE_OCCURED) {
+    setLights(lights, data, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
 
         let url = "";
         let res = [];
@@ -728,7 +728,7 @@ var PhueBridge =  GObject.registerClass({
 
                     /* change only for last light */
                     if (light + 1 == lights.length) {
-                        requestHueType = PhueRequestype.CHANGE_OCCURED;
+                        requestHueType = PhueRequestype.CHANGE_OCCURRED;
                     } else {
                         requestHueType = PhueRequestype.NO_RESPONSE_NEED;
                     }
@@ -760,7 +760,7 @@ var PhueBridge =  GObject.registerClass({
      * @param {Object} JSON input data
      * @return {Object} JSON output data
      */
-    actionGroup(groupId, data, requestHueType = PhueRequestype.CHANGE_OCCURED) {
+    actionGroup(groupId, data, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
 
         let url = "";
         let res = [];

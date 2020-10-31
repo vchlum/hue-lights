@@ -331,11 +331,7 @@ var PhueMenu = GObject.registerClass({
                 );
                 colorTemperature = this.colorPicker.colorTemperature;
 
-                if (value == 0) {
-                    cmd = {"on": false};
-                } else {
-                    cmd = {"on": true};
-                }
+                cmd = {"on": true};
 
                 if (colorTemperature > 0 &&
                     this.colorPicker.switchWhite.state) {
@@ -384,6 +380,107 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Creates slider for controlling the brightness
+     * 
+     * @method _createBrightnessSlider
+     * @param {String} bridgeid
+     * @param {Number} lightid
+     * @param {Number} groupid
+     * @return {Object} Brightness slider
+     */
+    _createBrightnessSlider(bridgeid, lightid, groupid) {
+
+        let bridgePath = "";
+
+        let slider = new Slider.Slider(0);
+        slider.set_width(200);
+        slider.set_x_align(Clutter.ActorAlign.END);
+        slider.set_x_expand(false);
+        slider.value = 100/254;
+
+        if (groupid !== null) {
+            bridgePath = `${this._rndID()}::groups::${groupid}::action::bri`;
+        } else {
+            bridgePath = `${this._rndID()}::lights::${lightid}::state::bri`;
+        }
+
+        slider.connect(
+            "drag-end",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object":slider,
+                    "type": "brightness"
+                }
+            )
+        );
+
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object":slider,
+            "type": "brightness"
+        }
+
+        return slider;
+    }
+
+    /**
+     * Creates switch button for torning the light on/off
+     * 
+     * @method _createLightSwitch
+     * @param {String} bridgeid
+     * @param {Number} lightid
+     * @param {Number} groupid
+     * @return {Object} switch button
+     */
+    _createLightSwitch(bridgeid, lightid, groupid) {
+
+        let bridgePath = "";
+
+        if (groupid !== null) {
+            bridgePath = `${this._rndID()}::groups::${groupid}::state::all_on`;
+        } else {
+            bridgePath = `${this._rndID()}::lights::${lightid}::state::on`;
+        }
+
+        let switchBox = new PopupMenu.Switch(false);
+        let switchButton = new St.Button(
+            {reactive: true, can_focus: true}
+        );
+        switchButton.set_x_align(Clutter.ActorAlign.END);
+        switchButton.set_x_expand(false);
+        switchButton.child = switchBox;
+        switchButton.connect(
+            "button-press-event",
+            Lang.bind(this, function() {
+                switchBox.toggle();
+            })
+        );
+        switchButton.connect(
+            "button-press-event",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object": switchBox,
+                    "type": "switch"
+                }
+            )
+        );
+
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object": switchBox,
+            "type": "switch"
+        }
+
+        return switchButton;
+    }
+
+    /**
      * Creates last item in menu hierarchy with all the controls.
      * 
      * @method _createItemLight
@@ -397,10 +494,7 @@ var PhueMenu = GObject.registerClass({
     _createItemLight(bridgeid, data, lightid, groupid) {
 
         let light;
-        let slider;
         let bridgePath = "";
-        let switchBox;
-        let switchButton
 
         /**
          * Decide if this is item for one light or a group.
@@ -448,82 +542,13 @@ var PhueMenu = GObject.registerClass({
             (groupid !== null &&
                 data["groups"][groupid]["action"]["bri"] !== undefined)) {
 
-            slider = new Slider.Slider(0);
-            slider.set_width(200);
-            slider.set_x_align(Clutter.ActorAlign.END);
-            slider.set_x_expand(false);
-            slider.value = 100/254;
-
-            if (groupid !== null) {
-                bridgePath = `${this._rndID()}::groups::${groupid}::action::bri`;
-            } else {
-                bridgePath = `${this._rndID()}::lights::${lightid}::state::bri`;
-            }
-
-            slider.connect(
-                "drag-end",
-                this._menuEventHandler.bind(
-                    this,
-                    {
-                        "bridgePath": bridgePath,
-                        "bridgeid": bridgeid,
-                        "object":slider,
-                        "type": "brightness"
-                    }
-                )
-            );
-
-            this.refreshMenuObjects[bridgePath] = {
-                "bridgeid": bridgeid,
-                "object":slider,
-                "type": "brightness"
-            }
-
-            light.add(slider);
+            light.add(this._createBrightnessSlider(bridgeid, lightid, groupid));
         }
 
         /**
-         * Add switch for turn the light on/off
+         * Add switch for turning the light on/off
          */
-        if (groupid !== null) {
-            bridgePath = `${this._rndID()}::groups::${groupid}::state::all_on`;
-        } else {
-            bridgePath = `${this._rndID()}::lights::${lightid}::state::on`;
-        }
-
-        switchBox = new PopupMenu.Switch(false);
-        switchButton = new St.Button(
-            {reactive: true, can_focus: true}
-        );
-        switchButton.set_x_align(Clutter.ActorAlign.END);
-        switchButton.set_x_expand(false);
-        switchButton.child = switchBox;
-        switchButton.connect(
-            "button-press-event",
-            Lang.bind(this, function() {
-                switchBox.toggle();
-            })
-        );
-        switchButton.connect(
-            "button-press-event",
-            this._menuEventHandler.bind(
-                this,
-                {
-                    "bridgePath": bridgePath,
-                    "bridgeid": bridgeid,
-                    "object":switchBox,
-                    "type": "switch"
-                }
-            )
-        );
-
-        this.refreshMenuObjects[bridgePath] = {
-            "bridgeid": bridgeid,
-            "object":switchBox,
-            "type": "switch"
-        }
-
-        light.add(switchButton);
+        light.add(this._createLightSwitch(bridgeid, lightid, groupid));
 
         return light;
     }
@@ -762,12 +787,12 @@ var PhueMenu = GObject.registerClass({
 
     /**
      * Check if light related to the brightness is off.
-     * Thus the  brightness should be off.
+     * Thus the brightness should be off.
      * 
      * @param {bridgeid} bridgeid
      * @param {Object} parsedBridgePath
      */
-    checkLightOfBrightness(bridgeid, p) {
+    _checkLightOfBrightness(bridgeid, p) {
 
         if (p[1] == "lights") {
             let light = this.bridesData[bridgeid]["lights"][p[2]];
@@ -842,7 +867,7 @@ var PhueMenu = GObject.registerClass({
 
                     value = value/255;
 
-                    if (!this.checkLightOfBrightness(bridgeid, parsedBridgePath)) {
+                    if (!this._checkLightOfBrightness(bridgeid, parsedBridgePath)) {
                         value = 0;
                     }
 
@@ -854,6 +879,73 @@ var PhueMenu = GObject.registerClass({
                 default:
             }
         }
+    }
+
+    /**
+     * Connect signals from bridge instance.
+     * The signals handles async data events.
+     * 
+     * @method _connectHueInstance
+     * @param {String} bridgeid
+     */
+    _connectHueInstance(bridgeid) {
+
+        this.hue.instances[bridgeid].connect(
+            "change-occurred",
+            () => {
+                /* ask for async all data,
+                 * which will invoke refreshMenu*/
+                this.hue.instances[bridgeid].getAll();
+            }
+        );
+
+        this.hue.instances[bridgeid].connect(
+            "all-data",
+            () => {
+                if (this.hue.instances[bridgeid].isConnected()) {
+                    this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
+                }
+
+                if (this.bridgeInProblem[bridgeid] !== undefined &&
+                    this.bridgeInProblem[bridgeid]) {
+                        Main.notify(
+                            _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                            _("Connection to Philips Hue bridge restored")
+                        );
+                }
+                this.bridgeInProblem[bridgeid] = false;
+
+                this.refreshMenu();
+            }
+        );
+
+        this.hue.instances[bridgeid].connect(
+            "lights-data",
+            () => {
+                this.checkNotifications(
+                    bridgeid,
+                    this.hue.instances[bridgeid].getAsyncData()
+                );
+            }
+        );
+
+        this.hue.instances[bridgeid].connect(
+            "connection-problem",
+            () => {
+                if (this.bridgeInProblem[bridgeid] !== undefined &&
+                    this.bridgeInProblem[bridgeid]) {
+                    /* already noticed */
+                    return;
+                    }
+
+                Main.notify(
+                    _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                    _("Please check the connection to Philips Hue bridge ")
+                );
+
+                this.bridgeInProblem[bridgeid] = true;
+            }
+        );
     }
 
     /**
@@ -883,63 +975,8 @@ var PhueMenu = GObject.registerClass({
             }
 
             this.hue.instances[bridgeid].disconnectAll;
-            this.hue.instances[bridgeid].connect(
-                "change-occured",
-                () => {
-                    /* ask for async all data,
-                     * which will invoke refreshMenu*/
-                    this.hue.instances[bridgeid].getAll();
-                }
-            );
 
-            this.hue.instances[bridgeid].connect(
-                "all-data",
-                () => {
-                    if (this.hue.instances[bridgeid].isConnected()) {
-                        this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
-                    }
-
-                    if (this.bridgeInProblem[bridgeid] !== undefined &&
-                        this.bridgeInProblem[bridgeid]) {
-                            Main.notify(
-                                _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
-                                _("Connection to Philips Hue bridge restored")
-                            );
-                    }
-                    this.bridgeInProblem[bridgeid] = false;
-
-                    this.refreshMenu();
-                }
-            );
-
-            this.hue.instances[bridgeid].connect(
-                "lights-data",
-                () => {
-                    this.checkNotifications(
-                        bridgeid,
-                        this.hue.instances[bridgeid].getAsyncData()
-                    );
-                }
-            );
-
-
-            this.hue.instances[bridgeid].connect(
-                "connection-problem",
-                () => {
-                    if (this.bridgeInProblem[bridgeid] !== undefined &&
-                        this.bridgeInProblem[bridgeid]) {
-                        /* already noticed */
-                        return;
-                        }
-
-                    Main.notify(
-                        _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
-                        _("Please check the connection to Philips Hue bridge ")
-                    );
-
-                    this.bridgeInProblem[bridgeid] = true;
-                }
-            );
+            this._connectHueInstance(bridgeid);
 
             bridgeItems = this._createMenuBridge(bridgeid);
 
@@ -1167,7 +1204,7 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
-     * A notification occured in the system.
+     * A notification occurred in the system.
      * Ask to get lights from all bridges.
      * It will invoke checkNotifications() for all bridges
      * 
