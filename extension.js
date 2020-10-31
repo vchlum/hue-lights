@@ -68,9 +68,6 @@ function init() {
 
     Utils.initTranslations();
 
-    origCreateBanner = MessageTray.Notification.prototype.createBanner;
-    MessageTray.Notification.prototype.createBanner = createBannerHue;
-
     log(`initializing ${Me.metadata.name} version ${Me.metadata.version}`);
 }
 
@@ -84,6 +81,9 @@ function enable() {
     hueLightsMenu = new HueMenu.PhueMenu();
 
     Main.panel.addToStatusArea('hue-lights', hueLightsMenu);
+
+    origCreateBanner = MessageTray.Notification.prototype.createBanner;
+    MessageTray.Notification.prototype.createBanner = createBannerHue;
 
     log(`enabling ${Me.metadata.name} version ${Me.metadata.version}`);
 }

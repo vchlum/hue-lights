@@ -464,7 +464,7 @@ var Prefs = class HuePrefs {
         let notifyLightId = undefined;
 
         labelWidget = new Gtk.Label(
-            {label: _("Light to blink on notify:")}
+            {label: _("Notification lights:")}
         );
         generalWidget.attach(labelWidget, 1, top, 1, 1);
 
