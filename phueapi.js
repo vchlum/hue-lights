@@ -464,7 +464,12 @@ var PhueBridge =  GObject.registerClass({
             log(e);
         }
 
-        username = `gnome-extension-hue-lights#${hostname}`;
+        /* device name can be up to 19 chars */
+        if (hostname.length > 19) {
+            hostname = hostname.slice(0, 19);
+        }
+
+        username = `gnome-hue-lights#${hostname}`;
 
         let requestHueType = PhueRequestype.NEW_USER;
         let res = this._bridgePOST(this._bridgeUrl, requestHueType, {"devicetype": username});
