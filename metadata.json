@@ -2,7 +2,7 @@
     "uuid": "hue-lights@chlumskyvaclav.gmail.com",
     "name": "Hue Lights",
     "description": "This extension controls Philips Hue compatible lights using Philips Hue Bridge.",
-    "version": 4,
+    "version": 5,
     "original-author": "chlumskyvaclav@gmail.com",
     "shell-version": [
       "3.36",
