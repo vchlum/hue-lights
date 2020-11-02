@@ -1084,7 +1084,7 @@ var PhueMenu = GObject.registerClass({
 
             lightState = dataLights[lightid]["state"];
 
-            cmd = {"transitiontime": 1};
+            cmd = {"transitiontime": 0};
 
             cmd["on"] = lightState["on"];
 
@@ -1139,7 +1139,7 @@ var PhueMenu = GObject.registerClass({
 
                 this.hue.instances[bridgeid].setLights(
                     lightid,
-                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 1 },
+                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 0 },
                     PhueRequestype.NO_RESPONSE_NEED
                 );
 
@@ -1202,7 +1202,7 @@ var PhueMenu = GObject.registerClass({
              */
             this.hue.instances[bridgeid].setLights(
                 lightid,
-                {"on": false, "transitiontime": 1},
+                {"on": false, "transitiontime": 0},
                 PhueRequestype.NO_RESPONSE_NEED
             );
         }
