@@ -50,6 +50,49 @@ var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
+var HUELIGHTS_SETTINGS_ICONPACK = "icon-pack";
+
+var getHueIconFile = {
+    "Downstairs": "zonesAreasGroundfloor",
+    "Upstairs": "zonesAreasFirstfloor",
+    "Top floor": "zonesAreasSecondfloor",
+    "Attic": "roomsAttic",
+    "Home": "tabbarHome",
+    "Gym": "roomsGym",
+    "Lounge": "roomsLounge",
+    "TV": "otherWatchingMovie",
+    "Computer": "roomsComputer",
+    "Recreation": "roomsRecreation",
+    "Man cave": "roomsMancave",
+    "Music": "otherMusic",
+    "Reading": "otherReading",
+    "Studio": "roomsStudio",
+    "Living room": "roomsLiving",
+    "Kitchen": "roomsKitchen",
+    "Dining": "roomsDining",
+    "Bedroom": "roomsBedroom",
+    "Kids bedroom": "roomsKidsbedroom",
+    "Bathroom": "roomsBathroom",
+    "Nursery": "roomsNursery",
+    "Office": "roomsOffice",
+    "Toilet": "roomsToilet",
+    "Staircase": "roomsStaircase",
+    "Hallway": "roomsHallway",
+    "Laundry room": "roomsLaundryroom",
+    "Storage": "roomsStorage",
+    "Closet": "roomsCloset",
+    "Garage": "roomsGarage",
+    "Other": "roomsOther",
+    "Garden": "roomsOutdoor",
+    "Terrace": "roomsTerrace",
+    "Balcony": "roomsBalcony",
+    "Driveway": "roomsDriveway",
+    "Carport": "roomsCarport",
+    "Front door": "roomsFrontdoor",
+    "Porch": "roomsPorch",
+    "Barbecue": "roomsOutdoorSocialtime",
+    "Pool": "roomsPool"
+};
 
 /**
  * Translations initialization.

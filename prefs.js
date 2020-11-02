@@ -107,6 +107,7 @@ var Prefs = class HuePrefs {
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
+        this._iconPack = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_ICONPACK);
     }
 
     /**
@@ -380,6 +381,36 @@ var Prefs = class HuePrefs {
         )
         generalWidget.attach_next_to(
             positinInPanelWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        /**
+         * Icon pack
+         */
+        labelWidget = new Gtk.Label(
+            {label: _("Icon pack:")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let iconPackWidget = new Gtk.ComboBoxText();
+        iconPackWidget.append_text(_("none"));
+        iconPackWidget.append_text(_("bright"));
+        iconPackWidget.append_text(_("dark"));
+        iconPackWidget.set_active(this._iconPack);
+        iconPackWidget.connect(
+            "changed",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "icon-pack", "object": iconPackWidget}
+            )
+        )
+        generalWidget.attach_next_to(
+            iconPackWidget,
             labelWidget,
             Gtk.PositionType.RIGHT,
             1,
@@ -789,6 +820,15 @@ var Prefs = class HuePrefs {
                 this._settings.set_enum(
                     Utils.HUELIGHTS_SETTINGS_INDICATOR,
                     this._indicatorPosition
+                );
+                break;
+
+            case "icon-pack":
+
+                this._iconPack = data["object"].get_active();
+                this._settings.set_enum(
+                    Utils.HUELIGHTS_SETTINGS_ICONPACK,
+                    this._iconPack
                 );
                 break;
 

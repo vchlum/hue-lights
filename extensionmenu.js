@@ -60,6 +60,14 @@ const PhueMenuPosition = {
     LEFT: 2
 };
 
+const IconSize = 20;
+
+const PhueIconPack = {
+    NONE: 0,
+    BRIGHT: 1,
+    DARK: 2
+};
+
 /**
  * PhueMenu class. Provides widget with menu items.
  * 
@@ -104,9 +112,13 @@ var PhueMenu = GObject.registerClass({
         this.colorPicker = null;
 
         let icon = new St.Icon({
-            gicon : Gio.icon_new_for_string(Me.dir.get_path() + '/media/devicesBridgesV2white.svg'),
+            gicon : Gio.icon_new_for_string(Me.dir.get_path() + '/media/HueIcons/devicesBridgesV2.svg'),
             style_class : 'system-status-icon',
-            });
+        });
+
+        let iconEffect = this._getIconEffect(PhueIconPack.BRIGHT);
+        icon.add_effect(iconEffect);
+
         this.add_child(icon);
 
         this.rebuildMenu();
@@ -119,6 +131,41 @@ var PhueMenu = GObject.registerClass({
                 }
             }
         });
+    }
+
+    /**
+     * Returns effect that can be applied on icon
+     * 
+     * @method _getIconEffect
+     * @param {Enum} requested icon effect
+     * @return {Object} effect
+     */
+    _getIconEffect(reqEffect) {
+
+        let bri = 0.0;
+        let cont = 0.0;
+
+        let effect = new Clutter.BrightnessContrastEffect();
+        switch (reqEffect) {
+
+            case PhueIconPack.BRIGHT:
+
+                bri = 0.8;
+                cont = 0.2;
+                break;
+
+            case PhueIconPack.DARK:
+
+                bri = 0.2;
+                cont = 0.2;
+                break;
+
+            default:
+        }
+
+        effect.set_brightness(bri);
+        effect.set_contrast(cont);
+        return effect;
     }
 
     /**
@@ -168,6 +215,19 @@ var PhueMenu = GObject.registerClass({
         );
 
         if (tmpVal !== this._showScenes) {
+            menuNeedsRebuild = true;
+        }
+
+        /**
+         * this._iconPack needs rebuild
+         */
+        tmpVal = this._iconPack;
+
+        this._iconPack = this._settings.get_enum(
+            Utils.HUELIGHTS_SETTINGS_ICONPACK
+        );
+
+        if (tmpVal !== this._iconPack) {
             menuNeedsRebuild = true;
         }
 
@@ -693,6 +753,66 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Read icon from FS and return icon.
+     * 
+     * @method _getIconByPath
+     * @param {String} path to icon
+     * @return {Object} icon or null if not found
+     */
+    _getIconByPath(iconPath) {
+
+        let icon = null;
+
+        try {
+
+            icon = new St.Icon({
+                gicon : Gio.icon_new_for_string(iconPath),
+                style_class : 'system-status-icon',
+            });
+
+            icon.set_size(IconSize, IconSize);
+
+            let iconEffect = this._getIconEffect(this._iconPack);
+            icon.add_effect(iconEffect);
+
+        }
+        catch(err) {
+            return null;
+        }
+
+        return icon;
+    }
+
+    /**
+     * Tries to determine icon for group from class
+     * 
+     * @method _tryGetGroupIcon
+     * @param {Object} group data
+     * @return {Object} icon or null
+     */
+    _tryGetGroupIcon(groupData) {
+
+        let iconPath = "";
+
+        if (this._iconPack === PhueIconPack.NONE) {
+            return null;
+        }
+
+
+        if (groupData["class"] === undefined) {
+            return null;
+        }
+
+        if (Utils.getHueIconFile[groupData["class"]] === undefined) {
+            return null;
+        }
+
+        iconPath = Me.dir.get_path() + `/media/HueIcons/${Utils.getHueIconFile[groupData["class"]]}.svg`
+
+        return this._getIconByPath(iconPath);
+    }
+
+    /**
      * Creates array of submenus for groups of bridge.
      * 
      * @method _createMenuGroups
@@ -706,6 +826,7 @@ var PhueMenu = GObject.registerClass({
 
         let groupItem;
         let menuItems = [];
+        let groupIcon = null;
 
         if (data["groups"] === undefined) {
             return [];
@@ -719,6 +840,11 @@ var PhueMenu = GObject.registerClass({
             groupItem = new PopupMenu.PopupSubMenuMenuItem(
                 data["groups"][groupid]["name"]
             );
+
+            groupIcon = this._tryGetGroupIcon(data["groups"][groupid]);
+            if (groupIcon !== null) {
+                groupItem.insert_child_at_index(groupIcon, 1);
+            }
 
             groupItem.add(this._createGroupSwitch(bridgeid, groupid));
 
@@ -957,6 +1083,8 @@ var PhueMenu = GObject.registerClass({
 
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
+        let icon;
+        let iconEffect;
 
         this.refreshMenuObjects = {};
 
@@ -989,18 +1117,38 @@ var PhueMenu = GObject.registerClass({
             );
         }
 
+        /**
+         * Refresh menu item
+         */
         let refreshMenuItem = new PopupMenu.PopupMenuItem(
             _("Refresh menu")
         );
+
+        if (this._iconPack !== PhueIconPack.NONE) {
+            icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/settingsSoftwareUpdate.svg");
+
+            refreshMenuItem.insert_child_at_index(icon, 1);
+        }
+
         refreshMenuItem.connect(
             'button-press-event',
             () => { this.rebuildMenu(); }
         );
         this.menu.addMenuItem(refreshMenuItem);
 
+        /**
+         * Settings menu item
+         */
         let prefsMenuItem = new PopupMenu.PopupMenuItem(
             _("Settings")
         );
+
+        if (this._iconPack !== PhueIconPack.NONE) {
+            icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/tabbarSettings.svg");
+
+            prefsMenuItem.insert_child_at_index(icon, 1);
+        }
+
         prefsMenuItem.connect(
             'button-press-event',
             () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}

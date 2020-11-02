@@ -5,6 +5,11 @@
     <value value="1" nick="right"/>
     <value value="2" nick="left"/>
   </enum>
+  <enum id="org.gnome.shell.extensions.hue-lights.icon-pack">
+    <value value="0" nick="none"/>
+    <value value="1" nick="bright"/>
+    <value value="2" nick="dark"/>
+  </enum>
   <schema id="org.gnome.shell.extensions.hue-lights" path="/org/gnome/shell/extensions/hue-lights/">
 
     <!-- See also: https://developer.gnome.org/glib/stable/gvariant-format-strings.html -->
@@ -32,6 +37,10 @@
     <key name="notify-lights" type="a{sa{si}}">
       <default>{}</default>
       <summary>Lights used for notifications</summary>
+    </key>
+    <key name="icon-pack" enum="org.gnome.shell.extensions.hue-lights.icon-pack">
+      <default>"bright"</default>
+      <summary>Used icon pack</summary>
     </key>
   </schema>
 </schemalist>
