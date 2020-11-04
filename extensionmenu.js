@@ -1269,7 +1269,7 @@ var PhueMenu = GObject.registerClass({
                     continue;
                 }
 
-                let bri = 255;
+                let bri = 254;
                 if (this._notifyLights[i]["bri"] !== undefined) {
                     bri = this._notifyLights[i]["bri"];
                 }
@@ -1310,8 +1310,6 @@ var PhueMenu = GObject.registerClass({
      */
     endNotify(reqBirdgeid) {
 
-        let lightOn = false;
-
         if (this.oldNotifylight === undefined) {
             return;
         }
@@ -1325,32 +1323,13 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
-            if (this.oldNotifylight[i] === undefined ||
-                this.oldNotifylight[i]["on"] === undefined) {
+            if (this.oldNotifylight[i] === undefined) {
                 continue;
             }
-
-            /* see the note below */
-            lightOn = this.oldNotifylight[i]["on"];
-            delete this.oldNotifylight[i]["on"];
 
             this.hue.instances[bridgeid].setLights(
                 lightid,
                 this.oldNotifylight[i],
-                PhueRequestype.NO_RESPONSE_NEED
-            );
-
-            if (lightOn) {
-                continue;
-            }
-
-            /* if light should be turned off after notification,
-             * it needs to be done separately. Otherwise,
-             * the light status is not preserved correctly
-             */
-            this.hue.instances[bridgeid].setLights(
-                lightid,
-                {"on": false, "transitiontime": 0},
                 PhueRequestype.NO_RESPONSE_NEED
             );
         }

@@ -46,7 +46,7 @@ let origCreateBanner;
 
 /**
  * Function to substitute original createBanner.
- * 
+ *
  * @method createBannerHue
  */
 function createBannerHue() {
@@ -60,7 +60,7 @@ function createBannerHue() {
 }
 
 /**
- * This function is called once when your extension is loaded, not enabled.
+ * This function is called once the extension is loaded, not enabled.
  *
  * @method init
  */
@@ -72,7 +72,7 @@ function init() {
 }
 
 /**
- * This function could be called after your extension is enabled.
+ * This function could be called after the extension is enabled.
  *
  * @method enable
  */
@@ -89,7 +89,7 @@ function enable() {
 }
 
 /**
- * This function could be called after your extension is uninstalled,
+ * This function could be called after the extension is uninstalled,
  * disabled GNOME Tweaks, when you log out or when the screen locks.
  *
  * @method disable

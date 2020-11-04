@@ -96,7 +96,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Reads settings into class variables.
-     * 
+     *
      * @method readSettings
      */
     readSettings() {
@@ -112,7 +112,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Write settings from class variables.
-     * 
+     *
      * @method writeSettings
      */
     writeSettings() {
@@ -128,7 +128,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Wite setting for lights used for notification
-     * 
+     *
      * @method writeNotifyLightsSettings
      */
     writeNotifyLightsSettings() {
@@ -143,7 +143,7 @@ var Prefs = class HuePrefs {
     }
     /**
      * Get the main witget for prefs.
-     * 
+     *
      * @method getPrefsWidget
      * @return {Object} the widget itself
      */
@@ -162,7 +162,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Create the main notebook with its content.
-     * 
+     *
      * @method _buildWidget
      * @private
      * @return {Object} the notebook widget
@@ -204,7 +204,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Create the widget with listed bridges.
-     * 
+     *
      * @method _buildBridgesWidget
      * @private
      * @return {Object} the widget with bridges
@@ -340,7 +340,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Create the widget with general settings.
-     * 
+     *
      * @method _buildGeneralWidget
      * @private
      * @return {Object} the widget with settings
@@ -375,7 +375,7 @@ var Prefs = class HuePrefs {
         positinInPanelWidget.connect(
             "changed",
             this._widgetEventHandler.bind(
-                this, 
+                this,
                 {"event": "position-in-panel", "object": positinInPanelWidget}
             )
         )
@@ -439,7 +439,7 @@ var Prefs = class HuePrefs {
         zonesFirstWidget.connect(
             "notify::active",
             this._widgetEventHandler.bind(
-                this, 
+                this,
                 {"event": "zones-first", "object": zonesFirstWidget}
             )
         )
@@ -587,7 +587,7 @@ var Prefs = class HuePrefs {
         brightnessNotifyWidget.connect(
             "value-changed",
             this._widgetEventHandler.bind(
-                this, 
+                this,
                 {
                     "event": "notify-light-brightness",
                     "object": brightnessNotifyWidget
@@ -618,7 +618,7 @@ var Prefs = class HuePrefs {
         colorButtonNotifyWidget.connect(
             "color-set",
             this._widgetEventHandler.bind(
-                this, 
+                this,
                 {
                     "event": "notify-light-color",
                     "object": colorButtonNotifyWidget
@@ -643,7 +643,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Create the widget with advanced settings.
-     * 
+     *
      * @method _buildAdvancedWidget
      * @private
      * @return {Object} the widget with advancedsettings
@@ -696,7 +696,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Create the widget 'About'.
-     * 
+     *
      * @method _buildBridgesWidget
      * @private
      * @return {Object} the widget 'about'
@@ -719,7 +719,7 @@ var Prefs = class HuePrefs {
 
     /**
      * Handles events from widget in prefs.
-     * 
+     *
      * @method _widgetEventHandler
      * @private
      * @param (object) dictionary with instruction what to do
@@ -948,6 +948,7 @@ function init() {
  * and return a Gtk widget.
  *
  * @method buildPrefsWidget
+ * @return {Object} returns the prefsWidget
  */
 function buildPrefsWidget() {
 
