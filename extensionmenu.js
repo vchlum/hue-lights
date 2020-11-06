@@ -635,9 +635,10 @@ var PhueMenu = GObject.registerClass({
                     data["scenes"][sceneid]["name"]
                 );
 
-                scene.x_align = Clutter.ActorAlign.CENTER;
+                scene.x_align = Clutter.ActorAlign.FILL;
                 scene.x_expand = true;
-                scene.label.set_x_expand(false);
+                scene.label.x_align = Clutter.ActorAlign.CENTER;
+                scene.label.set_x_expand(true);
 
                 scene.connect(
                     "button-press-event",
