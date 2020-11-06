@@ -315,6 +315,13 @@ var PhueMenu = GObject.registerClass({
                     );
                 }
 
+                if (parsedBridgePath[1] == "sensors") {
+                    this.hue.instances[bridgeid].setSensor(
+                        parsedBridgePath[2],
+                        {"on": value}
+                    );
+                }
+
                 break;
 
             case "brightness-colorpicker":
@@ -437,6 +444,308 @@ var PhueMenu = GObject.registerClass({
         }
 
         /* don't call this.refreshMenu() now... it will by called async */
+    }
+
+    /**
+     * Tries to discovery secondary sensor with temperature.
+     * 
+     * @method _tryaddSensorsTemperature
+     * @param {Number} bridgeid
+     * @param {String} uniqueid of primary sensor
+     * @param {Object} data to search
+     * @return {Object} lable for displaying temperature
+     */
+    _tryaddSensorsTemperature(bridgeid, uniqueid, data) {
+
+        let temperatureLabel = null;
+        for (let i in data["sensors"]) {
+
+            if (data["sensors"][i]["uniqueid"] === undefined) {
+                continue;
+            }
+
+            if (data["sensors"][i]["uniqueid"].split("-")[0] !== uniqueid) {
+                continue;
+            }
+
+            if (data["sensors"][i]["state"] === undefined ||
+                data["sensors"][i]["state"]["temperature"] === undefined) {
+                continue;
+            }
+
+            temperatureLabel = new St.Label();
+            temperatureLabel.text = "°C";
+
+            temperatureLabel.set_x_align(Clutter.ActorAlign.END);
+            temperatureLabel.set_x_expand(false);
+
+            let bridgePath = `${this._rndID()}::sensors::${i}::state::temperature`;
+
+            this.refreshMenuObjects[bridgePath] = {
+                "bridgeid": bridgeid,
+                "object": temperatureLabel,
+                "type": "temperature"
+            }
+
+            break;
+        }
+
+        return temperatureLabel;
+    }
+
+    /**
+     * Tries to discovery secondary sensor with light level.
+     * 
+     * @method _tryaddSensorsLightLevel
+     * @param {Number} bridgeid
+     * @param {String} uniqueid of primary sensor
+     * @param {Object} data to search
+     * @return {Object} lable for displaying light level
+     */
+    _tryaddSensorsLightLevel(bridgeid, uniqueid, data) {
+
+        let lightLabel = null;
+        for (let i in data["sensors"]) {
+
+            if (data["sensors"][i]["uniqueid"] === undefined) {
+                continue;
+            }
+
+            if (data["sensors"][i]["uniqueid"].split("-")[0] !== uniqueid) {
+                continue;
+            }
+
+            if (data["sensors"][i]["state"] === undefined ||
+                data["sensors"][i]["state"]["lightlevel"] === undefined) {
+                continue;
+            }
+
+            lightLabel = new St.Label();
+            lightLabel.text = "lux";
+
+            lightLabel.set_x_align(Clutter.ActorAlign.END);
+            lightLabel.set_x_expand(false);
+
+            let bridgePath = `${this._rndID()}::sensors::${i}::state::lightlevel`;
+
+            this.refreshMenuObjects[bridgePath] = {
+                "bridgeid": bridgeid,
+                "object": lightLabel,
+                "type": "light-level"
+            }
+
+            break;
+        }
+
+        return lightLabel;
+    }
+
+    /**
+     * Tries to discovery battery level of sensor.
+     * 
+     * @method _tryaddSensorsBattery
+     * @param {Number} bridgeid
+     * @param {String} sensorid of the sensor
+     * @param {Object} data to search
+     * @return {Object} lable for displaying battery level
+     */
+    _tryaddSensorsBattery(bridgeid, sensorid, data) {
+
+        if (data["sensors"][sensorid]["config"]["battery"] === undefined) {
+            return null;
+        }
+
+        let batteryLabel = new St.Label();
+        batteryLabel.text = "%";
+
+        batteryLabel.set_x_align(Clutter.ActorAlign.END);
+        batteryLabel.set_x_expand(false);
+
+        let bridgePath = `${this._rndID()}::sensors::${sensorid}::config::battery`;
+
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object": batteryLabel,
+            "type": "battery"
+        }
+
+        return batteryLabel;
+    }
+
+    /**
+     * Tries to discovery sensor switch.
+     * 
+     * @method _tryaddSensorsSwitch
+     * @param {Number} bridgeid
+     * @param {String} sensorid of the sensor
+     * @param {Object} data to search
+     * @return {Object} switch for switching the sensor
+     */
+    _tryaddSensorsSwitch(bridgeid, sensorid, data) {
+
+        let switchBox = null;
+        let switchButton = null;
+
+        if (data["sensors"][sensorid]["config"]["on"] === undefined) {
+            return null;
+        }
+
+        let bridgePath = `${this._rndID()}::sensors::${sensorid}::config::on`;
+
+        switchBox = new PopupMenu.Switch(false);
+        switchButton = new St.Button({reactive: true, can_focus: true});
+        switchButton.set_x_align(Clutter.ActorAlign.END);
+        switchButton.set_x_expand(false);
+        switchButton.child = switchBox;
+        switchButton.connect(
+            "button-press-event",
+            Lang.bind(this, function() {
+                switchBox.toggle();
+            })
+        );
+        switchButton.connect(
+            "button-press-event",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object":switchBox,
+                    "type": "switch"
+                }
+            )
+        );
+
+        this.refreshMenuObjects[bridgePath] = {
+            "bridgeid": bridgeid,
+            "object":switchBox,
+            "type": "switch"
+        }
+
+        return switchButton;
+    }
+
+    /**
+     * Creates item (like switch or light sensor)
+     * for submenu of sensors.
+     * 
+     * @method _createItemSensor
+     * @param {Number} bridgeid
+     * @param {String} sensorid of the sensor
+     * @param {Object} data to search
+     * @return {Object} menuitem of the sensor
+     */
+    _createItemSensor(bridgeid, sensorid, data) {
+
+        let uniqueid = data["sensors"][sensorid]["uniqueid"].split("-")[0];
+
+        let item = new PopupMenu.PopupMenuItem(
+            data["sensors"][sensorid]["name"]
+        )
+
+        item.label.set_x_expand(true);
+
+        let temperature = this._tryaddSensorsTemperature(bridgeid, uniqueid, data);
+        if (temperature !== null) {
+            item.add(temperature);
+        }
+
+
+        let lightlevel = this._tryaddSensorsLightLevel(bridgeid, uniqueid, data);
+        if (lightlevel !== null) {
+            item.add(lightlevel);
+        }
+
+        let battery = this._tryaddSensorsBattery(bridgeid, sensorid, data);
+        if (battery !== null) {
+            item.add(battery);
+        }
+
+        let sensorSwitch = this._tryaddSensorsSwitch(bridgeid, sensorid, data);
+        if (sensorSwitch !== null) {
+            item.add(sensorSwitch);
+        }
+
+        return item;
+    }
+
+    /**
+     * Creates submenu item of sensors
+     * and adds icon of bridge. If no sensor found,
+     * only dummy item is displayed.
+     * 
+     * @method _createMenuSensors
+     * @param {Number} bridgeid
+     * @param {Object} data to search
+     * @return {Object} submenuitem of the bridge
+     */
+    _createMenuSensors(bridgeid, data) {
+
+        let item;
+        let sensorCount = 0;
+        let iconPath;
+        let icon;
+
+        item = new PopupMenu.PopupSubMenuMenuItem(
+            data["config"]["name"]
+        );
+
+        for (let i in data["sensors"]) {
+
+            if (data["sensors"][i]["capabilities"] === undefined) {
+                continue;
+            }
+
+            if (data["sensors"][i]["capabilities"]["primary"] === undefined) {
+                continue;
+            }
+
+            if (data["sensors"][i]["capabilities"]["primary"]) {
+                item.menu.addMenuItem(
+                    this._createItemSensor(bridgeid, i, data)
+                );
+
+                sensorCount++;
+            }
+        }
+
+        if (!sensorCount) {
+            /* we have no sensors, so create a dummy item */
+            item = new PopupMenu.PopupMenuItem(
+                data["config"]["name"],
+                {
+                    hover: false,
+                    reactive: false,
+                    can_focus: false
+                }
+            );
+        }
+
+        if (this._iconPack === PhueIconPack.NONE) {
+            return item;
+        }
+
+        switch (data["config"]["modelid"]) {
+
+            case "BSB001":
+                iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV1.svg`;
+                break;
+
+            case "BSB002":
+                iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV2.svg`;
+                break;
+
+            default:
+                iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV2.svg`;
+        }
+
+        icon = this._getIconByPath(iconPath);
+
+        if (icon !== null) {
+            item.insert_child_at_index(icon, 1);
+        }
+
+        return item;
     }
 
     /**
@@ -884,14 +1193,7 @@ var PhueMenu = GObject.registerClass({
             return [];
         }
 
-        items.push(new PopupMenu.PopupMenuItem(
-            data["config"]["name"],
-            {
-                hover: false,
-                reactive: false,
-                can_focus: false
-            }
-        ));
+        items.push(this._createMenuSensors(bridgeid, data));
 
         if (this._zonesFirst) {
             items = items.concat(
@@ -1001,6 +1303,73 @@ var PhueMenu = GObject.registerClass({
                     if (object.value !== value) {
                         object.value = value;
                     }
+                    break;
+
+                case "battery":
+
+                    parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
+
+                    value = this.bridesData[bridgeid];
+                    for (let i in parsedBridgePath) {
+                        if (i == 0) {
+                            continue;
+                        }
+
+                        value = value[parsedBridgePath[i]];
+                    }
+
+                    value = `${value}%`;
+
+                    if (object.text !== value) {
+                        object.text = value;
+                    }
+
+                    break;
+
+                case "temperature":
+
+                    parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
+
+                    value = this.bridesData[bridgeid];
+                    for (let i in parsedBridgePath) {
+                        if (i == 0) {
+                            continue;
+                        }
+
+                        value = value[parsedBridgePath[i]];
+                    }
+
+                    value = value/100;
+
+                    value = `${Math.round(value)}°C/${Math.round(value * 1.8 + 32)}°F`;
+
+                    if (object.text !== value) {
+                        object.text = value;
+                    }
+
+                    break;
+
+                case "light-level":
+
+                    parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
+
+                    value = this.bridesData[bridgeid];
+                    for (let i in parsedBridgePath) {
+                        if (i == 0) {
+                            continue;
+                        }
+
+                        value = value[parsedBridgePath[i]];
+                    }
+
+                    value = Math.round(Math.pow(10, (value - 1) / 10000));
+
+                    value = `${value} lux`;
+
+                    if (object.text !== value) {
+                        object.text = value;
+                    }
+
                     break;
 
                 default:

@@ -781,4 +781,29 @@ var PhueBridge =  GObject.registerClass({
 
         return res;
     }
+
+    /**
+     * Sets sensor configuration.
+     * 
+     * @method setSensor
+     * @param {Number} sensorId for the settings
+     * @param {Object} JSON input data
+     * @return {Object} JSON output data
+     */
+    setSensor(sensorId, data, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
+
+        let url = "";
+        let res = [];
+
+        url = `${this._bridgeUrl}/${this._userName}/sensors/${sensorId.toString()}/config`;
+        res = this._bridgePUT(url, requestHueType, data)
+
+        this._checkBridgeError(res);
+        if (this.checkError()) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        return res;
+    }
 })
