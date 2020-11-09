@@ -1,4 +1,4 @@
-## Version 6 [TBA]
+## Version 6
  * support for group icons (bright and dark)
  * support for sensors
 ## Version 5
