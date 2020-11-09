@@ -692,6 +692,10 @@ var PhueMenu = GObject.registerClass({
 
         for (let i in data["sensors"]) {
 
+            if (data["sensors"][i]["uniqueid"] === undefined) {
+                continue;
+            }
+
             if (data["sensors"][i]["capabilities"] === undefined) {
                 continue;
             }
