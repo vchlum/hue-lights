@@ -659,6 +659,12 @@ var PhueMenu = GObject.registerClass({
         let battery = this._tryaddSensorsBattery(bridgeid, sensorid, data);
         if (battery !== null) {
             item.add(battery);
+
+            let icon = this._getIconByPath(Me.dir.get_path() + '/media/battery.svg');
+
+            if (icon !== null) {
+                item.add(icon);
+            }
         }
 
         let sensorSwitch = this._tryaddSensorsSwitch(bridgeid, sensorid, data);
