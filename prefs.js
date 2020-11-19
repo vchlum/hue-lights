@@ -271,7 +271,7 @@ var Prefs = class HuePrefs {
                 );
                 tmpWidged = statusWidget;
             } else {
-                connectWidget = new Gtk.Button({label: _("Press bridge button and Connect")});
+                connectWidget = new Gtk.Button({label: _("Connect")});
                 connectWidget.connect(
                     "clicked",
                     this._widgetEventHandler.bind(
@@ -718,6 +718,40 @@ var Prefs = class HuePrefs {
     }
 
     /**
+     * Show modal dialog with a label bridge not found.
+     * 
+     * @method showBridgeNotFoundDialog
+     */
+    showBridgeNotFoundDialog() {
+        let dialogFailed = new Gtk.Dialog(
+            {
+                modal: true,
+                title: _("Bridge not found")
+            }
+        );
+
+        let contentArea = dialogFailed.get_content_area();
+
+        contentArea.add(new Gtk.Label(
+            {
+                label: _("Press the button on the bridge and try again.")
+            }
+        ));
+
+        let button = Gtk.Button.new_with_label(_("OK"));
+        button.connect('clicked', () => {
+            dialogFailed.destroy();
+        });
+
+        button.expand = true;
+        button.grab_focus();
+
+        contentArea.add(button);
+
+        dialogFailed.show_all();
+    }
+
+    /**
      * Handles events from widget in prefs.
      *
      * @method _widgetEventHandler
@@ -738,8 +772,12 @@ var Prefs = class HuePrefs {
                 ip = data["object"].get_text();
                 this._hue.bridges[bridgeid]["ip"] = ip;
 
-                this._hue.checkBridges();
+                if (this._hue.addBridgeManual(ip) === false) {
+                    this.showBridgeNotFoundDialog();
+                    break;
+                }
 
+                this._hue.checkBridges();
                 this._refreshPrefs = true;
                 this.writeSettings();
                 break;
@@ -762,17 +800,9 @@ var Prefs = class HuePrefs {
 
                 ip = data["object2"].get_text();
                 data["object1"].destroy();
+
                 if (this._hue.addBridgeManual(ip) === false) {
-                    let dialogFailed = new Gtk.Dialog(
-                        {
-                            modal: true,
-                            title: _("Bridge not found")
-                        }
-                    );
-                    dialogFailed.get_content_area().add(new Gtk.Label(
-                        {label: _("Press the button on the bridge and try again.")}
-                    ));
-                    dialogFailed.show_all();
+                    this.showBridgeNotFoundDialog();
                     break;
                 }
 
@@ -862,7 +892,7 @@ var Prefs = class HuePrefs {
 
             case "notify-light-toggled":
 
-                let lightId = data["notify-lightid"];
+                lightId = data["notify-lightid"];
 
                 if (data["object"].active) {
                     let notifyData = {};
