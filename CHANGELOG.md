@@ -1,3 +1,6 @@
+## Version 7
+ * battery icon for sensors
+ * improve connect bridge button
 ## Version 6
  * support for group icons (bright and dark)
  * support for sensors
