@@ -66,7 +66,7 @@ function createBannerHue() {
  */
 function init() {
 
-    Utils.initTranslations();
+    ExtensionUtils.initTranslations();
 
     log(`initializing ${Me.metadata.name} version ${Me.metadata.version}`);
 }

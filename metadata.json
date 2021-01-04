@@ -8,5 +8,6 @@
       "3.36",
       "3.38"
     ],
+    "gettext-domain": "hue-lights",
     "url": "https://github.com/vchlum/hue-lights"
 }

@@ -95,17 +95,6 @@ var getHueIconFile = {
 };
 
 /**
- * Translations initialization.
- * 
- * @method initTranslations
- */
-function initTranslations() {
-
-    Gettext.textdomain(Me.metadata.uuid);
-    Gettext.bindtextdomain(Me.metadata.uuid, Me.dir.get_child("locale").get_path());
-}
-
-/**
  * Converts Philips Hue colour temperature of white to
  * kelvin temperature (2000K - 6500K).
  * Lights are capable of 153 (6500K) to 500 (2000K).

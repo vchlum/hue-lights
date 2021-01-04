@@ -966,7 +966,7 @@ var Prefs = class HuePrefs {
  */
 function init() {
 
-    Utils.initTranslations();
+    ExtensionUtils.initTranslations();
 
     hue = new Hue.Phue(false);
 
