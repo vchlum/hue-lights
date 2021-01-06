@@ -1,3 +1,6 @@
+## Version 8
+ * fix translation initialization
+ * improve bridge discovering
 ## Version 7
  * battery icon for sensors
  * improve connect bridge button
