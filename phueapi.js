@@ -47,17 +47,31 @@ const GObject = imports.gi.GObject;
   */
 function discoverBridges() {
 
+    let bridges = [];
     let session = Soup.Session.new();
     session.set_property(Soup.SESSION_USER_AGENT, "hue-discovery");
+    session.set_property(Soup.SESSION_TIMEOUT, 3);
 
     let message = Soup.Message.new('GET', "https://discovery.meethue.com/");
     let statusCode = session.send_message(message);
 
     if (statusCode === Soup.Status.OK) {
-        return JSON.parse(message.response_body.data);
+        session.set_property(Soup.SESSION_TIMEOUT, 1);
+
+        let discovered = JSON.parse(message.response_body.data);
+
+        for (let i in discovered) {
+            message = Soup.Message.new('GET', `http://${discovered[i]["internalipaddress"]}/api/config`);
+            statusCode = session.send_message(message);
+            if (statusCode === Soup.Status.OK &&
+                JSON.parse(message.response_body.data)["mac"] !== undefined) {
+
+                bridges.push(discovered[i]);
+            }
+        }
     }
 
-    return [];
+    return bridges;
 }
 
 var PhueRequestype = {

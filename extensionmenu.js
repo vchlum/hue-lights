@@ -1469,7 +1469,7 @@ var PhueMenu = GObject.registerClass({
         this.refreshMenuObjects = {};
 
         this.hue.disableAsyncMode();
-        this.bridesData = this.hue.checkBridges();
+        this.bridesData = this.hue.checkBridges(false);
         this.hue.enableAsyncMode();
 
         for (let item in oldItems){

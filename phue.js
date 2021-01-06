@@ -167,12 +167,14 @@ class _Phue {
      * @method checkBridges
      * @return {Object} dictionary with data of all bridges.
      */
-    checkBridges() {
+    checkBridges(discover = true) {
 
         let known;
         let errs;
+        let discovered = [];
 
-        let discovered = HueApi.discoverBridges();
+        if (discover)
+            discovered = HueApi.discoverBridges();
 
         /* first, check for deleted bridges */
         for (let bridgeidInstance in this.instances) {
