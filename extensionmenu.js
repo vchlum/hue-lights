@@ -364,6 +364,11 @@ var PhueMenu = GObject.registerClass({
                 if (this.colorPicker !== null) {
                     this.colorPicker.destroy();
                 }
+
+                if (this._checkEntertainmentStream(bridgeid, parsedBridgePath)) {
+                    break;
+                }
+
                 this.colorPicker = new ColorPicker.ColorPicker();
                 this.colorPicker.show();
                 this.colorPicker.connect("finish", () => {
@@ -1230,6 +1235,7 @@ var PhueMenu = GObject.registerClass({
      * 
      * @param {bridgeid} bridgeid
      * @param {Object} parsedBridgePath
+     * @returns {Boolean} true for yes
      */
     _checkLightOfBrightness(bridgeid, p) {
 
@@ -1244,6 +1250,45 @@ var PhueMenu = GObject.registerClass({
         }
 
         return true;
+    }
+
+    /**
+     * Check if light belongs to an entertaiment group
+     * and the group's stream is active now.
+     *
+     * @param {bridgeid} bridgeid
+     * @param {Object} parsedBridgePath
+     * @returns {Boolean} true for yes
+     */
+    _checkEntertainmentStream(bridgeid, p) {
+        if (p[1] !== "lights") {
+            return false;
+        }
+
+        if (this.bridesData[bridgeid]["groups"] === undefined) {
+            return false;
+        }
+
+        for (let group in this.bridesData[bridgeid]["groups"]) {
+            if (this.bridesData[bridgeid]["groups"][group]["type"] !== "Entertainment") {
+                continue;
+            }
+
+            if (this.bridesData[bridgeid]["groups"][group]["stream"] === undefined) {
+                continue;
+            }
+
+            if (! this.bridesData[bridgeid]["groups"][group]["stream"]["active"]) {
+                continue;
+            }
+
+            for (let light in this.bridesData[bridgeid]["groups"][group]["lights"]) {
+                if (parseInt(this.bridesData[bridgeid]["groups"][group]["lights"][light]) === parseInt(p[2])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -1289,6 +1334,11 @@ var PhueMenu = GObject.registerClass({
                     if (object.state !== value) {
                         object.state = value;
                     }
+
+                    if (this._checkEntertainmentStream(bridgeid, parsedBridgePath)) {
+                        object.state = true;
+                    }
+
                     break;
 
                 case "brightness":
@@ -1313,6 +1363,13 @@ var PhueMenu = GObject.registerClass({
                     if (object.value !== value) {
                         object.value = value;
                     }
+
+                    object.visible = true;
+                    if (this._checkEntertainmentStream(bridgeid, parsedBridgePath)) {
+                        object.visible = false;
+                        object.value = 0;
+                    }
+
                     break;
 
                 case "battery":
@@ -1464,7 +1521,6 @@ var PhueMenu = GObject.registerClass({
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
         let icon;
-        let iconEffect;
 
         this.refreshMenuObjects = {};
 
