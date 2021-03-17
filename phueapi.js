@@ -310,6 +310,8 @@ var PhueBridge =  GObject.registerClass({
         if (data !== null) {
             data = JSON.stringify(data);
             msg.set_request("application/gnome-extension", 2, data);
+        } else {
+            msg.set_request("application/gnome-extension", 2, "");
         }
 
         if (this._asyncRequest) {
@@ -469,6 +471,28 @@ var PhueBridge =  GObject.registerClass({
         const CMD_FQDN = "hostname --fqdn";
         let hostname = "";
         let username = "";
+        let res;
+        let generateClientKey = false;
+
+        res = this._bridgeGET(`${this._bridgeUrl}/config`, null, null);
+        this._checkBridgeError(res);
+        if (this.checkError()) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        log("hue bridge " + JSON.stringify(res));
+
+        /* test if clientkey (used for Entertainment)
+         * can be generated */
+        if (res["apiversion"] !== undefined) {
+            let apiVersion = res["apiversion"].split(".");
+            let major = parseInt(apiVersion[0]);
+            let minor = parseInt(apiVersion[1]);
+            if (major >= 1 && minor >= 22) {
+                generateClientKey = true;
+            }
+        }
 
         try {
             let output = GLib.spawn_command_line_sync(CMD_FQDN);
@@ -486,7 +510,13 @@ var PhueBridge =  GObject.registerClass({
         username = `gnome-hue-lights#${hostname}`;
 
         let requestHueType = PhueRequestype.NEW_USER;
-        let res = this._bridgePOST(this._bridgeUrl, requestHueType, {"devicetype": username});
+        let postData = {"devicetype": username}
+
+        if (generateClientKey) {
+            postData["generateclientkey"] = true;
+        }
+
+        res = this._bridgePOST(this._bridgeUrl, requestHueType, postData);
         this._checkBridgeError(res);
         if (this.checkError()) {
             log(JSON.stringify(this._bridgeError));
@@ -786,6 +816,40 @@ var PhueBridge =  GObject.registerClass({
 
         url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}/action`;
         res = this._bridgePUT(url, requestHueType, data)
+
+        this._checkBridgeError(res);
+        if (this.checkError()) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        return res;
+    }
+
+    enableStream(groupId, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
+
+        let url = "";
+        let res = [];
+
+        url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}`;
+        res = this._bridgePUT(url, requestHueType, {"stream":{"active":true}})
+
+        this._checkBridgeError(res);
+        if (this.checkError()) {
+            log(JSON.stringify(this._bridgeError));
+            return this._bridgeError;
+        }
+
+        return res;
+    }
+
+    disableStream(groupId, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
+
+        let url = "";
+        let res = [];
+
+        url = `${this._bridgeUrl}/${this._userName}/groups/${groupId.toString()}`;
+        res = this._bridgePUT(url, requestHueType, {"stream":{"active":false}})
 
         this._checkBridgeError(res);
         if (this.checkError()) {

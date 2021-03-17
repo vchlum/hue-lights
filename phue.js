@@ -137,6 +137,7 @@ class _Phue {
 
         if (res.length > 0 && "success" in res[0]) {
             let username = res[0]["success"]["username"];
+            let clientkey = res[0]["success"]["clientkey"];
             log(`new username: ${username} for ip: ${ipAddress}`);
 
             res = instance.getConfig();
@@ -153,6 +154,10 @@ class _Phue {
                 "name": res["name"],
                 "mac": res["mac"]
             };
+
+            if (clientkey !== undefined) {
+                this.bridges[bridgeid]["clientkey"] = clientkey;
+            }
 
             this.instances[bridgeid] = instance;
             return true;
@@ -251,8 +256,11 @@ class _Phue {
                 if (res.length > 0 && "success" in res[0]) {
                     let username = res[0]["success"]["username"];
                     this.bridges[bridgeid]["username"] = username;
+                    if (res[0]["success"]["clientkey"] != undefined) {
+                        this.bridges[bridgeid]["clientkey"] = res[0]["success"]["clientkey"];
+                    }
 
-                    log(`new username: ${username} for ip: ${this.bridges[bridgeid]["ip"]}`);
+                    log(`hue new username: ${username} for ip: ${this.bridges[bridgeid]["ip"]}`);
 
                     this._checkBridge(bridgeid);
                 }
