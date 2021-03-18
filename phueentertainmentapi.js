@@ -228,76 +228,9 @@ var PhueEntertainment =  GObject.registerClass({
     /**
      * This is the scheduler of random entertainment effect.
      * 
-     * @method randomStream
+     * @method doRandom
      */
-    async randomStream() {
-            if (!this._doStreaming) {
-                return;
-            }
-
-            if (this._checkChangeStream()) {
-                return;
-            }
-
-            await this.promisRandom();
-
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
-                this.randomStream();
-            });
-    }
-
-    /**
-     * This is the core magic of track cursor entertainment effect.
-     * 
-     * @method promisCursoreColor
-     */
-    promisCursoreColor() {
-        return new Promise((resolve, reject) => {
-            let color = this.screenshot.cursorColor;
-
-            let lightsArray = this._createLightHeader("color");
-
-            let r = Math.round(color.red * (this.brightness/254));
-            let g = Math.round(color.green * (this.brightness/254));
-            let b = Math.round(color.blue * (this.brightness/254));
-
-            for (let i = 0; i < this.lights.length; i++) {
-
-                lightsArray = lightsArray.concat(this.lights[i]);
-
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
-                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
-            }
-
-            if (this.gradient) {
-                for (let i = 0; i < 7; i++) {
-                    lightsArray = lightsArray.concat([0x01, 0x00, i]);
-
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
-                    lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
-                }
-            }
-
-            this.dtls.sendEncrypted(lightsArray);
-
-            resolve();
-        });
-    }
-
-    /**
-     * This is the scheduler of track cursor entertainment effect.
-     * 
-     * @method followCursor
-     */
-    async followCursor() {
+    async doRandom() {
         if (!this._doStreaming) {
             return;
         }
@@ -306,10 +239,66 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
-        await this.promisCursoreColor();
+        await this.promisRandom();
 
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
-            this.screenshot.updateCursorColor();
+            this.doRandom();
+        });
+    }
+
+    /**
+     * This is the scheduler and the core magic of track cursor entertainment effect.
+     * 
+     * @method doCursorColor
+     */
+    async doCursorColor() {
+        if (!this._doStreaming) {
+            return;
+        }
+
+        if (this._checkChangeStream()) {
+            return;
+        }
+
+        let [x, y] = global.get_pointer();
+
+        let color = await this.screenshot.getColorPixel(x, y);
+
+        let lightsArray = this._createLightHeader("color");
+
+        let r = Math.round(color.red * (this.brightness/254));
+        let g = Math.round(color.green * (this.brightness/254));
+        let b = Math.round(color.blue * (this.brightness/254));
+
+        for (let i = 0; i < this.lights.length; i++) {
+
+            lightsArray = lightsArray.concat(this.lights[i]);
+
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+        }
+
+        if (this.gradient) {
+            for (let i = 0; i < 7; i++) {
+                lightsArray = lightsArray.concat([0x01, 0x00, i]);
+
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+            }
+        }
+
+        this.dtls.sendEncrypted(lightsArray);
+
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
+            this.doCursorColor();
         });
     }
 
@@ -378,11 +367,11 @@ var PhueEntertainment =  GObject.registerClass({
             x = widthRectangle[0] + (widthRectangle[1] - widthRectangle[0]) / 2;
             y = heightRectangle[0] + (heightRectangle[1] - heightRectangle[0]) / 2;
 
-            let result = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
+            let color = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
 
-            r = Math.round(result.red * (this.brightness/254));
-            g = Math.round(result.green * (this.brightness/254));
-            b = Math.round(result.blue * (this.brightness/254));
+            r = Math.round(color.red * (this.brightness/254));
+            g = Math.round(color.green * (this.brightness/254));
+            b = Math.round(color.blue * (this.brightness/254));
 
             lightsArray = lightsArray.concat(this.lights[i]);
 
@@ -402,11 +391,11 @@ var PhueEntertainment =  GObject.registerClass({
                 x = widthRectangle[0] + (widthRectangle[1] - widthRectangle[0]) / 2;
                 y = heightRectangle[0] + (heightRectangle[1] - heightRectangle[0]) / 2;
     
-                let result = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
+                let color = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
     
-                r = Math.round(result.red * (this.brightness/254));
-                g = Math.round(result.green * (this.brightness/254));
-                b = Math.round(result.blue * (this.brightness/254));
+                r = Math.round(color.red * (this.brightness/254));
+                g = Math.round(color.green * (this.brightness/254));
+                b = Math.round(color.blue * (this.brightness/254));
 
                 lightsArray = lightsArray.concat([0x01, 0x00, i]);
 
@@ -489,22 +478,22 @@ var PhueEntertainment =  GObject.registerClass({
         this.gradient = gradient;
         this._doStreaming = true;
 
-        this.randomStream();
+        this.doRandom();
     }
 
     /**
      * Starts track cursor entertainment effect
      * 
-     * @method startFollowCursor
+     * @method startCursorColor
      * @param {Array} lights to by synchronized
      * @param {Array} relative locations of lights
      * @param {Boolean} Is the gradient light strip in the group?
      */
-    startFollowCursor(lights, lightsLocations, gradient) {
+    startCursorColor(lights, lightsLocations, gradient) {
         if (this._doStreaming) {
             this._changeToMe = {
                 "done": false,
-                "func": this.startFollowCursor,
+                "func": this.startCursorColor,
                 "prams": [lights, lightsLocations, gradient]
             }
 
@@ -512,20 +501,16 @@ var PhueEntertainment =  GObject.registerClass({
         }
 
         this.lights = [];
-        this.lightsLocations = [];
         for (let i = 0; i < lights.length; i++) {
             this.lights.push(DTLSClient.uintToArray(lights[i], 24));
-            this.lightsLocations.push(lightsLocations[lights[i]]);
         }
 
         this.gradient = gradient;
         this._doStreaming = true;
 
         this.screenshot = new PhueScreenshot.PhueScreenshot();
-        this.screenshot.connect("cursorColor", () => {
-            this.followCursor();
-        });
-        this.screenshot.updateCursorColor();
+
+        this.doCursorColor();
     }
 
     /**
@@ -583,7 +568,7 @@ var PhueEntertainment =  GObject.registerClass({
             this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [0.5, 0.75, -1]));
         }
 
-        this.doSyncSreen()
+        this.doSyncSreen();
     }
 
     /**

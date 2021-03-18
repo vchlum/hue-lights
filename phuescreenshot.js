@@ -39,7 +39,7 @@ const GObject = imports.gi.GObject;
 
 
 /**
- * PhueScreenshot class for work with screenshots
+ * PhueScreenshot class for taking screenshots
  *
  * @class PhueScreenshot
  * @constructor
@@ -48,62 +48,11 @@ const GObject = imports.gi.GObject;
  */
 var PhueScreenshot =  GObject.registerClass({
     GTypeName: "PhueScreenshot",
-    Signals: {
-        "cursorColor": {}
-    }
 }, class PhueScreenshot extends GObject.Object {
 
     _init(props={}) {
         super._init(props);
         this._screenshot = new Shell.Screenshot();
-    }
-
-    /**
-     * Promise to take color of coordinates
-     * 
-     * @method pickCoordinatesColor
-     * @param {Object} coordinates [x, y]
-     */
-    pickCoordinatesColor(c) {
-        return new Promise((resolve, reject) => {
-            try {
-                let [x, y] = c;
-                
-                this._screenshot.pick_color(x, y, (o, res) => {
-                    let [, color] = this._screenshot.pick_color_finish(res);
-
-                    resolve({
-                        color: color,
-                        x: x,
-                        y: y
-                    });
-                });
-            } catch(e) {
-                reject(e.message);
-            }
-        });
-    }
-
-    /**
-     * Takes coodrinates of cursor pointer
-     * 
-     * @method updateCursorColor
-     */
-    updateCursorColor() {
-        this.pickCoordinatesColor(global.get_pointer()).then(
-            this._updateCursorColorFinished.bind(this)
-        );
-    }
-
-    /**
-     * Finisher of cursor color picking.
-     * 
-     * @method _updateCursorColorFinished
-     * @param {Object} object with color and coordinates
-     */
-    _updateCursorColorFinished(p) {
-        this.cursorColor = p.color;
-        this.emit("cursorColor");
     }
 
     /**
@@ -114,9 +63,18 @@ var PhueScreenshot =  GObject.registerClass({
      * @param {Number} y coordinate
      * @return {Object} color
      */
-    async getColorPixel(x, y) {
-        [this._color] = await this._screenshot.pick_color(x, y);
-        return this._color;
+    getColorPixel(x, y) {
+        return new Promise((resolve, reject) => {
+            try {
+                this._screenshot.pick_color(x, y, (o, res) => {
+                    let [, color] = this._screenshot.pick_color_finish(res);
+
+                    resolve(color);
+                });
+            } catch(e) {
+                logError(e);
+            }
+        });
     }
 });
     

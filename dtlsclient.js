@@ -237,7 +237,7 @@ var DTLSClient =  GObject.registerClass({
         this._protocolVersion = protocolVersion.DTLS_1_2;
         this._cipherSuites = cipherSuites.TLS_PSK_WITH_AES_128_GCM_SHA256;
         this._debug = false;
-        this._handshake_messages = [];
+        this._handshakeMessages = {};
         this._encrypted = false;
     }
 
@@ -356,6 +356,8 @@ var DTLSClient =  GObject.registerClass({
      * @param {Object} callbeck to be called after sending msg
      */
     _sendMsg(msg, callback) {
+        this._loghex("sending a message:", msg);
+
         this._outputStream.write_async(
             new ByteArray.ByteArray(msg),
             GLib.PRIORITY_DEFAULT,
@@ -586,9 +588,9 @@ var DTLSClient =  GObject.registerClass({
             preMasterSecret.push(parseInt("0x" + this._psk[i] + this._psk[i + 1]));
         }
 
-        this._logDebug("preMasterSecret: " + preMasterSecret);
-        this._logDebug("client random: " + this._clientRandom);
-        this._logDebug("server random: " + this._serverRandom);
+        this._loghex("preMasterSecret: ", preMasterSecret);
+        this._loghex("client random: ", this._clientRandom);
+        this._loghex("server random: ", this._serverRandom);
 
         this._masterSecret = this.PRF(
             preMasterSecret,
@@ -608,10 +610,15 @@ var DTLSClient =  GObject.registerClass({
         this._serverIV = this._keyBlock.slice(36, 40);
 
         /* https://www.cryptologie.net/article/353/dtls-and-finished-messages/ */
+        let handshakeMsg = [];
+        handshakeMsg = handshakeMsg.concat(this._handshakeMessages[handshakeType.CLIENT_HELLO]);
+        handshakeMsg = handshakeMsg.concat(this._handshakeMessages[handshakeType.SERVER_HELLO]);
+        handshakeMsg = handshakeMsg.concat(this._handshakeMessages[handshakeType.SERVER_HELLO_DONE]);
+        handshakeMsg = handshakeMsg.concat(this._handshakeMessages[handshakeType.CLIENT_KEY_EXCHANGE]);
         let finishMsg = this.PRF(
             this._masterSecret,
             "client finished",
-            hashing.sha256.hash(this._handshake_messages)
+            hashing.sha256.hash(handshakeMsg)
         );
 
         handshakeBody = finishMsg.slice(0,12);
@@ -672,11 +679,10 @@ var DTLSClient =  GObject.registerClass({
         handshakeMsg = handshakeMsg.concat(handshakeBody);
 
         if (packet["hType"] == handshakeType.FINISHED) {
-            this._encrypted = true;
             handshakeMsg = this._encryptMsg(packet, handshakeMsg);
         }
 
-        this._handshake_messages = this._handshake_messages.concat(handshakeMsg);
+        this._handshakeMessages[packet["hType"]] = handshakeMsg;
         return handshakeMsg;
     }
 
@@ -742,7 +748,6 @@ var DTLSClient =  GObject.registerClass({
 
         switch(hType) {
             case handshakeType.HELLO_VERIFY_REQUEST:
-                this._handshake_messages = [];
                 subPacket["protocolVersionH"] = arrayToUint(this.popNextN(msg, 2));
                 subPacket["cookieLegth"] = arrayToUint(this.popNextN(msg, 1));
                 subPacket["cookie"] = this.popNextN(msg, subPacket["cookieLegth"]);
@@ -794,7 +799,7 @@ var DTLSClient =  GObject.registerClass({
         switch (packet["cType"]) {
             case contentType.HANDSHAKE:
                 if (this._handshakeInProgress) {
-                    this._handshake_messages = this._handshake_messages.concat(msg.slice(0, bodyLength));
+                    this._handshakeMessages[msg[0]] = msg.slice(0, bodyLength);
                 }
 
                 packet["hType"] = arrayToUint(this.popNextN(msg, 1));
@@ -876,8 +881,8 @@ var DTLSClient =  GObject.registerClass({
                 this._logDebug("received hello verify request");
 
                 responsePacket = this._helloClientPacket;
-                responsePacket["headerSeq"]++;
-                responsePacket["handshakeSeq"]++;
+                responsePacket["headerSeq"] = 1;
+                responsePacket["handshakeSeq"] = 1;
                 responsePacket["cookie"] = packet["cookie"];
 
                 msg = this._createPacket(responsePacket);
@@ -886,6 +891,7 @@ var DTLSClient =  GObject.registerClass({
                 break;
 
             case handshakeType.FINISHED:
+                this._encrypted = true;
                 this._handshakeInProgress = false;
                 this._logDebug("received handshake finished");
                 this.emit("connected");
@@ -895,6 +901,7 @@ var DTLSClient =  GObject.registerClass({
             default:
                 /* without decryption we can not get the msg handshakeType.FINISHED
                  * so we assume:-( this is handshakeType.FINISHED */
+                this._encrypted = true;
                 this._handshakeInProgress = false;
                 this._logDebug("unknown handshake type msg: " + packet["hType"]);
                 this.streamSeq = 0;
@@ -1053,13 +1060,15 @@ var DTLSClient =  GObject.registerClass({
 
         encryptedMsg = epochAndSeq.concat(encryptedMsg);
 
+        this._logDecryptionData("client", packet, encryptedMsg);
+
         return encryptedMsg;
     }
 
     /**
      * Encrypt and send DTLS aplication data message
      * 
-     * @method _encryptMsg
+     * @method sendEncrypted
      * @param {Object} cleartext
      * @return {Boolean} true if sent
      */
@@ -1085,7 +1094,6 @@ var DTLSClient =  GObject.registerClass({
         msg = msg.concat(encryptedMsg);
 
         this._loghex("hue lights: ", msg);
-        this._logDecryptionData("client", packet, encryptedMsg);
 
         this._outputStream.write_all(new ByteArray.ByteArray(msg), null);
         return true;
