@@ -43,9 +43,9 @@ const Lang = imports.lang;
 const DTLSClient = Me.imports.dtlsclient;
 const PhueScreenshot = Me.imports.phuescreenshot;
 
-const StreamingArea = {
-    WIDTH: 0.2,
-    HEIGHT: 0.25
+const LightRectangle = {
+    WIDTH: 0.3,
+    HEIGHT: 0.4
 }
 
 /**
@@ -266,9 +266,13 @@ var PhueEntertainment =  GObject.registerClass({
 
         let lightsArray = this._createLightHeader("color");
 
-        let r = Math.round(color.red * (this.brightness/254));
-        let g = Math.round(color.green * (this.brightness/254));
-        let b = Math.round(color.blue * (this.brightness/254));
+        let red = this.adjustColorElement(color.red);
+        let green = this.adjustColorElement(color.green);
+        let blue = this.adjustColorElement(color.blue);
+
+        let r = Math.round(red * (this.brightness/254));
+        let g = Math.round(green * (this.brightness/254));
+        let b = Math.round(blue * (this.brightness/254));
 
         for (let i = 0; i < this.lights.length; i++) {
 
@@ -303,6 +307,25 @@ var PhueEntertainment =  GObject.registerClass({
     }
 
     /**
+     * For fixing colors like rgb(1,0,1)
+     *
+     * @method adjustColorElement
+     * @param {Number} color element
+     * @return {Number} color element
+     */
+     adjustColorElement(c) {
+        if (c <= 5) {
+            return 0;
+        }
+
+        if (c >= 249) {
+            return 254;
+        }
+
+        return c;
+    }
+
+    /**
      * Returns the rectangle on the actual screen that is around
      * the relative location of light in Philips Hue
      * entertainment setting
@@ -323,13 +346,13 @@ var PhueEntertainment =  GObject.registerClass({
             tmpWidth = this.screenWidth;
         }
 
-        let minWidth = Math.round(Math.max(0, tmpWidth - screenWidth * StreamingArea.WIDTH / 2));
-        let maxWidth = Math.round(Math.min(screenWidth, tmpWidth + screenWidth * StreamingArea.WIDTH / 2));
+        let minWidth = Math.round(Math.max(0, tmpWidth - screenWidth * LightRectangle.WIDTH / 2));
+        let maxWidth = Math.round(Math.min(screenWidth, tmpWidth + screenWidth * LightRectangle.WIDTH / 2));
 
         let tmpHeight =  -1 * location[2] * (screenHeight/2) + screenHeight/2;
 
-        let minHeight = Math.round(Math.max(0, tmpHeight - screenHeight * StreamingArea.HEIGHT / 2));
-        let maxHeight = Math.round(Math.min(screenHeight, tmpHeight + screenHeight * StreamingArea.HEIGHT / 2));
+        let minHeight = Math.round(Math.max(0, tmpHeight - screenHeight * LightRectangle.HEIGHT / 2));
+        let maxHeight = Math.round(Math.min(screenHeight, tmpHeight + screenHeight * LightRectangle.HEIGHT / 2));
 
         return [[minWidth, maxWidth],[],[minHeight, maxHeight]]
     }
@@ -367,11 +390,25 @@ var PhueEntertainment =  GObject.registerClass({
             x = widthRectangle[0] + (widthRectangle[1] - widthRectangle[0]) / 2;
             y = heightRectangle[0] + (heightRectangle[1] - heightRectangle[0]) / 2;
 
-            let color = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
+            let quarterWidth = (widthRectangle[1] - widthRectangle[0]) / 4;
+            let quarterheight = (heightRectangle[1] - heightRectangle[0]) / 4;
 
-            r = Math.round(color.red * (this.brightness/254));
-            g = Math.round(color.green * (this.brightness/254));
-            b = Math.round(color.blue * (this.brightness/254));
+            let left = await this.screenshot.getColorPixel(widthRectangle[0] + quarterWidth, Math.round(y));
+            let right = await this.screenshot.getColorPixel(widthRectangle[1] - quarterWidth, Math.round(y));
+            let top = await this.screenshot.getColorPixel(Math.round(x), heightRectangle[0] + quarterheight);
+            let bottom = await this.screenshot.getColorPixel(Math.round(x), heightRectangle[1] - quarterheight);
+
+            let red = (left.red + right.red + top.red + bottom.red) / 4;
+            let green = (left.green + right.green + top.green + bottom.green) / 4;
+            let blue = (left.blue + right.blue + top.blue + bottom.blue) / 4;
+
+            red = this.adjustColorElement(red);
+            green = this.adjustColorElement(green);
+            blue = this.adjustColorElement(blue);
+
+            r = Math.round(red * (this.brightness/254));
+            g = Math.round(green * (this.brightness/254));
+            b = Math.round(blue * (this.brightness/254));
 
             lightsArray = lightsArray.concat(this.lights[i]);
 
@@ -390,12 +427,26 @@ var PhueEntertainment =  GObject.registerClass({
 
                 x = widthRectangle[0] + (widthRectangle[1] - widthRectangle[0]) / 2;
                 y = heightRectangle[0] + (heightRectangle[1] - heightRectangle[0]) / 2;
+
+                let quarterWidth = (widthRectangle[1] - widthRectangle[0]) / 4;
+                let quarterheight = (heightRectangle[1] - heightRectangle[0]) / 4;
     
-                let color = await this.screenshot.getColorPixel(Math.round(x), Math.round(y));
-    
-                r = Math.round(color.red * (this.brightness/254));
-                g = Math.round(color.green * (this.brightness/254));
-                b = Math.round(color.blue * (this.brightness/254));
+                let left = await this.screenshot.getColorPixel(widthRectangle[0] + quarterWidth, Math.round(y));
+                let right = await this.screenshot.getColorPixel(widthRectangle[1] - quarterWidth, Math.round(y));
+                let top = await this.screenshot.getColorPixel(Math.round(x), heightRectangle[0] + quarterheight);
+                let bottom = await this.screenshot.getColorPixel(Math.round(x), heightRectangle[1] - quarterheight);
+
+                let red = (left.red + right.red + top.red + bottom.red) / 4;
+                let green = (left.green + right.green + top.green + bottom.green) / 4;
+                let blue = (left.blue + right.blue + top.blue + bottom.blue) / 4;
+
+                red = this.adjustColorElement(red);
+                green = this.adjustColorElement(green);
+                blue = this.adjustColorElement(blue);
+
+                r = Math.round(red * (this.brightness/254));
+                g = Math.round(green * (this.brightness/254));
+                b = Math.round(blue * (this.brightness/254));
 
                 lightsArray = lightsArray.concat([0x01, 0x00, i]);
 

@@ -1487,7 +1487,7 @@ var PhueMenu = GObject.registerClass({
         if (this._iconPack !== PhueIconPack.NONE) {
             let iconPath = "";
 
-            iconPath = Me.dir.get_path() + `/media/HueIcons/otherWatchingMovie.svg`
+            iconPath = Me.dir.get_path() + `/media/HueIcons/roomsMancave.svg`
 
             entertainmentIcon = this._getIconByPath(iconPath);
         }
