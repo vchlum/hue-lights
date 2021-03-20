@@ -35,6 +35,7 @@
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+const Main = imports.ui.main;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const GObject = imports.gi.GObject;
@@ -131,6 +132,7 @@ var PhueEntertainment =  GObject.registerClass({
      */
     closeBridge() {
         this.dtls.closeBridge();
+        this.emit("disconnected");
     }
 
     /**
@@ -371,6 +373,14 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
+        if (this.screenWidth !== global.screen_width ||
+            this.screenHeight !== global.screen_height) {
+            /* screen has been changed */
+            this.stopStreaming();
+            this.closeBridge();
+            return;
+        }
+
         let lightsArray = this._createLightHeader("color");
 
         let widthRectangle;
@@ -464,6 +474,55 @@ var PhueEntertainment =  GObject.registerClass({
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
             this.doSyncSreen();
         });
+    }
+
+    /**
+     * Checks the suitability of screen
+     * and display(s) resolution for sync
+     *
+     * @method checkSyncSuitableResolution
+     * @return {Boolean} True if screen is rectangle
+     */
+     checkSyncSuitableResolution() {
+        let totalWidth = 0;
+        let totalHeight = 0;
+        let possibleWidths = [];
+        let possibleHeights = [];
+
+        for (let i = 0; i < global.display.get_n_monitors(); i++) {
+            let geometry = global.display.get_monitor_geometry(i);
+
+            totalWidth += geometry.width;
+            totalHeight += geometry.height;
+
+            possibleWidths.push(geometry.width);
+            possibleHeights.push(geometry.height);
+
+        }
+
+        if (global.screen_width === totalWidth) {
+            for (let i = 0; i < possibleHeights.length; i++) {
+                if (global.screen_height !== possibleHeights[i]) {
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (global.screen_height === totalHeight) {
+            for (let i = 0; i < possibleWidths.length; i++) {
+                if (global.screen_width !== possibleWidths[i]) {
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -583,6 +642,16 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
+        if (!this.checkSyncSuitableResolution()) {
+            Main.notify(
+                _("Hue Lights - Sync screen"),
+                _("Your screen is not a solid rectangle.")
+            );
+            this.stopStreaming();
+            this.closeBridge();
+            return;
+        }
+
         this.lights = [];
         this.lightsLocations = [];
         for (let i = 0; i < lights.length; i++) {
@@ -594,9 +663,6 @@ var PhueEntertainment =  GObject.registerClass({
         this._doStreaming = true;
 
         this.screenshot = new PhueScreenshot.PhueScreenshot();
-
-        let currentMonitorIndex = global.display.get_current_monitor();
-        let geometry = global.display.get_monitor_geometry(currentMonitorIndex);
 
         this.screenWidth = global.screen_width;
         this.screenHeight = global.screen_height;

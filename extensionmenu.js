@@ -1816,6 +1816,10 @@ var PhueMenu = GObject.registerClass({
         this._hueLightsIsStreaming[bridgeid]["entertainment"].connect("connected", () => {
             this._startEntertainmentStream(bridgeid, groupid);            
         });
+
+        this._hueLightsIsStreaming[bridgeid]["entertainment"].connect("disconnected", () => {
+            this.hue.instances[bridgeid].disableStream(groupid);
+        });
     }
 
     /**

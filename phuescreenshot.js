@@ -67,9 +67,12 @@ var PhueScreenshot =  GObject.registerClass({
         return new Promise((resolve, reject) => {
             try {
                 this._screenshot.pick_color(x, y, (o, res) => {
-                    let [, color] = this._screenshot.pick_color_finish(res);
+                    let [ok, color] = this._screenshot.pick_color_finish(res);
+                    if (ok) {
+                        resolve(color);
+                    }
 
-                    resolve(color);
+                    reject();
                 });
             } catch(e) {
                 logError(e);
