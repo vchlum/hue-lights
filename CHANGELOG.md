@@ -1,3 +1,5 @@
+## Version 9
+ * support for Philips Hue Entertainment areas
 ## Version 8
  * fix translation initialization
  * improve bridge discovering
