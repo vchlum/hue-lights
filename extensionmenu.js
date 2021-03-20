@@ -1426,7 +1426,7 @@ var PhueMenu = GObject.registerClass({
      */
     _createSentertainmentServiceItem(bridgeid) {
         let bridgePath = `${this._rndID()}`;
-        let entertainmentServiceItem = new PopupMenu.PopupMenuItem(_("Mode:"));
+        let entertainmentServiceItem = new PopupMenu.PopupMenuItem(_("Mode"));
 
         entertainmentServiceItem.set_x_align(Clutter.ActorAlign.FILL);
         entertainmentServiceItem.label.set_x_expand(false);
@@ -1435,7 +1435,20 @@ var PhueMenu = GObject.registerClass({
         slider.set_width(150);
         slider.set_x_align(Clutter.ActorAlign.END);
         slider.set_x_expand(false);
-        slider.value = 0;
+
+        switch (this._hueLightsIsStreaming[bridgeid]["entertainmentMode"]) {
+            case PhueEntertainmentMode.SYNC:
+                slider.value = 0;
+                break;
+            case PhueEntertainmentMode.CURSOR:
+                slider.value = 0.5;
+                break;
+            case PhueEntertainmentMode.RANDOM:
+                slider.value = 1;
+                break;
+            default:
+                slider.value = 0;
+        }
 
         let label = new St.Label({text: this._hueLightsIsStreaming[bridgeid]["entertainmentMode"]});
         label.set_x_expand(true);
