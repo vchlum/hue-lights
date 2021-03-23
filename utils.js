@@ -51,6 +51,8 @@ var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
 var HUELIGHTS_SETTINGS_ICONPACK = "icon-pack";
+var HUELIGHTS_SETTINGS_ENTERTAINMENT = "entertainment";
+var HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE = "a{sa{si}}";
 
 var getHueIconFile = {
     "Downstairs": "zonesAreasGroundfloor",
@@ -92,6 +94,18 @@ var getHueIconFile = {
     "Porch": "roomsPorch",
     "Barbecue": "roomsOutdoorSocialtime",
     "Pool": "roomsPool"
+};
+
+const entertainmentMode = {
+    SYNC: 0,
+    CURSOR: 1,
+    RANDOM: 2
+};
+
+var entertainmentModeText = {
+    0: _("Sync screen"),
+    1: _("Track cursor"),
+    2: _("Random")
 };
 
 /**

@@ -42,5 +42,9 @@
       <default>"bright"</default>
       <summary>Used icon pack</summary>
     </key>
+    <key name="entertainment" type="a{sa{si}}">
+      <default>{}</default>
+      <summary>Entertainment areas</summary>
+    </key>
   </schema>
 </schemalist>

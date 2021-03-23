@@ -69,10 +69,12 @@ const PhueIconPack = {
     DARK: 2
 };
 
-const PhueEntertainmentMode = {
-    SYNC: _("Sync screen"),
-    CURSOR: _("Track cursor"),
-    RANDOM: _("Random"),
+const StreamState = {
+    STOPPED: 0,
+    STARTING: 1,
+    STOPPING: 2,
+    RUNNING: 3,
+    FAILED: 4
 };
 
 /**
@@ -100,7 +102,7 @@ var PhueMenu = GObject.registerClass({
         this.oldNotifylight = {};
         this.bridgeInProblem = {}
 
-        this._hueLightsIsStreaming = {};
+        this._isStreaming = {};
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         this._settings.connect("changed", Lang.bind(this, function() {
@@ -261,6 +263,12 @@ var PhueMenu = GObject.registerClass({
             Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS
         ).deep_unpack();
 
+        /**
+         * this._entertainment doesn't need rebuild
+         */
+        this._entertainment = this._settings.get_value(
+            Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT
+        ).deep_unpack();
         return menuNeedsRebuild;
     }
 
@@ -336,51 +344,91 @@ var PhueMenu = GObject.registerClass({
             case "switchEntertainment":
                 parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
-                value = object.state;
-
-                if (!value) {
-                    this.hue.instances[bridgeid].disableStream(
-                        parsedBridgePath[2],
-                    );
-
-                    if (this._hueLightsIsStreaming[bridgeid]["entertainment"] === undefined) {
-                        break;
-                    }
-
-                    this._hueLightsIsStreaming[bridgeid]["entertainment"].closeBridge();
-                    this._hueLightsIsStreaming[bridgeid]["entertainment"].stopStreaming();
-                    delete(this._hueLightsIsStreaming[bridgeid]["entertainment"]);
-                    delete(this._hueLightsIsStreaming[bridgeid]["streamService"]);
-
-                    break;
-                }
-
                 if (!this.hue.instances[bridgeid].isConnected()){
                     object.state = false;
                     this._checkHueLightsIsStreaming(bridgeid);
                     break;
                 }
 
-                if (parsedBridgePath[1] === "groups") {
-                    /* ignore if already active */
-                    if (this._hueLightsIsStreaming[bridgeid]["entertainment"]) {
-                        object.state = false;
-                        break;
-                    }
-
-                    if (!this._checkClientKey(bridgeid)) {
-                        object.state = false;
-                        break;
-                    }
-
-                    this._hueLightsIsStreaming[bridgeid]["streamService"] = this._hueLightsIsStreaming[bridgeid]["entertainmentMode"];
-                    this._hueLightsIsStreaming[bridgeid]["groupid"] = parsedBridgePath[2];
-
-                    /* ask to start a new stream with new service */
-                    this.hue.instances[bridgeid].enableStream(
-                        parsedBridgePath[2],
-                    );
+                if (parsedBridgePath[1] !== "groups") {
+                    object.state = false;
+                    break;
                 }
+
+                switch (this._isStreaming[bridgeid]["state"]) {
+                    case StreamState.STOPPED:
+                        if (object.state) {
+                            /* start streaming */
+
+                            if (!this._checkClientKey(bridgeid)) {
+                                object.state = false;
+                                break;
+                            }
+
+                            this._isStreaming[bridgeid]["groupid"] = parsedBridgePath[2];
+
+                            this._isStreaming[bridgeid]["state"] = StreamState.STARTING;
+
+                            /* ask to start a new stream with new service */
+                            this.hue.instances[bridgeid].enableStream(
+                                parsedBridgePath[2],
+                            );
+                        } else {
+                            /* other aplication is streaming - disable it */
+                            this.hue.instances[bridgeid].disableStream(
+                                parsedBridgePath[2],
+                            );
+                        }
+
+                        break;
+
+                    case StreamState.STARTING:
+                        if (object.state) {
+                            this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
+                            this._checkHueLightsIsStreaming(bridgeid);
+                            break;
+                        }
+
+                        object.state = true;
+                        break;
+
+                    case StreamState.STOPPING:
+                        if (!object.state) {
+                            this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
+                            this._checkHueLightsIsStreaming(bridgeid);
+                            break;
+                        }
+
+                        object.state = false;
+                        break;
+
+                    case StreamState.RUNNING:
+
+                        if (this._isStreaming[bridgeid]["groupid"] !== parsedBridgePath[2]) {
+                            object.state = false;
+                            break;
+                        }
+
+                        if (!object.state) {
+                            /* stop streaming */
+
+                            this._isStreaming[bridgeid]["state"] = StreamState.STOPPING;
+
+                            this.hue.instances[bridgeid].disableStream(
+                                parsedBridgePath[2],
+                            );
+
+                            if (this._isStreaming[bridgeid]["entertainment"] === undefined) {
+                                break;
+                            }
+                        }
+
+                        break;
+
+                    default:
+                        break;
+                }
+
                 break;
 
             case "entertainmentIntensity":
@@ -388,10 +436,10 @@ var PhueMenu = GObject.registerClass({
                 value = Math.round(object.value * 254);
 
                 /* 40 is the reasonable minimum */
-                this._hueLightsIsStreaming[bridgeid]["intensity"] = 254 - value + 40;
-                if (this._hueLightsIsStreaming[bridgeid]["entertainment"]) {
-                    this._hueLightsIsStreaming[bridgeid]["entertainment"].setIntensity(
-                        this._hueLightsIsStreaming[bridgeid]["intensity"]
+                this._isStreaming[bridgeid]["intensity"] = 254 - value + 40;
+                if (this._isStreaming[bridgeid]["entertainment"]) {
+                    this._isStreaming[bridgeid]["entertainment"].setIntensity(
+                        this._isStreaming[bridgeid]["intensity"]
                     );
                 }
                 break;
@@ -400,10 +448,10 @@ var PhueMenu = GObject.registerClass({
 
                 value = Math.round(object.value * 254);
 
-                this._hueLightsIsStreaming[bridgeid]["brightness"] = value;
-                if (this._hueLightsIsStreaming[bridgeid]["entertainment"]) {
-                    this._hueLightsIsStreaming[bridgeid]["entertainment"].setBrightness(
-                        this._hueLightsIsStreaming[bridgeid]["brightness"]
+                this._isStreaming[bridgeid]["brightness"] = value;
+                if (this._isStreaming[bridgeid]["entertainment"]) {
+                    this._isStreaming[bridgeid]["entertainment"].setBrightness(
+                        this._isStreaming[bridgeid]["brightness"]
                     );
                 }
                 break;
@@ -411,26 +459,32 @@ var PhueMenu = GObject.registerClass({
             case "entertainmentMode":
 
                 if (object.value <= 0.33) {
-                    value = PhueEntertainmentMode.SYNC;
+                    value = Utils.entertainmentMode.SYNC;
                     object.value = 0;
                 }
 
                 if (object.value > 0.33 && object.value <= 0.66) {
-                    value = PhueEntertainmentMode.CURSOR;
+                    value = Utils.entertainmentMode.CURSOR;
                     object.value = 0.5;
                 }
 
                 if (object.value > 0.66) {
-                    value = PhueEntertainmentMode.RANDOM;
+                    value = Utils.entertainmentMode.RANDOM;
                     object.value = 1;
                 }
 
-                data["objectLabel"].set_text(value);
+                data["objectLabel"].set_text(Utils.entertainmentModeText[value]);
 
-                this._hueLightsIsStreaming[bridgeid]["entertainmentMode"] = value;
+                this._isStreaming[bridgeid]["entertainmentMode"] = value;
 
-                this._checkHueLightsIsStreaming(bridgeid);
+                if (this._isStreaming[bridgeid] !== undefined &&
+                    this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
 
+                    this._startEntertainmentStream(
+                        bridgeid,
+                        this._isStreaming[bridgeid]["groupid"]
+                    );
+                }
                 break;
 
             case "brightness-colorpicker":
@@ -1419,12 +1473,12 @@ var PhueMenu = GObject.registerClass({
     /**
      * Creates item with possible entertainment effects
      * 
-     * @method _createSentertainmentServiceItem
+     * @method _createsEntertainmentServiceItem
      * @private
      * @param {String} bridgeid which bridge we use here
      * @return {Object} menuitem with slider to chaneg the mode
      */
-    _createSentertainmentServiceItem(bridgeid) {
+    _createsEntertainmentServiceItem(bridgeid) {
         let bridgePath = `${this._rndID()}`;
         let entertainmentServiceItem = new PopupMenu.PopupMenuItem(_("Mode"));
 
@@ -1436,21 +1490,23 @@ var PhueMenu = GObject.registerClass({
         slider.set_x_align(Clutter.ActorAlign.END);
         slider.set_x_expand(false);
 
-        switch (this._hueLightsIsStreaming[bridgeid]["entertainmentMode"]) {
-            case PhueEntertainmentMode.SYNC:
+        switch (this._isStreaming[bridgeid]["entertainmentMode"]) {
+            case Utils.entertainmentMode.SYNC:
                 slider.value = 0;
                 break;
-            case PhueEntertainmentMode.CURSOR:
+            case Utils.entertainmentMode.CURSOR:
                 slider.value = 0.5;
                 break;
-            case PhueEntertainmentMode.RANDOM:
+            case Utils.entertainmentMode.RANDOM:
                 slider.value = 1;
                 break;
             default:
                 slider.value = 0;
         }
 
-        let label = new St.Label({text: this._hueLightsIsStreaming[bridgeid]["entertainmentMode"]});
+        let label = new St.Label({
+            text: Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]
+        });
         label.set_x_expand(true);
 
         slider.connect(
@@ -1512,18 +1568,18 @@ var PhueMenu = GObject.registerClass({
         let entertainmentIntensityItem = this._createEntertainmentSliderItem(
             bridgeid,
             "Intensity",
-            ((254 - this._hueLightsIsStreaming[bridgeid]["intensity"] - 40)) / 100
+            ((254 - this._isStreaming[bridgeid]["intensity"] - 40)) / 100
         );
         entertainmentMainItem.menu.addMenuItem(entertainmentIntensityItem);
 
         let entertainmentBrightnessItem = this._createEntertainmentSliderItem(
             bridgeid,
             "Brightness",
-            this._hueLightsIsStreaming[bridgeid]["brightness"] / 254
+            this._isStreaming[bridgeid]["brightness"] / 254
         );
         entertainmentMainItem.menu.addMenuItem(entertainmentBrightnessItem);
 
-        let entertainmentServiceItem = this._createSentertainmentServiceItem(bridgeid);
+        let entertainmentServiceItem = this._createsEntertainmentServiceItem(bridgeid);
         entertainmentMainItem.menu.addMenuItem(entertainmentServiceItem);
 
         entertainmentMainItem.menu.addMenuItem(
@@ -1690,24 +1746,24 @@ var PhueMenu = GObject.registerClass({
             streamingLightsLocations[parseInt(i)] = this.bridesData[bridgeid]["groups"][groupid]["locations"][i];
         }
 
-        switch(this._hueLightsIsStreaming[bridgeid]["streamService"]) {
+        switch(this._isStreaming[bridgeid]["entertainmentMode"]) {
 
-            case PhueEntertainmentMode.SYNC:
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].startSyncScreen(
+            case Utils.entertainmentMode.SYNC:
+                this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
                     streamingLights,
                     streamingLightsLocations,
                     gradient);
                 break;
 
-            case PhueEntertainmentMode.CURSOR:
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].startCursorColor(
+            case Utils.entertainmentMode.CURSOR:
+                this._isStreaming[bridgeid]["entertainment"].startCursorColor(
                     streamingLights,
                     streamingLightsLocations,
                     gradient);
                 break;
 
-            case PhueEntertainmentMode.RANDOM:
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].startRandom(
+            case Utils.entertainmentMode.RANDOM:
+                this._isStreaming[bridgeid]["entertainment"].startRandom(
                     streamingLights,
                     streamingLightsLocations,
                     gradient);
@@ -1752,87 +1808,118 @@ var PhueMenu = GObject.registerClass({
     _checkHueLightsIsStreaming(bridgeid) {
         let groupid;
 
-        if (this._hueLightsIsStreaming[bridgeid] === undefined) {
+        if (this._isStreaming[bridgeid] === undefined) {
             return;
         }
 
-        if (!this.hue.instances[bridgeid].isConnected()){
-            if (this._hueLightsIsStreaming[bridgeid]["streamService"] !== undefined) {
-                delete(this._hueLightsIsStreaming[bridgeid]["streamService"]);
-            }
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
 
-            if (this._hueLightsIsStreaming[bridgeid]["entertainment"] !== undefined) {
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].closeBridge();
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].stopStreaming();
-                delete(this._hueLightsIsStreaming[bridgeid]["entertainment"]);
+            if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                delete(this._isStreaming[bridgeid]["entertainment"]);
             }
 
             return;
         }
 
-        /* check if stream should run */
-        if (this._hueLightsIsStreaming[bridgeid]["streamService"] === undefined) {
-            return;
+        switch (this._isStreaming[bridgeid]["state"]) {
+            case StreamState.STOPPED:
+                break;
+
+            case StreamState.STARTING:
+
+                if (!this._checkClientKey(bridgeid)) {
+                    this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+                    return;
+                }
+
+                if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                    return;
+                }
+
+                groupid = this._isStreaming[bridgeid]["groupid"];
+
+                this._isStreaming[bridgeid]["entertainment"] = new HueEntertainment.PhueEntertainment(
+                    {
+                        ip: this.hue.bridges[bridgeid]["ip"],
+                        username: this.hue.bridges[bridgeid]["username"],
+                        clientkey: this.hue.bridges[bridgeid]["clientkey"]
+                    }
+                );
+
+                this._isStreaming[bridgeid]["entertainment"].setIntensity(
+                    this._isStreaming[bridgeid]["intensity"]
+                );
+
+                this._isStreaming[bridgeid]["entertainment"].setBrightness(
+                    this._isStreaming[bridgeid]["brightness"]
+                );
+
+                this._isStreaming[bridgeid]["entertainment"].connectBridge();
+
+                this._isStreaming[bridgeid]["entertainment"].connect("connected", () => {
+                    this._startEntertainmentStream(bridgeid, groupid);
+                    this._isStreaming[bridgeid]["state"] = StreamState.RUNNING;
+                });
+
+                this._isStreaming[bridgeid]["entertainment"].connect("disconnected", () => {
+                    this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+                    delete(this._isStreaming[bridgeid]["entertainment"]);
+
+                    groupid = this._isStreaming[bridgeid]["groupid"];
+                    if (this.bridesData[bridgeid]["groups"][groupid] !== undefined &&
+                        this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+
+                        this.hue.instances[bridgeid].disableStream(groupid);
+                    }
+
+                });
+
+                break;
+
+            case StreamState.STOPPING:
+                if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                    this._isStreaming[bridgeid]["entertainment"].closeBridge();
+                } else {
+                    this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+                }
+
+                break;
+
+            case StreamState.RUNNING:
+                groupid = this._isStreaming[bridgeid]["groupid"];
+
+                if (!this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+                    /* another app disabled stream */
+
+                    this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+
+                    if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                        delete(this._isStreaming[bridgeid]["entertainment"]);
+                    }
+                }
+
+                break;
+
+            case StreamState.FAILED:
+                if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                    delete(this._isStreaming[bridgeid]["entertainment"]);
+                }
+
+                groupid = this._isStreaming[bridgeid]["groupid"];
+
+                if (this.bridesData[bridgeid]["groups"][groupid] !== undefined &&
+                    this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+
+                    this.hue.instances[bridgeid].disableStream(groupid);
+                }
+
+                this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+                break;
+
+            default:
+                break;
         }
-
-        if (this._hueLightsIsStreaming[bridgeid]["entertainment"] !== undefined) {
-            /* already steaming */
-
-            groupid = this._hueLightsIsStreaming[bridgeid]["groupid"];
-            if (groupid === undefined) {
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].closeBridge();
-                this._hueLightsIsStreaming[bridgeid]["entertainment"].stopStreaming();
-                delete(this._hueLightsIsStreaming[bridgeid]["entertainment"]);
-
-                return;
-            }
-
-            if (this._hueLightsIsStreaming[bridgeid]["entertainmentMode"] !== this._hueLightsIsStreaming[bridgeid]["streamService"]) {
-                this._hueLightsIsStreaming[bridgeid]["streamService"] = this._hueLightsIsStreaming[bridgeid]["entertainmentMode"];
-
-                this._startEntertainmentStream(bridgeid, groupid);
-            }
-
-            if (!this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
-                /* other app deactivate dthe stream and the stream is no longer active */
-
-                delete(this._hueLightsIsStreaming[bridgeid]["entertainment"]);
-            }
-            return;
-        }
-
-        if (!this._checkClientKey(bridgeid)) {
-            delete(this._hueLightsIsStreaming[bridgeid]["streamService"]);
-            return;
-        }
-
-        groupid = this._hueLightsIsStreaming[bridgeid]["groupid"];
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"] = new HueEntertainment.PhueEntertainment(
-            {
-                ip: this.hue.bridges[bridgeid]["ip"],
-                username: this.hue.bridges[bridgeid]["username"],
-                clientkey: this.hue.bridges[bridgeid]["clientkey"]
-            }
-        );
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"].setIntensity(
-            this._hueLightsIsStreaming[bridgeid]["intensity"]
-        );
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"].setBrightness(
-            this._hueLightsIsStreaming[bridgeid]["brightness"]
-        );
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"].connectBridge();
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"].connect("connected", () => {
-            this._startEntertainmentStream(bridgeid, groupid);            
-        });
-
-        this._hueLightsIsStreaming[bridgeid]["entertainment"].connect("disconnected", () => {
-            this.hue.instances[bridgeid].disableStream(groupid);
-        });
     }
 
     /**
@@ -1870,6 +1957,10 @@ var PhueMenu = GObject.registerClass({
                     for (let i in parsedBridgePath) {
                         if (i == 0) {
                             continue;
+                        }
+
+                        if (value === undefined){
+                            break;
                         }
 
                         value = value[parsedBridgePath[i]];
@@ -2060,6 +2151,124 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Initialize entertainment stream
+     * based on settings. If tehre is a autostart
+     * entertainment area, start it.
+     * 
+     * @method entertainmentInit
+     * @param {Number} bridgeid 
+     */
+    entertainmentInit(bridgeid) {
+
+        if (this._isStreaming[bridgeid] === undefined) {
+            this._isStreaming[bridgeid] = {};
+
+            this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+
+            if (this._entertainment[bridgeid] !== undefined &&
+                this._entertainment[bridgeid]["intensity"] !== undefined) {
+
+                this._isStreaming[bridgeid]["intensity"] = this._entertainment[bridgeid]["intensity"];
+            } else {
+                this._isStreaming[bridgeid]["intensity"] = 150;
+            }
+
+            if (this._entertainment[bridgeid] !== undefined &&
+                this._entertainment[bridgeid]["bri"] !== undefined) {
+
+                this._isStreaming[bridgeid]["brightness"] = this._entertainment[bridgeid]["bri"];
+            } else {
+                this._isStreaming[bridgeid]["brightness"] = 254;
+            }
+
+            if (this._entertainment[bridgeid] !== undefined &&
+                this._entertainment[bridgeid]["mode"] !== undefined) {
+
+                this._isStreaming[bridgeid]["entertainmentMode"] = this._entertainment[bridgeid]["mode"];
+            } else {
+                this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SYNC;
+            }
+        }
+
+        if (this._entertainment[bridgeid] !== undefined &&
+            this._entertainment[bridgeid]["autostart"] !== undefined &&
+            this._entertainment[bridgeid]["autostart"] >= 0) {
+
+            let groupid = this._entertainment[bridgeid]["autostart"];
+
+            if (this.bridesData[bridgeid]["groups"][groupid] === undefined) {
+                return;
+            }
+
+            if (this.bridesData[bridgeid]["groups"][groupid]["type"] !== "Entertainment") {
+                return;
+            }
+
+            /* do not start stream if active stream exists */
+            for (let g in this.bridesData[bridgeid]["groups"]) {
+                if (this.bridesData[bridgeid]["groups"][g]["type"] === "Entertainment" &&
+                    this.bridesData[bridgeid]["groups"][g]["stream"]["active"]) {
+
+                    return;
+                }
+            }
+
+            this._isStreaming[bridgeid]["state"] = StreamState.STARTING;
+
+            this._isStreaming[bridgeid]["groupid"] = groupid;
+
+            if (this._entertainment[bridgeid]["mode"] !== undefined) {
+                this._isStreaming[bridgeid]["entertainmentMode"] = this._entertainment[bridgeid]["mode"];
+            } else {
+                this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SYNC;
+            }
+
+            this.hue.instances[bridgeid].enableStream(
+                groupid,
+            );
+        }
+    }
+
+    /**
+     * Disable entertainments streams
+     * on extension disable.
+     * This is done in synchronous mode
+     * besause destroy of the extension
+     * follows.
+     * 
+     * @method disableStreams
+     */
+    disableStreams() {
+        this.hue.disableAsyncMode();
+
+        for (let bridgeid in this.hue.instances) {
+
+            if (this._isStreaming[bridgeid] === undefined ||
+                this._isStreaming[bridgeid]["state"] === StreamState.STOPPED) {
+
+                continue;
+            }
+
+            this._isStreaming[bridgeid]["state"] = StreamState.STOPPING;
+
+            if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+
+                this._isStreaming[bridgeid]["entertainment"].closeBridge();
+                if (this._isStreaming[bridgeid]["groupid"] !== undefined) {
+                    this.hue.instances[bridgeid].disableStream(
+                        this._isStreaming[bridgeid]["groupid"]
+                    );
+                }
+
+                delete(this._isStreaming[bridgeid]["entertainment"]);
+                delete(this._isStreaming[bridgeid]["entertainmentMode"])
+            }
+
+            this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+        }
+    }
+
+    /**
      * Rebuild the menu from scratch
      * 
      * @method rebuildMenu
@@ -2086,16 +2295,11 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
  
-            if (this._hueLightsIsStreaming[bridgeid] === undefined) {
-                this._hueLightsIsStreaming[bridgeid] = {};
-                this._hueLightsIsStreaming[bridgeid]["intensity"] = 150;
-                this._hueLightsIsStreaming[bridgeid]["brightness"] = 254;
-                this._hueLightsIsStreaming[bridgeid]["entertainmentMode"] = PhueEntertainmentMode.SYNC;
-            }
-
             this.hue.instances[bridgeid].disconnectAll;
 
             this._connectHueInstance(bridgeid);
+
+            this.entertainmentInit(bridgeid);
 
             bridgeItems = this._createMenuBridge(bridgeid);
 

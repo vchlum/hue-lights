@@ -128,9 +128,10 @@ var PhueEntertainment =  GObject.registerClass({
     /**
      * Closes dtls connetion to the Philips Hue bridge.
      * 
-     * @method connectBridge
+     * @method closeBridge
      */
     closeBridge() {
+        this.stopStreaming();
         this.dtls.closeBridge();
         this.emit("disconnected");
     }
@@ -376,7 +377,6 @@ var PhueEntertainment =  GObject.registerClass({
         if (this.screenWidth !== global.screen_width ||
             this.screenHeight !== global.screen_height) {
             /* screen has been changed */
-            this.stopStreaming();
             this.closeBridge();
             return;
         }
@@ -647,7 +647,6 @@ var PhueEntertainment =  GObject.registerClass({
                 _("Hue Lights - Sync screen"),
                 _("Your screen is not a solid rectangle.")
             );
-            this.stopStreaming();
             this.closeBridge();
             return;
         }

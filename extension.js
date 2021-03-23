@@ -98,6 +98,7 @@ function disable() {
 
     MessageTray.Notification.prototype.createBanner = origCreateBanner;
 
+    hueLightsMenu.disableStreams();
     hueLightsMenu.destroy();
 
     log(`disabling ${Me.metadata.name} version ${Me.metadata.version}`);

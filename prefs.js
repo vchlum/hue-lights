@@ -108,6 +108,7 @@ var Prefs = class HuePrefs {
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
         this._iconPack = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_ICONPACK);
+        this._entertainment = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT).deep_unpack();
     }
 
     /**
@@ -141,6 +142,23 @@ var Prefs = class HuePrefs {
             )
         );
     }
+
+    /**
+     * Wite setting for entertainment area
+     *
+     * @method writeEntertainmentSettings
+     */
+    writeEntertainmentSettings() {
+
+    this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE,
+                this._entertainment
+            )
+        );
+    }
+
     /**
      * Get the main witget for prefs.
      *
@@ -183,6 +201,13 @@ var Prefs = class HuePrefs {
         notebook.append_page(
             pageGeneral,
             new Gtk.Label({label: _("General settings")})
+        );
+
+        let pageEntertainment = this._buildEntertainmentWidget();
+        pageEntertainment.border_width = 10;
+        notebook.append_page(
+            pageEntertainment,
+            new Gtk.Label({label: _("Entertainment areas")})
         );
 
         let pageAdvanced = this._buildAdvancedWidget();
@@ -642,6 +667,231 @@ var Prefs = class HuePrefs {
     }
 
     /**
+     * Create the widget with listed entertainment areas.
+     *
+     * @method _buildEntertainmentWidget
+     * @private
+     * @return {Object} the widget with Entertainment areas
+     */
+    _buildEntertainmentWidget() {
+
+        let top = 1;
+        let labelWidget = null;
+
+        let entertainmentWidget = new Gtk.Grid(
+            {
+                hexpand: true,
+                vexpand: true,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+
+        for (let bridgeid in this._hue.instances) {
+
+            let adj;
+
+            if (this._hue.data[bridgeid] === undefined ||
+                this._hue.data[bridgeid]["groups"] === undefined) {
+                continue;
+            }
+
+            /* autostart entertainment area */
+            labelWidget = new Gtk.Label({
+                label: _("Autostart entertainment area:")
+            });
+            entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
+
+            let entertainmentGroupsWidget = new Gtk.ComboBoxText();
+
+            entertainmentGroupsWidget.append("-1", _("none"));
+
+            for (let groupid in this._hue.data[bridgeid]["groups"]) {
+                if (this._hue.data[bridgeid]["groups"][groupid]["type"] !== "Entertainment") {
+                    continue;
+                }
+
+                entertainmentGroupsWidget.append(
+                    groupid,
+                    this._hue.data[bridgeid]["groups"][groupid]["name"]
+                );
+            }
+
+            entertainmentGroupsWidget.set_active_id("-1");
+            entertainmentGroupsWidget.connect(
+                "changed",
+                this._widgetEventHandler.bind(
+                    this, {
+                        "event": "entertainment-autostart",
+                        "object": entertainmentGroupsWidget,
+                        "bridgeid": bridgeid
+                    }
+                )
+            )
+
+            entertainmentWidget.attach_next_to(
+                entertainmentGroupsWidget,
+                labelWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            top++;
+
+            /* default entertainment mode */
+            labelWidget = new Gtk.Label({
+            label: _("Default mode:")
+            });
+            entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
+
+            let entertainmentModesWidget = new Gtk.ComboBoxText();
+
+            for (let mode in Utils.entertainmentModeText) {
+                entertainmentModesWidget.append(
+                    mode.toString(),
+                    Utils.entertainmentModeText[mode]
+                );
+            }
+
+            entertainmentModesWidget.set_active_id(Utils.entertainmentMode.SYNC.toString());
+            entertainmentModesWidget.connect(
+                "changed",
+                this._widgetEventHandler.bind(
+                    this, {
+                        "event": "entertainment-mode",
+                        "object": entertainmentModesWidget,
+                        "bridgeid": bridgeid
+                    }
+                )
+            )
+
+            entertainmentWidget.attach_next_to(
+                entertainmentModesWidget,
+                labelWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            top++;
+
+            /* default entertainment intensity */
+            labelWidget = new Gtk.Label({
+                label: _("Default intensity:")
+            });
+            entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
+
+            adj = new Gtk.Adjustment({
+                value : 1.0,
+                lower: 0,
+                upper: 254,
+                step_increment : 1,
+                page_increment : 20,
+                page_size : 0
+            });
+            let intensityEntertainmentWidget = new Gtk.ScaleButton({
+                icons: ["keyboard-brightness-symbolic"],
+                adjustment : adj
+            });
+
+            intensityEntertainmentWidget.value = 150
+            intensityEntertainmentWidget.connect(
+                "value-changed",
+                this._widgetEventHandler.bind(
+                    this, {
+                        "event": "entertainment-intensity",
+                        "object": intensityEntertainmentWidget,
+                        "bridgeid": bridgeid
+                    }
+                )
+            )
+            entertainmentWidget.attach_next_to(
+                intensityEntertainmentWidget,
+                labelWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            top++;
+
+            /* default entertainment brightness */
+            labelWidget = new Gtk.Label(
+                {label: _("Default brightness:")}
+            );
+            entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
+
+            adj = new Gtk.Adjustment({
+                value : 1.0,
+                lower: 0,
+                upper: 254,
+                step_increment : 1,
+                page_increment : 20,
+                page_size : 0
+            });
+            let brightnessEntertainmentWidget = new Gtk.ScaleButton({
+                icons: ["display-brightness-symbolic"],
+                adjustment : adj
+            });
+
+            brightnessEntertainmentWidget.value = 254;
+            brightnessEntertainmentWidget.connect(
+                "value-changed",
+                this._widgetEventHandler.bind(
+                    this, {
+                        "event": "entertainment-brightness",
+                        "object": brightnessEntertainmentWidget,
+                        "bridgeid": bridgeid
+                    }
+                )
+            )
+            entertainmentWidget.attach_next_to(
+                brightnessEntertainmentWidget,
+                labelWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            if (this._entertainment[bridgeid] !== undefined) {
+                if (this._entertainment[bridgeid]["autostart"] !== undefined) {
+
+                    entertainmentGroupsWidget.set_active_id(
+                        this._entertainment[bridgeid]["autostart"].toString()
+                    );
+                }
+
+                if (this._entertainment[bridgeid]["mode"] !== undefined) {
+
+                    entertainmentModesWidget.set_active_id(
+                        this._entertainment[bridgeid]["mode"].toString()
+                    );
+                }
+
+                if (this._entertainment[bridgeid]["intensity"] !== undefined) {
+                    intensityEntertainmentWidget.value = 254 - this._entertainment[bridgeid]["intensity"] + 40;
+                }
+
+                if (this._entertainment[bridgeid]["bri"] !== undefined) {
+                    brightnessEntertainmentWidget.value = this._entertainment[bridgeid]["bri"];
+                }
+            }
+
+            top++;
+        }
+
+        if (top === 1) {
+            labelWidget = new Gtk.Label(
+                {label: _("Nothing here yet.")}
+            );
+            entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
+        }
+
+        return entertainmentWidget;
+    }
+
+    /**
      * Create the widget with advanced settings.
      *
      * @method _buildAdvancedWidget
@@ -703,7 +953,8 @@ var Prefs = class HuePrefs {
      */
     _buildAboutWidget() {
 
-        let aboutWidget = new Gtk.Box(
+        let top = 1;
+        let aboutWidget = new Gtk.Grid(
             {
                 hexpand: true,
                 vexpand: true,
@@ -711,9 +962,27 @@ var Prefs = class HuePrefs {
                 valign:Gtk.Align.CENTER
             }
         );
-        aboutWidget.add(new Gtk.Label(
+        aboutWidget.attach(new Gtk.Label(
             {label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`}
-        ));
+        ), 1, top, 1, 1);
+
+        top++;
+        aboutWidget.attach(new Gtk.HSeparator(), 1, top, 1, 1);
+        top++;
+
+        let warningText = _(
+            "This application makes use of fast changing light effects conditions alone, or in combination with certain content on the screen it may trigger previously undetected epileptic symptoms or seizures in persons who have no history of prior seizures or epilepsy."
+        );
+        let warningLabel = new Gtk.Label(
+            {label: warningText}
+        );
+        warningLabel.set_line_wrap(true);
+        aboutWidget.attach(warningLabel, 1, top, 1, 1);
+
+        top++;
+        aboutWidget.attach(new Gtk.HSeparator(), 1, top, 1, 1);
+        top++;
+
         return aboutWidget;
     }
 
@@ -763,6 +1032,7 @@ var Prefs = class HuePrefs {
         let bridgeid;
         let ip;
         let lightId;
+        let value;
 
         switch(data["event"]) {
 
@@ -952,6 +1222,45 @@ var Prefs = class HuePrefs {
                 this.writeNotifyLightsSettings();
                 break;
 
+            case "entertainment-autostart":
+                if (this._entertainment[data["bridgeid"]] === undefined) {
+                    this._entertainment[data["bridgeid"]] = {}
+                }
+
+                value = parseInt(data["object"].get_active_id());
+                this._entertainment[data["bridgeid"]]["autostart"] = value;
+                this.writeEntertainmentSettings();
+                break;
+
+            case "entertainment-mode":
+                if (this._entertainment[data["bridgeid"]] === undefined) {
+                    this._entertainment[data["bridgeid"]] = {}
+                }
+
+                value = parseInt(data["object"].get_active_id());
+                this._entertainment[data["bridgeid"]]["mode"] = value;
+                this.writeEntertainmentSettings();
+                break;
+
+            case "entertainment-intensity":
+                if (this._entertainment[data["bridgeid"]] === undefined) {
+                    this._entertainment[data["bridgeid"]] = {}
+                }
+
+                value = Math.round(data["object"].value);
+                this._entertainment[data["bridgeid"]]["intensity"] = 254 - value + 40;
+                this.writeEntertainmentSettings();
+                break;
+
+            case "entertainment-brightness":
+                if (this._entertainment[data["bridgeid"]] === undefined) {
+                    this._entertainment[data["bridgeid"]] = {}
+                }
+
+                value = Math.round(data["object"].value);
+                this._entertainment[data["bridgeid"]]["bri"] = value;
+                this.writeEntertainmentSettings();
+                break;
             case undefined:
             default:
                 log("unknown event");

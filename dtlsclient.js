@@ -390,7 +390,13 @@ var DTLSClient =  GObject.registerClass({
                 return;
             }
 
-            let fillSize = this._dataInputStream.fill_finish(res);
+            let fillSize;
+            try {
+                fillSize = this._dataInputStream.fill_finish(res);
+            } catch (e) {
+                log("hue lights dtls client failed to finish reading: " + e);
+            }
+
             if (fillSize > 0) {
 
                 let msg = [];
