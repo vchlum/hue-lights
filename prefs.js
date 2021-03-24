@@ -83,12 +83,6 @@ var Prefs = class HuePrefs {
 
         this.readSettings();
 
-        this._prefsWidget.connect('realize', () => {
-            let window = this._prefsWidget.get_toplevel();
-            let [default_width, default_height] = window.get_default_size();
-            window.resize(default_width, default_height);
-        });
-
         this._hue.checkBridges();
 
         this.writeSettings();
@@ -167,6 +161,14 @@ var Prefs = class HuePrefs {
      */
     getPrefsWidget() {
 
+        if (Utils.isGnome40()) {
+            this._prefsWidget.set_child(this._buildWidget());
+
+            return this._prefsWidget;
+        }
+
+        /* else Gnome 3.x */
+
         let children = this._prefsWidget.get_children();
         for (let child in children) {
             children[child].destroy();
@@ -217,11 +219,18 @@ var Prefs = class HuePrefs {
             new Gtk.Label({label: _("Advanced settings")})
         );
 
+        let aboutIcon;
+        if (Utils.isGnome40()) {
+            aboutIcon = Gtk.Image.new_from_icon_name("help-about");
+        } else {
+            aboutIcon = Gtk.Image.new_from_icon_name("help-about", Gtk.IconSize.MENU);
+        }
+
         let pageAbout = this._buildAboutWidget()
         pageAbout.border_width = 10;
         notebook.append_page(
             pageAbout,
-            Gtk.Image.new_from_icon_name("help-about", Gtk.IconSize.MENU)
+            aboutIcon
         );
 
         return notebook;
@@ -511,7 +520,11 @@ var Prefs = class HuePrefs {
         );
 
         top++;
-        generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        if (Utils.isGnome40()) {
+            generalWidget.attach(new Gtk.Separator(Gtk.HORIZONTAL), 1, top, 2, 1);
+        } else {
+            generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        }
         top++;
 
         /**
@@ -524,10 +537,23 @@ var Prefs = class HuePrefs {
         );
         generalWidget.attach(labelWidget, 1, top, 1, 1);
 
-        /* list all lights in menu wich checkboxes*/
+        /* list all lights in menu wich checkboxes/switches */
         let lightNotifyMenuBUtton = new Gtk.MenuButton({label: _("Select lights")});
-        let lightNotifyMenu = new Gtk.Menu();
-        lightNotifyMenuBUtton.set_popup(lightNotifyMenu);
+
+        let lightNotifyMenu;
+        let notifyLightsListBox; /* used for Gnome 40*/
+        if (Utils.isGnome40()) {
+            lightNotifyMenu = new Gtk.Popover();
+            lightNotifyMenuBUtton.set_popover(lightNotifyMenu);
+            notifyLightsListBox = new Gtk.Box(
+                {
+                    orientation: Gtk.Orientation.VERTICAL
+                }
+            );
+        } else {
+            lightNotifyMenu = new Gtk.Menu();
+            lightNotifyMenuBUtton.set_popup(lightNotifyMenu);
+        }
 
         for (let bridgeid in this._hue.instances) {
 
@@ -550,31 +576,76 @@ var Prefs = class HuePrefs {
                     let lightName = this._hue.data[bridgeid]["lights"][lightid]["name"];
                     let groupName = this._hue.data[bridgeid]["groups"][groupid]["name"];
 
-                    let lightNotifyMenuItem = new Gtk.CheckMenuItem({label:`${groupName} - ${lightName}`});
-                    for (let i in this._notifyLights) {
-                        if (notifyLightId == i) {
-                            lightNotifyMenuItem.active = true;
-                        }
-                    }
-                    lightNotifyMenuItem.connect(
-                        "toggled",
-                        this._widgetEventHandler.bind(
-                            this,
+                    if (Utils.isGnome40()) {
+                        let notifyLightBox = new Gtk.Box(
                             {
-                                "event": "notify-light-toggled",
-                                "notify-lightid": notifyLightId,
-                                "object": lightNotifyMenuItem
+                                orientation: Gtk.Orientation.HORIZONTAL
                             }
+                        );
+                        notifyLightBox.append(new Gtk.Label(
+                            {
+                                label: `${groupName} - ${lightName}`,
+                                hexpand: true,
+                                halign:Gtk.Align.START,
+                            }
+                        ));
+
+                        notifyLightsListBox.append(notifyLightBox);
+                        let isActive = false;
+                        if (this._notifyLights[notifyLightId] !== undefined) {
+                            isActive = true;
+                        }
+                        let switchNotifyLight = new Gtk.Switch(
+                            {
+                                active: isActive
+                            }
+                        );
+                        switchNotifyLight.connect(
+                            "notify::active",
+                            this._widgetEventHandler.bind(
+                                this,
+                                {
+                                    "event": "notify-light-toggled",
+                                    "notify-lightid": notifyLightId,
+                                    "object": switchNotifyLight
+                                }
+                            )
                         )
-                    )
-                    lightNotifyMenu.append(lightNotifyMenuItem);
+                        notifyLightBox.append(switchNotifyLight);
+
+                    } else {
+                        /* Gnome 3.x */
+
+                        let lightNotifyMenuItem = new Gtk.CheckMenuItem({label:`${groupName} - ${lightName}`});
+                        for (let i in this._notifyLights) {
+                            if (notifyLightId == i) {
+                                lightNotifyMenuItem.active = true;
+                            }
+                        }
+                        lightNotifyMenuItem.connect(
+                            "toggled",
+                            this._widgetEventHandler.bind(
+                                this,
+                                {
+                                    "event": "notify-light-toggled",
+                                    "notify-lightid": notifyLightId,
+                                    "object": lightNotifyMenuItem
+                                }
+                            )
+                        )
+                        lightNotifyMenu.append(lightNotifyMenuItem);
+                    }
                 }
 
             }
 
         }
 
-        lightNotifyMenu.show_all();
+        if (Utils.isGnome40()) {
+            lightNotifyMenu.set_child(notifyLightsListBox);
+        } else {
+            lightNotifyMenu.show_all();
+        }
 
         generalWidget.attach_next_to(
             lightNotifyMenuBUtton,
@@ -603,9 +674,16 @@ var Prefs = class HuePrefs {
             briVal = this._notifyLights[notifyLightId]["bri"];
         }
 
-        let adj = new Gtk.Adjustment({value : 1.0, lower: 0, upper: 254, step_increment : 1, page_increment : 20, page_size : 0});
+        let adj = new Gtk.Adjustment({
+            value : 1.0,
+            lower: 0,
+            upper: 254,
+            step_increment : 1,
+            page_increment : 20,
+            page_size : 0
+        });
         let brightnessNotifyWidget = new Gtk.ScaleButton({
-            label: _("Brightness"),
+            icons: ["display-brightness-symbolic"],
             adjustment : adj
         });
         brightnessNotifyWidget.value = briVal;
@@ -660,7 +738,11 @@ var Prefs = class HuePrefs {
         );
 
         top++;
-        generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        if (Utils.isGnome40()) {
+            generalWidget.attach(new Gtk.Separator(Gtk.HORIZONTAL), 1, top, 2, 1);
+        } else {
+            generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        }
         top++;
 
         return generalWidget;
@@ -883,7 +965,7 @@ var Prefs = class HuePrefs {
 
         if (top === 1) {
             labelWidget = new Gtk.Label(
-                {label: _("Nothing here yet.")}
+                {label: _("Nothing here yet. Connect your bridge.")}
             );
             entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
         }
@@ -962,12 +1044,23 @@ var Prefs = class HuePrefs {
                 valign:Gtk.Align.CENTER
             }
         );
-        aboutWidget.attach(new Gtk.Label(
-            {label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`}
-        ), 1, top, 1, 1);
+
+        let aboutTextLabel = new Gtk.Label({
+            label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
+        });
+
+        if (Utils.isGnome40()) {
+            aboutWidget.attach(aboutTextLabel, 1, top, 1, 1);
+        } else {
+            aboutWidget.attach(aboutTextLabel, 1, top, 1, 1);
+        }
 
         top++;
-        aboutWidget.attach(new Gtk.HSeparator(), 1, top, 1, 1);
+        if (Utils.isGnome40()) {
+            aboutWidget.attach(new Gtk.Separator(Gtk.HORIZONTAL), 1, top, 2, 1);
+        } else {
+            aboutWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        }
         top++;
 
         let warningText = _(
@@ -976,11 +1069,19 @@ var Prefs = class HuePrefs {
         let warningLabel = new Gtk.Label(
             {label: warningText}
         );
-        warningLabel.set_line_wrap(true);
+        if (Utils.isGnome40()) {
+            warningLabel.set_wrap(true);
+        } else {
+            warningLabel.set_line_wrap(true);
+        }
         aboutWidget.attach(warningLabel, 1, top, 1, 1);
 
         top++;
-        aboutWidget.attach(new Gtk.HSeparator(), 1, top, 1, 1);
+        if (Utils.isGnome40()) {
+            aboutWidget.attach(new Gtk.Separator(Gtk.HORIZONTAL), 1, top, 2, 1);
+        } else {
+            aboutWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        }
         top++;
 
         return aboutWidget;
@@ -1001,11 +1102,15 @@ var Prefs = class HuePrefs {
 
         let contentArea = dialogFailed.get_content_area();
 
-        contentArea.add(new Gtk.Label(
-            {
+        let pressButtonLabel = new Gtk.Label({
                 label: _("Press the button on the bridge and try again.")
-            }
-        ));
+        });
+
+        if (Utils.isGnome40()) {
+            contentArea.append(pressButtonLabel);
+        } else {
+            contentArea.add(pressButtonLabel);
+        }
 
         let button = Gtk.Button.new_with_label(_("OK"));
         button.connect('clicked', () => {
@@ -1015,9 +1120,13 @@ var Prefs = class HuePrefs {
         button.expand = true;
         button.grab_focus();
 
-        contentArea.add(button);
-
-        dialogFailed.show_all();
+        if (Utils.isGnome40()) {
+            dialogFailed.add_action_widget(button, 0);
+            dialogFailed.show();
+        } else {
+            contentArea.add(button);
+            dialogFailed.show_all();
+        }
     }
 
     /**
@@ -1091,20 +1200,28 @@ var Prefs = class HuePrefs {
                 );
 
                 let entry = new Gtk.Entry();
-                dialog.get_content_area().add(entry);
+                if (Utils.isGnome40()) {
+                    dialog.get_content_area().append(entry);
+                } else {
+                    dialog.get_content_area().add(entry);
+                }
 
-                let buttonOk = Gtk.Button.new_from_stock(Gtk.STOCK_OK);
+                let buttonOk = new Gtk.Button({label: _("OK")});
                 buttonOk.connect(
                     "clicked",
                     this._widgetEventHandler.bind(
                         this,
-                        {"event":"new-ip", "object1": dialog, "object2": entry}
+                        {"event": "new-ip", "object1": dialog, "object2": entry}
                     )
                 );
 
-                dialog.get_action_area().add(buttonOk);
-
-                dialog.show_all();
+                if (Utils.isGnome40()) {
+                    dialog.add_action_widget(buttonOk, 0);
+                    dialog.show();
+                } else {
+                    dialog.get_action_area().add(buttonOk);
+                    dialog.show_all();
+                }
                 break;
 
             case "discovery-bridges":

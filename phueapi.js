@@ -468,7 +468,7 @@ var PhueBridge =  GObject.registerClass({
      */
     _createUser() {
 
-        const CMD_FQDN = "hostname --fqdn";
+        const CMD_HOSTNAME = "hostname";
         let hostname = "";
         let username = "";
         let res;
@@ -495,7 +495,7 @@ var PhueBridge =  GObject.registerClass({
         }
 
         try {
-            let output = GLib.spawn_command_line_sync(CMD_FQDN);
+            let output = GLib.spawn_command_line_sync(CMD_HOSTNAME);
             hostname = ByteArray.toString(output[1]).trim();
         } catch(e) {
             hostname = "unknown-host";

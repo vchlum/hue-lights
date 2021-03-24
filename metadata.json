@@ -6,7 +6,8 @@
     "original-author": "chlumskyvaclav@gmail.com",
     "shell-version": [
       "3.36",
-      "3.38"
+      "3.38",
+      "40.0"
     ],
     "gettext-domain": "hue-lights",
     "url": "https://github.com/vchlum/hue-lights"

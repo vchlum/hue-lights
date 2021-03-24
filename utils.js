@@ -37,6 +37,7 @@ const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+const Config = imports.misc.config;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
@@ -107,6 +108,20 @@ var entertainmentModeText = {
     1: _("Track cursor"),
     2: _("Random")
 };
+
+/**
+ * Check gnome version
+ *
+ * @method isGnome40
+ * @return {Boolean} true if Gnome 40
+ */
+ function isGnome40() {
+    if (parseInt(Config.PACKAGE_VERSION) >= 40) {
+        return true;
+    }
+
+    return false;
+}
 
 /**
  * Converts Philips Hue colour temperature of white to
