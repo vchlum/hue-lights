@@ -374,6 +374,11 @@ var PhueMenu = GObject.registerClass({
                                 break;
                             }
 
+                            if (this._checkAnyEntertainmentActive(bridgeid)) {
+                                object.state = false;
+                                break;
+                            }
+
                             this._isStreaming[bridgeid]["groupid"] = parsedBridgePath[2];
 
                             this._isStreaming[bridgeid]["state"] = StreamState.STARTING;
@@ -2183,6 +2188,32 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Check if another app already using
+     * the entertainment areas
+     * 
+     * @method _checkAnyEntertainmentActive
+     * @param {NUmber} bridgeid
+     * @return {Boolean} true if already useing
+     */
+    _checkAnyEntertainmentActive(bridgeid) {
+        for (let groupid in this.bridesData[bridgeid]["groups"]) {
+            if (this.bridesData[bridgeid]["groups"][groupid]["type"] === "Entertainment" &&
+                this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+
+                Utils.logDebug(`Another app already streaming group ${groupid} on bridge ${bridgeid}`);
+
+                Main.notify(
+                    _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                    _("Another app is already using the entertainment areas.")
+                );
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Initialize entertainment stream
      * based on settings. If tehre is a autostart
      * entertainment area, start it.
@@ -2240,14 +2271,10 @@ var PhueMenu = GObject.registerClass({
                 return;
             }
 
-            /* do not start stream if active stream exists */
-            for (let g in this.bridesData[bridgeid]["groups"]) {
-                if (this.bridesData[bridgeid]["groups"][g]["type"] === "Entertainment" &&
-                    this.bridesData[bridgeid]["groups"][g]["stream"]["active"]) {
+            if (this._checkAnyEntertainmentActive(bridgeid)) {
 
-                    Utils.logDebug(`Entertainment init discovered already streaming group ${g} on bridge ${bridgeid}`);
-                    return;
-                }
+                Utils.logDebug(`Entertainment init will not autostart group: ${groupid}`);
+                return;
             }
 
             this._isStreaming[bridgeid]["state"] = StreamState.STARTING;
