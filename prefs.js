@@ -778,7 +778,9 @@ var Prefs = class HuePrefs {
                 continue;
             }
 
-            /* autostart entertainment area */
+            /**
+             * autostart entertainment area
+             */
             labelWidget = new Gtk.Label({
                 label: _("Autostart entertainment area:")
             });
@@ -800,6 +802,15 @@ var Prefs = class HuePrefs {
             }
 
             entertainmentGroupsWidget.set_active_id("-1");
+            if (this._entertainment[bridgeid] !== undefined) {
+                if (this._entertainment[bridgeid]["autostart"] !== undefined) {
+
+                    entertainmentGroupsWidget.set_active_id(
+                        this._entertainment[bridgeid]["autostart"].toString()
+                    );
+                }
+            }
+
             entertainmentGroupsWidget.connect(
                 "changed",
                 this._widgetEventHandler.bind(
@@ -821,7 +832,9 @@ var Prefs = class HuePrefs {
 
             top++;
 
-            /* default entertainment mode */
+            /**
+             * default entertainment mode
+             */
             labelWidget = new Gtk.Label({
             label: _("Default mode:")
             });
@@ -837,6 +850,15 @@ var Prefs = class HuePrefs {
             }
 
             entertainmentModesWidget.set_active_id(Utils.entertainmentMode.SYNC.toString());
+            if (this._entertainment[bridgeid] !== undefined) {
+                if (this._entertainment[bridgeid]["mode"] !== undefined) {
+
+                    entertainmentModesWidget.set_active_id(
+                        this._entertainment[bridgeid]["mode"].toString()
+                    );
+                }
+            }
+
             entertainmentModesWidget.connect(
                 "changed",
                 this._widgetEventHandler.bind(
@@ -858,7 +880,9 @@ var Prefs = class HuePrefs {
 
             top++;
 
-            /* default entertainment intensity */
+            /**
+             * default entertainment intensity
+             */
             labelWidget = new Gtk.Label({
                 label: _("Default intensity:")
             });
@@ -878,6 +902,13 @@ var Prefs = class HuePrefs {
             });
 
             intensityEntertainmentWidget.value = 150
+            if (this._entertainment[bridgeid] !== undefined) {
+                if (this._entertainment[bridgeid]["intensity"] !== undefined) {
+                    intensityEntertainmentWidget.value = 254 - this._entertainment[bridgeid]["intensity"] + 40;
+                }
+
+            }
+
             intensityEntertainmentWidget.connect(
                 "value-changed",
                 this._widgetEventHandler.bind(
@@ -898,7 +929,9 @@ var Prefs = class HuePrefs {
 
             top++;
 
-            /* default entertainment brightness */
+            /**
+             * default entertainment brightness
+             */
             labelWidget = new Gtk.Label(
                 {label: _("Default brightness:")}
             );
@@ -918,6 +951,12 @@ var Prefs = class HuePrefs {
             });
 
             brightnessEntertainmentWidget.value = 254;
+            if (this._entertainment[bridgeid] !== undefined) {
+                if (this._entertainment[bridgeid]["bri"] !== undefined) {
+                    brightnessEntertainmentWidget.value = this._entertainment[bridgeid]["bri"];
+                }
+            }
+
             brightnessEntertainmentWidget.connect(
                 "value-changed",
                 this._widgetEventHandler.bind(
@@ -935,30 +974,6 @@ var Prefs = class HuePrefs {
                 1,
                 1
             );
-
-            if (this._entertainment[bridgeid] !== undefined) {
-                if (this._entertainment[bridgeid]["autostart"] !== undefined) {
-
-                    entertainmentGroupsWidget.set_active_id(
-                        this._entertainment[bridgeid]["autostart"].toString()
-                    );
-                }
-
-                if (this._entertainment[bridgeid]["mode"] !== undefined) {
-
-                    entertainmentModesWidget.set_active_id(
-                        this._entertainment[bridgeid]["mode"].toString()
-                    );
-                }
-
-                if (this._entertainment[bridgeid]["intensity"] !== undefined) {
-                    intensityEntertainmentWidget.value = 254 - this._entertainment[bridgeid]["intensity"] + 40;
-                }
-
-                if (this._entertainment[bridgeid]["bri"] !== undefined) {
-                    brightnessEntertainmentWidget.value = this._entertainment[bridgeid]["bri"];
-                }
-            }
 
             top++;
         }

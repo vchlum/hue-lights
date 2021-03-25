@@ -97,7 +97,7 @@ var getHueIconFile = {
     "Pool": "roomsPool"
 };
 
-const entertainmentMode = {
+var entertainmentMode = {
     SYNC: 0,
     CURSOR: 1,
     RANDOM: 2
