@@ -35,6 +35,7 @@
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+const Utils = Me.imports.utils;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const GObject = imports.gi.GObject;
@@ -236,7 +237,6 @@ var DTLSClient =  GObject.registerClass({
         this._clientSocket = null;
         this._protocolVersion = protocolVersion.DTLS_1_2;
         this._cipherSuites = cipherSuites.TLS_PSK_WITH_AES_128_GCM_SHA256;
-        this._debug = false;
         this._handshakeMessages = {};
         this._encrypted = false;
     }
@@ -386,7 +386,8 @@ var DTLSClient =  GObject.registerClass({
     _readResponse() {
         this._dataInputStream.fill_async(-1, GLib.PRIORITY_DEFAULT, null, (o, res) => {
             if (this._dataInputStream.is_closed()) {
-                this._logDebug("dtls stream is closed");
+
+                Utils.logDebug("DTLS stream is closed.");
                 return;
             }
 
@@ -394,7 +395,9 @@ var DTLSClient =  GObject.registerClass({
             try {
                 fillSize = this._dataInputStream.fill_finish(res);
             } catch (e) {
-                log("hue lights dtls client failed to finish reading: " + e);
+                fillSize = 0;
+
+                Utils.logDebug(`DTLS client failed to finish reading: ${e}`);
             }
 
             if (fillSize > 0) {
@@ -516,7 +519,7 @@ var DTLSClient =  GObject.registerClass({
     _createHandshakeClientKeyExchangeBody(packet) {
         let handshakeBody = [];
 
-        this._logDebug("ClientKeyExchange psk identity: " + this._pskIdentity);
+        Utils.logDebug("ClientKeyExchange psk identity: " + this._pskIdentity);
 
         /* psk identity lenght */
         handshakeBody = handshakeBody.concat(uintToArray(this._pskIdentity.length, 16));
@@ -686,6 +689,8 @@ var DTLSClient =  GObject.registerClass({
 
         if (packet["hType"] == handshakeType.FINISHED) {
             handshakeMsg = this._encryptMsg(packet, handshakeMsg);
+
+            this._logDecryptionData("client", packet, handshakeMsg);
         }
 
         this._handshakeMessages[packet["hType"]] = handshakeMsg;
@@ -797,7 +802,7 @@ var DTLSClient =  GObject.registerClass({
         let bodyLength = arrayToUint(this.popNextN(msg, 2));
 
         if (this._encrypted) {
-            this._logDebug("decrypt messages not supported: " + JSON.stringify(packet));
+            Utils.logDebug("decrypt messages not supported: " + JSON.stringify(packet));
             this._logDecryptionData("server", packet, msg);
             return packet;
         }
@@ -823,7 +828,7 @@ var DTLSClient =  GObject.registerClass({
                 break;
         }
 
-        this._logDebug("incomming packet " + JSON.stringify(packet));
+        Utils.logDebug("incomming packet " + JSON.stringify(packet));
         return packet;
     }
 
@@ -839,12 +844,12 @@ var DTLSClient =  GObject.registerClass({
 
         switch(packet["hType"]) {
             case handshakeType.SERVER_HELLO:
-                this._logDebug("received server hello");
+                Utils.logDebug("Received server hello");
                 this._readResponse();
                 break;
 
             case handshakeType.SERVER_HELLO_DONE:
-                this._logDebug("received server hello done");
+                Utils.logDebug("Received server hello done");
 
                 /* send client key exchange */
                 responsePacket = {
@@ -884,7 +889,7 @@ var DTLSClient =  GObject.registerClass({
                 break;
 
             case handshakeType.HELLO_VERIFY_REQUEST:
-                this._logDebug("received hello verify request");
+                Utils.logDebug("Received hello verify request");
 
                 responsePacket = this._helloClientPacket;
                 responsePacket["headerSeq"] = 1;
@@ -899,17 +904,17 @@ var DTLSClient =  GObject.registerClass({
             case handshakeType.FINISHED:
                 this._encrypted = true;
                 this._handshakeInProgress = false;
-                this._logDebug("received handshake finished");
+                Utils.logDebug("Received handshake finished");
                 this.emit("connected");
                 this._readResponse();
                 break;
 
             default:
                 /* without decryption we can not get the msg handshakeType.FINISHED
-                 * so we assume:-( this is handshakeType.FINISHED */
+                 * so we only assume this is handshakeType.FINISHED */
                 this._encrypted = true;
                 this._handshakeInProgress = false;
-                this._logDebug("unknown handshake type msg: " + packet["hType"]);
+                Utils.logDebug("Unknown handshake type message; decryption not available yet:-(; supposing this is the finish message and we are ready to send some app data");
                 this.streamSeq = 0;
                 this.emit("connected");
 
@@ -936,35 +941,21 @@ var DTLSClient =  GObject.registerClass({
                 break;
 
             default:
-                this._logDebug("unknown type msg: " + packet["cType"]);
+                Utils.logDebug("Nnknown message type: " + packet["cType"]);
                 break;
         }
         return;
     }
 
     /**
-     * If debugging is enabled log the message
-     * 
-     * @method _logDebug
-     * @param {String} message to be printed
-     */
-    _logDebug(msg) {
-        if (!this._debug) {
-            return;
-        }
-
-        log("hue debug " + msg);
-    }
-
-    /**
      * If debugging is enabled log the message in hex format
      * 
-     * @method _logDebug
+     * @method _loghex
      * @param {String} message to be printed
      * @param {String} array of bytes to be printed in hex format
      */
     _loghex(msg, a) {
-        if (!this._debug) {
+        if (!Utils.debug) {
             return;
         }
 
@@ -975,7 +966,8 @@ var DTLSClient =  GObject.registerClass({
                 s = s + "0";
             s=s + bytestr;
         }
-        log("hue debug " + msg +"("+a.length+") " + s);
+
+        Utils.logDebug(`${msg} (${a.length}) ${s}`);
     }
 
     /**
@@ -987,7 +979,7 @@ var DTLSClient =  GObject.registerClass({
      * @param {String} array msg in bytes
      */
     _logDecryptionData(peer, packet, msg) {
-        if (!this._debug) {
+        if (!Utils.debug) {
             return;
         }
 
@@ -1066,8 +1058,6 @@ var DTLSClient =  GObject.registerClass({
 
         encryptedMsg = epochAndSeq.concat(encryptedMsg);
 
-        this._logDecryptionData("client", packet, encryptedMsg);
-
         return encryptedMsg;
     }
 
@@ -1098,8 +1088,6 @@ var DTLSClient =  GObject.registerClass({
         let msg = this._createRecordHeader(packet, encryptedMsg.length);
 
         msg = msg.concat(encryptedMsg);
-
-        this._loghex("hue lights: ", msg);
 
         this._outputStream.write_all(new ByteArray.ByteArray(msg), null);
         return true;

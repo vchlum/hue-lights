@@ -49,6 +49,7 @@ var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
+var HUELIGHTS_SETTINGS_DEBUG = "debug";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
 var HUELIGHTS_SETTINGS_ICONPACK = "icon-pack";
@@ -121,6 +122,14 @@ var entertainmentModeText = {
     }
 
     return false;
+}
+
+var debug = false;
+
+function logDebug(msg) {
+    if (debug) {
+        log(`Hue Lights (debug): ${msg}`)
+    }
 }
 
 /**

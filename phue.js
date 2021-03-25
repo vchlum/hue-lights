@@ -36,6 +36,7 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const HueApi = Me.imports.phueapi;
+const Utils = Me.imports.utils;
 
 /**
  * _Phue class for controlling multiple bridges.
@@ -95,9 +96,13 @@ class _Phue {
      */
     _checkBridge(bridgeid) {
 
+        Utils.logDebug(`Checking bridge: ${bridgeid}`);
+
         let res = this.instances[bridgeid].getConfig();
 
         if (this.instances[bridgeid].checkError()) {
+
+            Utils.logDebug(`Bridge ${bridgeid} check failed.`);
             return;
         }
 
@@ -121,6 +126,8 @@ class _Phue {
      */
     addBridgeManual(ipAddress) {
 
+        Utils.logDebug(`Trying to manual add bridge ip: ${ipAddress}`);
+
         let instance = new HueApi.PhueBridge({ip: ipAddress});
 
         if (this._asyncMode) {
@@ -138,7 +145,8 @@ class _Phue {
         if (res.length > 0 && "success" in res[0]) {
             let username = res[0]["success"]["username"];
             let clientkey = res[0]["success"]["clientkey"];
-            log(`new username: ${username} for ip: ${ipAddress}`);
+
+            Utils.logDebug(`bridge connected (manual); new username: ${username} ip: ${ipAddress}`);
 
             res = instance.getConfig();
 
@@ -157,6 +165,8 @@ class _Phue {
 
             if (clientkey !== undefined) {
                 this.bridges[bridgeid]["clientkey"] = clientkey;
+
+                Utils.logDebug(`bridge connected (manual); got clientkey: ${clientkey}`);
             }
 
             this.instances[bridgeid] = instance;
@@ -177,6 +187,8 @@ class _Phue {
         let known;
         let errs;
         let discovered = [];
+
+        Utils.logDebug(`Checking for available bridges, discover: ${discover}`);
 
         if (discover)
             discovered = HueApi.discoverBridges();
@@ -208,10 +220,14 @@ class _Phue {
             }
         }
 
+        Utils.logDebug(`Discovered bridges: ${JSON.stringify(discovered)}`);
+
         for (let bridgeid in this.bridges) {
             let instance;
 
             if (this.instances[bridgeid] === undefined) {
+                Utils.logDebug(`Creating bridge: ${bridgeid}`);
+
                 instance = new HueApi.PhueBridge({ip: this.bridges[bridgeid]["ip"]});
 
                 if (this._asyncMode) {
@@ -236,6 +252,9 @@ class _Phue {
              * for authorization
              */
             if (instance.checkError()) {
+
+                Utils.logDebug(`Failed to connect bridge: ${bridgeid}, checking for button to be pressed`);
+
                 errs = instance.getError();
 
                 if (errs.length !== 1) {
@@ -256,11 +275,14 @@ class _Phue {
                 if (res.length > 0 && "success" in res[0]) {
                     let username = res[0]["success"]["username"];
                     this.bridges[bridgeid]["username"] = username;
+
+                    Utils.logDebug(`bridge connected; new username: ${username} ip: ${this.bridges[bridgeid]["ip"]}`);
+
                     if (res[0]["success"]["clientkey"] != undefined) {
                         this.bridges[bridgeid]["clientkey"] = res[0]["success"]["clientkey"];
-                    }
 
-                    log(`hue new username: ${username} for ip: ${this.bridges[bridgeid]["ip"]}`);
+                        Utils.logDebug(`bridge connected; got clientkey: ${this.bridges[bridgeid]["clientkey"]}`);
+                    }
 
                     this._checkBridge(bridgeid);
                 }

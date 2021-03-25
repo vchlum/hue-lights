@@ -100,6 +100,7 @@ var Prefs = class HuePrefs {
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
+        Utils.debug = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_DEBUG);
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
         this._iconPack = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_ICONPACK);
         this._entertainment = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT).deep_unpack();
@@ -1009,6 +1010,10 @@ var Prefs = class HuePrefs {
             }
         );
 
+        /**
+         * Set connection timeout
+         */
+
         labelWidget = new Gtk.Label(
             {label: _("Connection timeout (seconds):")}
         );
@@ -1037,6 +1042,38 @@ var Prefs = class HuePrefs {
         );
 
         top++;
+
+        /**
+         * Enable/disable debug messages
+         */
+        labelWidget = new Gtk.Label({
+            label: _("Log debug messages:")
+        });
+        advancedWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let debugWidget = new Gtk.Switch(
+            {
+                active: Utils.debug,
+                hexpand: false,
+                vexpand: false,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+        debugWidget.connect(
+            "notify::active",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "debug", "object": debugWidget}
+            )
+        )
+        advancedWidget.attach_next_to(
+            debugWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
 
         return advancedWidget;
     }
@@ -1179,7 +1216,7 @@ var Prefs = class HuePrefs {
             case "remove-bridge":
 
                 bridgeid = data["bridgeid"];
-                log(`removing hue bridge ${bridgeid}`);
+                Utils.logDebug(`Removing bridge: ${bridgeid}`);
 
                 delete this._hue.bridges[bridgeid];
                 if (this._hue.instances[bridgeid] !== undefined) {
@@ -1291,6 +1328,14 @@ var Prefs = class HuePrefs {
                 );
                 break;
 
+            case "debug":
+
+                Utils.debug = data["object"].get_active();
+                this._settings.set_boolean(
+                    Utils.HUELIGHTS_SETTINGS_DEBUG,
+                    Utils.debug
+                );
+                break;
 
             case "notify-light-toggled":
 
@@ -1395,7 +1440,7 @@ var Prefs = class HuePrefs {
                 break;
             case undefined:
             default:
-                log("unknown event");
+                Utils.logDebug(`Unknown prefs event`);
           }
     }
 }

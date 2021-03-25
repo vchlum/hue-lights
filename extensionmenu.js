@@ -230,6 +230,13 @@ var PhueMenu = GObject.registerClass({
         }
 
         /**
+         * debug doesn't need rebuild
+         */
+        Utils.debug = this._settings.get_boolean(
+            Utils.HUELIGHTS_SETTINGS_DEBUG
+        );
+        
+        /**
          * this._iconPack needs rebuild
          */
         tmpVal = this._iconPack;
@@ -308,6 +315,8 @@ var PhueMenu = GObject.registerClass({
         if (this.bridesData[bridgeid].length === 0) {
             return;
         }
+
+        Utils.logDebug(`Menu event handler type: ${type}, ${bridgeid}, ${bridgePath}`);
 
         parsedBridgePath = bridgePath.split("::");
 
@@ -609,6 +618,7 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             default:
+                Utils.logDebug(`Menu event handler - uknown type ${type}`)
         }
 
         /* don't call this.refreshMenu() now... it will by called async */
@@ -907,14 +917,20 @@ var PhueMenu = GObject.registerClass({
 
             case "BSB001":
                 iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV1.svg`;
+
+                Utils.logDebug("Bridge is version 1");
                 break;
 
             case "BSB002":
                 iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV2.svg`;
+
+                Utils.logDebug("Bridge is version 2");
                 break;
 
             default:
                 iconPath = Me.dir.get_path() + `/media/HueIcons/devicesBridgesV2.svg`;
+
+                Utils.logDebug("Bridge version unknown");
         }
 
         icon = this._getIconByPath(iconPath);
@@ -1749,6 +1765,8 @@ var PhueMenu = GObject.registerClass({
         switch(this._isStreaming[bridgeid]["entertainmentMode"]) {
 
             case Utils.entertainmentMode.SYNC:
+                Utils.logDebug(`Starting sync screen entertainment for bridge ${bridgeid} group ${groupid}`);
+
                 this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
                     streamingLights,
                     streamingLightsLocations,
@@ -1756,6 +1774,8 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case Utils.entertainmentMode.CURSOR:
+                Utils.logDebug(`Starting track cursor entertainment for bridge ${bridgeid} group ${groupid}`);
+
                 this._isStreaming[bridgeid]["entertainment"].startCursorColor(
                     streamingLights,
                     streamingLightsLocations,
@@ -1763,6 +1783,8 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case Utils.entertainmentMode.RANDOM:
+                Utils.logDebug(`Starting random entertainment for bridge ${bridgeid} group ${groupid}`);
+
                 this._isStreaming[bridgeid]["entertainment"].startRandom(
                     streamingLights,
                     streamingLightsLocations,
@@ -1791,8 +1813,12 @@ var PhueMenu = GObject.registerClass({
                 _("Please, remove Philips hue bridge and pair it again.")
             );
 
+            Utils.logDebug("Client key not available");
+
             return false;
         }
+
+        Utils.logDebug("Client key available");
 
         return true;
     }
@@ -1813,6 +1839,8 @@ var PhueMenu = GObject.registerClass({
         }
 
         if (!this.hue.instances[bridgeid].isConnected()) {
+            Utils.logDebug(`Bridge ${bridgeid} disconnected while checking entertainment stream.`);
+
             this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
 
             if (this._isStreaming[bridgeid]["entertainment"] !== undefined) {
@@ -1821,6 +1849,8 @@ var PhueMenu = GObject.registerClass({
 
             return;
         }
+
+        Utils.logDebug(`Bridge ${bridgeid} checking for entertainment streams: ${JSON.stringify(this._isStreaming)}`);
 
         switch (this._isStreaming[bridgeid]["state"]) {
             case StreamState.STOPPED:
@@ -1934,6 +1964,8 @@ var PhueMenu = GObject.registerClass({
         let object = null;
         let parsedBridgePath = [];
         let value;
+
+        Utils.logDebug("Refreshing menu.");
 
         for (let bridgePath in this.refreshMenuObjects) {
 
@@ -2160,6 +2192,8 @@ var PhueMenu = GObject.registerClass({
      */
     entertainmentInit(bridgeid) {
 
+        Utils.logDebug(`Bridge ${bridgeid} is initializing entertainment.`);
+
         if (this._isStreaming[bridgeid] === undefined) {
             this._isStreaming[bridgeid] = {};
 
@@ -2196,6 +2230,8 @@ var PhueMenu = GObject.registerClass({
 
             let groupid = this._entertainment[bridgeid]["autostart"];
 
+            Utils.logDebug(`Entertainment init tries to autostart group ${groupid} on bridge ${bridgeid}`);
+
             if (this.bridesData[bridgeid]["groups"][groupid] === undefined) {
                 return;
             }
@@ -2209,6 +2245,7 @@ var PhueMenu = GObject.registerClass({
                 if (this.bridesData[bridgeid]["groups"][g]["type"] === "Entertainment" &&
                     this.bridesData[bridgeid]["groups"][g]["stream"]["active"]) {
 
+                    Utils.logDebug(`Entertainment init discovered already streaming group ${g} on bridge ${bridgeid}`);
                     return;
                 }
             }
@@ -2239,6 +2276,9 @@ var PhueMenu = GObject.registerClass({
      * @method disableStreams
      */
     disableStreams() {
+
+        Utils.logDebug(`Disabling all streams (using sync mode).`);
+
         this.hue.disableAsyncMode();
 
         for (let bridgeid in this.hue.instances) {
@@ -2275,6 +2315,8 @@ var PhueMenu = GObject.registerClass({
      */
     rebuildMenu() {
 
+        Utils.logDebug("Rebuilding menu.");
+
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
         let icon;
@@ -2292,6 +2334,8 @@ var PhueMenu = GObject.registerClass({
         for (let bridgeid in this.hue.instances) {
 
             if (!this.hue.instances[bridgeid].isConnected()){
+
+                Utils.logDebug(`Bridge ${bridgeid} is not connected.`);
                 continue;
             }
  
@@ -2443,6 +2487,8 @@ var PhueMenu = GObject.registerClass({
 
             this.oldNotifylight[i] = cmd;
         }
+
+        Utils.logDebug(`Notify lights backed up: ${JSON.stringify(this.oldNotifylight)}`);
     }
 
     /**
@@ -2454,6 +2500,8 @@ var PhueMenu = GObject.registerClass({
     startNotify(reqBirdgeid) {
 
         return new Promise(resolve => {
+
+            Utils.logDebug(`Starting notify lights: ${JSON.stringify(this._notifyLights)}`);
 
             for (let i in this._notifyLights) {
 
@@ -2509,6 +2557,8 @@ var PhueMenu = GObject.registerClass({
             return;
         }
 
+        Utils.logDebug(`Ending notify lights: ${JSON.stringify(this.oldNotifylight)}`);
+
         for (let i in this._notifyLights) {
 
             let bridgeid = i.split("::")[0];
@@ -2541,6 +2591,8 @@ var PhueMenu = GObject.registerClass({
 
         if (this._waitingNotification) {
 
+            Utils.logDebug("Checking notifications.");
+
             this.notifyBackupLight(birdgeid, dataLights);
             await this.startNotify(birdgeid);
 
@@ -2556,6 +2608,8 @@ var PhueMenu = GObject.registerClass({
      * @method runNotify
      */
     runNotify() {
+
+        Utils.logDebug("Notification happend in the system.");
 
         this._waitingNotification = true;
 

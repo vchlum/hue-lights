@@ -34,6 +34,10 @@
       <default>2</default>
       <summary>Connection timeout</summary>
     </key>
+    <key name="debug" type="b">
+      <default>false</default>
+      <summary>Enable debugging messages</summary>
+    </key>
     <key name="notify-lights" type="a{sa{si}}">
       <default>{}</default>
       <summary>Lights used for notifications</summary>

@@ -38,6 +38,9 @@ const Json = imports.gi.Json;
 const GLib = imports.gi.GLib;
 const ByteArray = imports.byteArray;
 const GObject = imports.gi.GObject;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const Utils = Me.imports.utils;
 
 /**
   * Check all bridges in the local network.
@@ -276,6 +279,8 @@ var PhueBridge =  GObject.registerClass({
                 if (data["error"]["type"] === 1) {
                     this._bridgeConnected = false;
                 }
+
+                Utils.logDebug(`Bridge error: ${JSON.stringify(this._bridgeError)}`);
             }
         }
 
@@ -286,6 +291,8 @@ var PhueBridge =  GObject.registerClass({
             });
 
             this._bridgeConnected = false;
+
+            Utils.logDebug(`Bridge error: ${JSON.stringify(this._bridgeError)}`);
         }
 
         return this._bridgeError;
@@ -302,6 +309,8 @@ var PhueBridge =  GObject.registerClass({
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
+
+        Utils.logDebug(`Bridge ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
 
         let msg = PhueMessage.new(method, url);
 
@@ -320,8 +329,16 @@ var PhueBridge =  GObject.registerClass({
             this._bridgeSession.queue_message(msg, (sess, mess) => {
                 if (mess.status_code === Soup.Status.OK) {
                     try {
-                        this._bridgeConnected = true;
-                        this._data = JSON.parse(mess.response_body.data);
+
+                        Utils.logDebug(`Bridge ${method} async-responded OK to url: ${url}`);
+
+                        try {
+                            this._bridgeConnected = true;
+                            this._data = JSON.parse(mess.response_body.data);
+                        } catch {
+                            Utils.logDebug(`Bridge ${method} async-respond, failed to parse JSON`);
+                            this._data = [];
+                        }
 
                         switch (mess.requestHueType) {
 
@@ -405,10 +422,14 @@ var PhueBridge =  GObject.registerClass({
 
         let statusCode = this._bridgeSession.send_message(msg);
         if (statusCode === Soup.Status.OK) {
+
+            Utils.logDebug(`Bridge ${method} sync-responded OK to url: ${url}`);
+
             try {
                 this._bridgeConnected = true;
                 this._data = JSON.parse(msg.response_body.data);
             } catch {
+                Utils.logDebug(`Bridge ${method} sync-respond, failed to parse JSON`);
                 return [];
             }
         }
@@ -477,11 +498,11 @@ var PhueBridge =  GObject.registerClass({
         res = this._bridgeGET(`${this._bridgeUrl}/config`, null, null);
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
+            Utils.logDebug(`Failed to get bridge config: ${JSON.stringify(this._bridgeError)}`);
             return this._bridgeError;
         }
 
-        log("hue bridge " + JSON.stringify(res));
+        Utils.logDebug(`Creating user, got bridge config: ${JSON.stringify(res)}`);
 
         /* test if clientkey (used for Entertainment)
          * can be generated */
@@ -499,7 +520,7 @@ var PhueBridge =  GObject.registerClass({
             hostname = ByteArray.toString(output[1]).trim();
         } catch(e) {
             hostname = "unknown-host";
-            log(e);
+            Utils.logDebug(`Failed to get hostanme: ${e}`);
         }
 
         /* device name can be up to 19 chars */
@@ -509,17 +530,20 @@ var PhueBridge =  GObject.registerClass({
 
         username = `gnome-hue-lights#${hostname}`;
 
+        Utils.logDebug(`New bridge username: ${username}`);
+
         let requestHueType = PhueRequestype.NEW_USER;
         let postData = {"devicetype": username}
 
         if (generateClientKey) {
             postData["generateclientkey"] = true;
+            Utils.logDebug(`Requesting client key`);
         }
 
         res = this._bridgePOST(this._bridgeUrl, requestHueType, postData);
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
+            Utils.logDebug(`Failed to create bridge user: ${JSON.stringify(this._bridgeError)}`);
             return this._bridgeError;
         }
 
@@ -588,6 +612,9 @@ var PhueBridge =  GObject.registerClass({
         if (data[0]["success"] !== undefined) {
             this._userName = data[0]["success"]["username"];
             this._bridgeConnected = true;
+
+            Utils.logDebug(`First bridge connecting succeeded`);
+
             return data;
         }
 
@@ -614,7 +641,7 @@ var PhueBridge =  GObject.registerClass({
 
         this._checkBridgeError(this._bridgeData);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
+            Utils.logDebug(`Failed to get bridge data: ${JSON.stringify(this._bridgeError)}`);
             return [];
         }
 
@@ -765,7 +792,6 @@ var PhueBridge =  GObject.registerClass({
 
                 this._checkBridgeError(res);
                 if (this.checkError()) {
-                    log(JSON.stringify(this._bridgeError));
                     return this._bridgeError;
                 }
 
@@ -787,7 +813,6 @@ var PhueBridge =  GObject.registerClass({
 
                     this._checkBridgeError(res);
                     if (this.checkError()) {
-                        log(JSON.stringify(this._bridgeError));
                         return this._bridgeError;
                     }
 
@@ -819,7 +844,6 @@ var PhueBridge =  GObject.registerClass({
 
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
             return this._bridgeError;
         }
 
@@ -836,7 +860,6 @@ var PhueBridge =  GObject.registerClass({
 
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
             return this._bridgeError;
         }
 
@@ -853,7 +876,6 @@ var PhueBridge =  GObject.registerClass({
 
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
             return this._bridgeError;
         }
 
@@ -878,7 +900,6 @@ var PhueBridge =  GObject.registerClass({
 
         this._checkBridgeError(res);
         if (this.checkError()) {
-            log(JSON.stringify(this._bridgeError));
             return this._bridgeError;
         }
 
