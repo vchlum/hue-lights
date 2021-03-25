@@ -149,7 +149,9 @@ var PhueMenu = GObject.registerClass({
                     });
 
                     this.rebuildMenuStart();
-                    this._setScreenChangeDetection();
+                    this._setScreenChangeDetection(
+                        this.rebuildMenuStart.bind(this)
+                    );
                 }
             );
         } else {
@@ -159,28 +161,10 @@ var PhueMenu = GObject.registerClass({
             });
 
             this.rebuildMenuStart();
-            this._setScreenChangeDetection();
+            this._setScreenChangeDetection(
+                this.rebuildMenuStart.bind(this)
+            );
         }
-    }
-
-    /**
-     * Connects signals with change of displays
-     * to rebuild menu and detect new displays.
-     * 
-     * @method _setScreenChangeDetection
-     * @private
-     */
-    _setScreenChangeDetection() {
-
-        let signal;
-
-        signal = Main.layoutManager.connect(
-            "monitors-changed",
-            () => {
-                this.rebuildMenuStart();
-            }
-        );
-        this._appendSignal(signal, Main.layoutManager, false);
     }
 
     /**
@@ -1344,9 +1328,10 @@ var PhueMenu = GObject.registerClass({
     _createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, tmpTier = 0) {
 
         let bridgePath = "";
+        let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         let slider = new Slider.Slider(0);
-        slider.set_width(180);
+        slider.set_width(180 * themeContext.scaleFactor);
         slider.set_height(25);
         slider.set_x_align(Clutter.ActorAlign.START);
         slider.set_x_expand(false);
@@ -3123,6 +3108,7 @@ var PhueMenu = GObject.registerClass({
     _createEntertainmentSliderItem(bridgeid, name, defaultValue) {
         let entertainmentSliderItem;
         let bridgePath = `${this._rndID()}`;
+        let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         entertainmentSliderItem = new PopupMenu.PopupMenuItem(
             name
@@ -3133,7 +3119,7 @@ var PhueMenu = GObject.registerClass({
 
         let slider = new Slider.Slider(0);
 
-        slider.set_width(200);
+        slider.set_width(200 * themeContext.scaleFactor);
         slider.set_x_align(Clutter.ActorAlign.END);
         slider.set_x_expand(false);
         slider.value = defaultValue;

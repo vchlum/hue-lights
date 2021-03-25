@@ -107,6 +107,26 @@ var PhuePanelMenu = GObject.registerClass({
         this.add_child(icon);
     }
 
+    /**
+     * Connects signals with change of displays
+     * to rebuild menu and detect new displays or change display scale.
+     * 
+     * @method _setScreenChangeDetection
+     * @private
+     */
+     _setScreenChangeDetection(screenChangeFunction = this.rebuildMenuStart) {
+
+        let signal;
+
+        signal = Main.layoutManager.connect(
+            "monitors-changed",
+            () => {
+                screenChangeFunction();
+            }
+        );
+        this._appendSignal(signal, Main.layoutManager, false);
+    }
+
     set iconFile(value) {
         this._iconFile = value;
     }
@@ -202,6 +222,7 @@ var PhuePanelMenu = GObject.registerClass({
     _getGnomeIcon(iconName) {
 
         let icon = null;
+        let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         try {
 
@@ -212,7 +233,7 @@ var PhuePanelMenu = GObject.registerClass({
                 y_align: Clutter.ActorAlign.CENTER
             });
 
-            icon.set_size(IconSize * 0.8, IconSize * 0.8);
+            icon.set_size(IconSize * themeContext.scaleFactor * 0.8, IconSize * themeContext.scaleFactor * 0.8);
 
             let iconEffect = this._getIconColorEffect(this._iconPack);
             icon.add_effect(iconEffect);
@@ -238,6 +259,7 @@ var PhuePanelMenu = GObject.registerClass({
     _getIconByPath(iconPath) {
 
         let icon = null;
+        let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         try {
 
@@ -248,7 +270,7 @@ var PhuePanelMenu = GObject.registerClass({
                 y_align: Clutter.ActorAlign.CENTER
             });
 
-            icon.set_size(IconSize, IconSize);
+            icon.set_size(IconSize * themeContext.scaleFactor, IconSize * themeContext.scaleFactor);
 
             let iconEffect = this._getIconBriConEffect(this._iconPack);
             icon.add_effect(iconEffect);

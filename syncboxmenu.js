@@ -130,6 +130,9 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     });
 
                     this.rebuildMenuStart();
+                    this._setScreenChangeDetection(
+                        this.rebuildMenuStart.bind(this)
+                    );
                 }
             );
         } else {
@@ -139,6 +142,9 @@ var PhueSyncBoxMenu = GObject.registerClass({
             });
 
             this.rebuildMenuStart();
+            this._setScreenChangeDetection(
+                this.rebuildMenuStart.bind(this)
+            );
         }
     }
 
@@ -591,6 +597,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon = null;
         let syncBoxPath = `${this._rndID()}`;
+        let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         let item = new PopupMenu.PopupMenuItem(
             _("Brightness") + ":"
@@ -608,7 +615,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let slider = new Slider.Slider(0);
 
-        slider.set_width(200);
+        slider.set_width(200 * themeContext.scaleFactor);
         slider.set_x_align(Clutter.ActorAlign.END);
         slider.set_x_expand(false);
         slider.value = data["execution"]["brightness"];
