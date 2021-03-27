@@ -941,7 +941,7 @@ var DTLSClient =  GObject.registerClass({
                 break;
 
             default:
-                Utils.logDebug("Nnknown message type: " + packet["cType"]);
+                Utils.logDebug("Unknown message type: " + packet["cType"]);
                 break;
         }
         return;

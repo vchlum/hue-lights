@@ -110,6 +110,8 @@ var entertainmentModeText = {
     2: _("Random")
 };
 
+var debug = false;
+
 /**
  * Check gnome version
  *
@@ -124,8 +126,12 @@ var entertainmentModeText = {
     return false;
 }
 
-var debug = false;
-
+/**
+ * Logs debug message
+ *
+ * @method logDebug
+ * @param {String} meassage to print
+ */
 function logDebug(msg) {
     if (debug) {
         log(`Hue Lights (debug): ${msg}`)

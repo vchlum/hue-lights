@@ -780,6 +780,16 @@ var Prefs = class HuePrefs {
             }
 
             /**
+             * Bridge name
+             */
+             labelWidget = new Gtk.Label({
+                label: this._hue.bridges[bridgeid]["name"]
+            });
+            entertainmentWidget.attach(labelWidget, 1, top, 2, 1);
+
+            top++;
+
+            /**
              * autostart entertainment area
              */
             labelWidget = new Gtk.Label({
