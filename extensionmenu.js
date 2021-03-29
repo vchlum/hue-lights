@@ -2444,6 +2444,7 @@ var PhueMenu = GObject.registerClass({
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
         let icon;
+        let instanceCounter = 0;
 
         this.refreshMenuObjects = {};
 
@@ -2462,6 +2463,8 @@ var PhueMenu = GObject.registerClass({
                 Utils.logDebug(`Bridge ${bridgeid} is not connected.`);
                 continue;
             }
+
+            instanceCounter++;
  
             this.hue.instances[bridgeid].disconnectAll;
 
@@ -2499,28 +2502,44 @@ var PhueMenu = GObject.registerClass({
             'button-press-event',
             () => { this.rebuildMenu(); }
         );
-        this.menu.addMenuItem(refreshMenuItem);
 
-        /**
-         * Settings menu item
-         */
-        let prefsMenuItem = new PopupMenu.PopupMenuItem(
-            _("Settings")
-        );
-
-        if (this._iconPack !== PhueIconPack.NONE) {
-            icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/tabbarSettings.svg");
-
-            if (icon !== null) {
-                prefsMenuItem.insert_child_at_index(icon, 1);
-            }
+        if (instanceCounter > 0) {
+            let settingsButton = new St.Button({reactive: true, can_focus: true});
+            settingsButton.set_x_align(Clutter.ActorAlign.END);
+            settingsButton.set_x_expand(true);
+            settingsButton.child = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/tabbarSettings.svg");
+            settingsButton.connect(
+                'button-press-event',
+                () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
+            );
+            refreshMenuItem.add_child(settingsButton);
         }
 
-        prefsMenuItem.connect(
-            'button-press-event',
-            () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
-        );
-        this.menu.addMenuItem(prefsMenuItem);
+        this.menu.addMenuItem(refreshMenuItem);
+
+        if (instanceCounter === 0) {
+            /**
+             * Settings menu item
+             */
+
+            let prefsMenuItem = new PopupMenu.PopupMenuItem(
+                _("Settings")
+            );
+
+            if (this._iconPack !== PhueIconPack.NONE) {
+                icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/tabbarSettings.svg");
+
+                if (icon !== null) {
+                    prefsMenuItem.insert_child_at_index(icon, 1);
+                }
+            }
+
+            prefsMenuItem.connect(
+                'button-press-event',
+                () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
+            );
+            this.menu.addMenuItem(prefsMenuItem);
+        }
 
         this.refreshMenu();
     }
