@@ -127,7 +127,7 @@ var PhueMenu = GObject.registerClass({
             style_class : 'system-status-icon',
         });
 
-        let iconEffect = this._getIconEffect(PhueIconPack.BRIGHT);
+        let iconEffect = this._getIconBriConEffect(PhueIconPack.BRIGHT);
         icon.add_effect(iconEffect);
 
         this.add_child(icon);
@@ -147,11 +147,50 @@ var PhueMenu = GObject.registerClass({
     /**
      * Returns effect that can be applied on icon
      * 
-     * @method _getIconEffect
+     * @method _getIconColorEffect
      * @param {Enum} requested icon effect
      * @return {Object} effect
      */
-    _getIconEffect(reqEffect) {
+    _getIconColorEffect(reqEffect) {
+
+        let color;
+        switch (reqEffect) {
+
+            case PhueIconPack.BRIGHT:
+
+                color = new Clutter.Color({
+                    red: 237,
+                    green: 237,
+                    blue: 237,
+                    alpha: 255
+                });
+                break;
+
+            case PhueIconPack.DARK:
+
+                color = new Clutter.Color({
+                    red: 40,
+                    green: 40,
+                    blue: 40,
+                    alpha: 255
+                });
+                break;
+
+            default:
+        }
+
+        let effect = new Clutter.ColorizeEffect({tint: color});
+        return effect;
+    }
+
+    /**
+     * Returns effect that can be applied on icon
+     * 
+     * @method _getIconBriConEffect
+     * @param {Enum} requested icon effect
+     * @return {Object} effect
+     */
+    _getIconBriConEffect(reqEffect) {
 
         let bri = 0.0;
         let cont = 0.0;
@@ -1284,6 +1323,42 @@ var PhueMenu = GObject.registerClass({
         return switchButton;
     }
 
+
+    /**
+     * Get gnome icon by name.
+     * 
+     * @method _getGnomeIcon
+     * @param {String} path to icon
+     * @return {Object} icon or null if not found
+     */
+    _getGnomeIcon(iconName) {
+
+        let icon = null;
+
+        try {
+
+            icon = new St.Icon({
+                gicon : Gio.ThemedIcon.new(iconName),
+                style_class : 'system-status-icon',
+                y_expand: false,
+                y_align: Clutter.ActorAlign.CENTER
+            });
+
+            icon.set_size(IconSize * 0.8, IconSize * 0.8);
+
+            let iconEffect = this._getIconColorEffect(this._iconPack);
+            icon.add_effect(iconEffect);
+
+            iconEffect = this._getIconBriConEffect(this._iconPack);
+            icon.add_effect(iconEffect);
+
+        } catch(err) {
+            return null;
+        }
+
+        return icon;
+    }
+
     /**
      * Read icon from FS and return icon.
      * 
@@ -1304,11 +1379,10 @@ var PhueMenu = GObject.registerClass({
 
             icon.set_size(IconSize, IconSize);
 
-            let iconEffect = this._getIconEffect(this._iconPack);
+            let iconEffect = this._getIconBriConEffect(this._iconPack);
             icon.add_effect(iconEffect);
 
-        }
-        catch(err) {
+        } catch(err) {
             return null;
         }
 
@@ -2414,9 +2488,11 @@ var PhueMenu = GObject.registerClass({
         );
 
         if (this._iconPack !== PhueIconPack.NONE) {
-            icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/settingsSoftwareUpdate.svg");
+            icon = this._getGnomeIcon("emblem-synchronizing-symbolic");
 
-            refreshMenuItem.insert_child_at_index(icon, 1);
+            if (icon !== null){
+                refreshMenuItem.insert_child_at_index(icon, 1);
+            }
         }
 
         refreshMenuItem.connect(
@@ -2435,7 +2511,9 @@ var PhueMenu = GObject.registerClass({
         if (this._iconPack !== PhueIconPack.NONE) {
             icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/tabbarSettings.svg");
 
-            prefsMenuItem.insert_child_at_index(icon, 1);
+            if (icon !== null) {
+                prefsMenuItem.insert_child_at_index(icon, 1);
+            }
         }
 
         prefsMenuItem.connect(
