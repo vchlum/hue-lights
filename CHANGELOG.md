@@ -1,3 +1,6 @@
+## Version 11
+ * fix Gnome 40 tag
+ * minor settings icons change
 ## Version 10
  * Gnome 40 support
  * autostart entertainment area support
