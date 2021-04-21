@@ -7,7 +7,7 @@
     "shell-version": [
       "3.36",
       "3.38",
-      "40.0"
+      "40"
     ],
     "gettext-domain": "hue-lights",
     "url": "https://github.com/vchlum/hue-lights"
