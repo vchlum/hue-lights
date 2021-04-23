@@ -1987,8 +1987,6 @@ var PhueMenu = GObject.registerClass({
                     this._isStreaming[bridgeid]["brightness"]
                 );
 
-                this._isStreaming[bridgeid]["entertainment"].connectBridge();
-
                 this._isStreaming[bridgeid]["entertainment"].connect("connected", () => {
                     this._startEntertainmentStream(bridgeid, groupid);
                     this._isStreaming[bridgeid]["state"] = StreamState.RUNNING;
@@ -2006,6 +2004,8 @@ var PhueMenu = GObject.registerClass({
                     }
 
                 });
+
+                this._isStreaming[bridgeid]["entertainment"].connectBridge();
 
                 break;
 
