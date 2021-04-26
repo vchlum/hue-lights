@@ -1,3 +1,8 @@
+## Version 12
+ * new UI and UX; standard and compact menu
+ * multiple bridges - proper support
+ * synchronization errors fixes
+ * signals fixes
 ## Version 11
  * fix Gnome 40 tag
  * minor settings icons change
