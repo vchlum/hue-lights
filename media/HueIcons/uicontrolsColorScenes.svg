@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32px" height="32px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 51.3 (57544) - http://www.bohemiancoding.com/sketch -->
+    <title>uicontrolsColorScenes</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g fill="#101010">
+            <path d="M24,18 C24,18.553 23.553,19 23,19 L9,19 C8.447,19 8,18.553 8,18 L8,15 L24,15 L24,18 Z M24,11 L24,5 C24,3.896 23.104,3 22,3 L17,3 L17,6 C17,6.553 16.553,7 16,7 C15.447,7 15,6.553 15,6 L15,3 L13,3 L13,8 C13,8.553 12.553,9 12,9 C11.447,9 11,8.553 11,8 L11,3 L10,3 C8.896,3 8,3.896 8,5 L8,11 C6.896,11 6,11.896 6,13 L6,19 C6,20.104 6.896,21 8,21 L13,21 L13,26 C13,27.657 14.343,29 16,29 C17.657,29 19,27.657 19,26 L19,21 L24,21 C25.104,21 26,20.104 26,19 L26,13 C26,11.896 25.104,11 24,11 Z"></path>
+        </g>
+    </g>
+</svg>

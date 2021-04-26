@@ -99,6 +99,8 @@ var Prefs = class HuePrefs {
         this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
+        this._compactMenu = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_COMPACTMENU);
+        this._compactMenuRemember = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_COMPACTMENU_REMEMBER_OPENED);
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
         Utils.debug = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_DEBUG);
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
@@ -339,6 +341,37 @@ var Prefs = class HuePrefs {
                 1
             );
 
+            if (this._hue.bridges[bridge]["default"] !== undefined &&
+                this._hue.bridges[bridge]["default"] === bridge) {
+
+                let unDefaultWidget = new Gtk.Button({label: _("Unprefer")});
+                unDefaultWidget.connect(
+                    "clicked",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {"event": "unset-default-bridge", "bridgeid": bridge}
+                    )
+                );
+                tmpWidged = unDefaultWidget;
+            } else {
+                let defaultWidget = new Gtk.Button({label: _("Prefer")});
+                defaultWidget.connect(
+                    "clicked",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {"event": "set-default-bridge", "bridgeid": bridge}
+                    )
+                );
+                tmpWidged = defaultWidget;
+            }
+            bridgesWidget.attach_next_to(
+                tmpWidged,
+                removeWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
             top++;
         }
 
@@ -352,7 +385,7 @@ var Prefs = class HuePrefs {
                 {"event": "add-ip", "object": ipWidget}
             )
         );
-        bridgesWidget.attach(addWidget, 1, top, 4, 1);
+        bridgesWidget.attach(addWidget, 1, top, 5, 1);
 
         top++;
 
@@ -366,7 +399,7 @@ var Prefs = class HuePrefs {
                 {"event": "discovery-bridges"}
             )
         );
-        bridgesWidget.attach(discoveryWidget, 1, top, 4, 1);
+        bridgesWidget.attach(discoveryWidget, 1, top, 5, 1);
 
         top++;
 
@@ -492,7 +525,7 @@ var Prefs = class HuePrefs {
          * Show zones in group menu
          */
         labelWidget = new Gtk.Label(
-            {label: _("Show scenes in group menu:")}
+            {label: _("Show scenes:")}
         );
         generalWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -529,6 +562,92 @@ var Prefs = class HuePrefs {
         top++;
 
         /**
+         * compact menu
+         */
+
+        labelWidget = new Gtk.Label(
+            {label: _("Compact menu settings")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 2, 1);
+
+        top++;
+
+        /**
+         * Use compact menu
+         */
+         labelWidget = new Gtk.Label(
+            {label: _("Use by default:")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let compactMenuWidget = new Gtk.Switch(
+            {
+                active: this._compactMenu,
+                hexpand: false,
+                vexpand: false,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+        compactMenuWidget.connect(
+            "notify::active",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "compact-menu", "object": compactMenuWidget}
+            )
+        )
+        generalWidget.attach_next_to(
+            compactMenuWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        /**
+         * Remember submenu
+         */
+        labelWidget = new Gtk.Label(
+            {label: _("Remember opened submenu:")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let compactMenuRememberWidget = new Gtk.Switch(
+            {
+                active: this._compactMenuRemember,
+                hexpand: false,
+                vexpand: false,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+        compactMenuRememberWidget.connect(
+            "notify::active",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "compact-menu-remember", "object": compactMenuRememberWidget}
+            )
+        )
+        generalWidget.attach_next_to(
+            compactMenuRememberWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        if (Utils.isGnome40()) {
+            generalWidget.attach(new Gtk.Separator(Gtk.HORIZONTAL), 1, top, 2, 1);
+        } else {
+            generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
+        }
+        top++;
+
+        /**
          * Blink light notification
          */
         let notifyLightId = undefined;
@@ -543,14 +662,19 @@ var Prefs = class HuePrefs {
 
         let lightNotifyMenu;
         let notifyLightsListBox; /* used for Gnome 40*/
+        let notifyScrolledWindow; /* used for Gnome 40*/
         if (Utils.isGnome40()) {
             lightNotifyMenu = new Gtk.Popover();
             lightNotifyMenuBUtton.set_popover(lightNotifyMenu);
+            notifyScrolledWindow = new Gtk.ScrolledWindow();
+            notifyScrolledWindow.min_content_width = 300;
+            notifyScrolledWindow.min_content_height = 200;
             notifyLightsListBox = new Gtk.Box(
                 {
                     orientation: Gtk.Orientation.VERTICAL
                 }
             );
+            notifyScrolledWindow.set_child(notifyLightsListBox);
         } else {
             lightNotifyMenu = new Gtk.Menu();
             lightNotifyMenuBUtton.set_popup(lightNotifyMenu);
@@ -643,7 +767,7 @@ var Prefs = class HuePrefs {
         }
 
         if (Utils.isGnome40()) {
-            lightNotifyMenu.set_child(notifyLightsListBox);
+            lightNotifyMenu.set_child(notifyScrolledWindow);
         } else {
             lightNotifyMenu.show_all();
         }
@@ -667,7 +791,7 @@ var Prefs = class HuePrefs {
         /**
          * Brightness for notification light
          */
-        let briVal = 254;
+        let briVal = 255;
         if (notifyLightId !== undefined &&
             this._notifyLights[notifyLightId] !== undefined &&
             this._notifyLights[notifyLightId]["bri"] !== undefined) {
@@ -678,7 +802,7 @@ var Prefs = class HuePrefs {
         let adj = new Gtk.Adjustment({
             value : 1.0,
             lower: 0,
-            upper: 254,
+            upper: 255,
             step_increment : 1,
             page_increment : 20,
             page_size : 0
@@ -793,7 +917,7 @@ var Prefs = class HuePrefs {
              * autostart entertainment area
              */
             labelWidget = new Gtk.Label({
-                label: _("Autostart entertainment area:")
+                label: _("Autostart on Gnome login:")
             });
             entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -902,7 +1026,7 @@ var Prefs = class HuePrefs {
             adj = new Gtk.Adjustment({
                 value : 1.0,
                 lower: 0,
-                upper: 254,
+                upper: 255,
                 step_increment : 1,
                 page_increment : 20,
                 page_size : 0
@@ -915,7 +1039,7 @@ var Prefs = class HuePrefs {
             intensityEntertainmentWidget.value = 150
             if (this._entertainment[bridgeid] !== undefined) {
                 if (this._entertainment[bridgeid]["intensity"] !== undefined) {
-                    intensityEntertainmentWidget.value = 254 - this._entertainment[bridgeid]["intensity"] + 40;
+                    intensityEntertainmentWidget.value = 255 - this._entertainment[bridgeid]["intensity"] + 40;
                 }
 
             }
@@ -951,7 +1075,7 @@ var Prefs = class HuePrefs {
             adj = new Gtk.Adjustment({
                 value : 1.0,
                 lower: 0,
-                upper: 254,
+                upper: 255,
                 step_increment : 1,
                 page_increment : 20,
                 page_size : 0
@@ -961,7 +1085,7 @@ var Prefs = class HuePrefs {
                 adjustment : adj
             });
 
-            brightnessEntertainmentWidget.value = 254;
+            brightnessEntertainmentWidget.value = 255;
             if (this._entertainment[bridgeid] !== undefined) {
                 if (this._entertainment[bridgeid]["bri"] !== undefined) {
                     brightnessEntertainmentWidget.value = this._entertainment[bridgeid]["bri"];
@@ -1191,6 +1315,14 @@ var Prefs = class HuePrefs {
         }
     }
 
+    unsetDefaultBridge() {
+        for (let bridge in this._hue.bridges) {
+            if (this._hue.bridges[bridge]["default"] !== undefined) {
+                delete(this._hue.bridges[bridge]["default"]);
+            }
+        }
+    }
+
     /**
      * Handles events from widget in prefs.
      *
@@ -1228,10 +1360,32 @@ var Prefs = class HuePrefs {
                 bridgeid = data["bridgeid"];
                 Utils.logDebug(`Removing bridge: ${bridgeid}`);
 
-                delete this._hue.bridges[bridgeid];
+                delete(this._hue.bridges[bridgeid]);
                 if (this._hue.instances[bridgeid] !== undefined) {
-                    delete this._hue.instances[bridgeid];
+                    delete(this._hue.instances[bridgeid]);
                 }
+
+                this._refreshPrefs = true;
+                this.writeSettings();
+                break;
+
+            case "set-default-bridge":
+
+                bridgeid = data["bridgeid"];
+                Utils.logDebug(`New default bridge is: ${bridgeid}`);
+
+                this.unsetDefaultBridge();
+                this._hue.bridges[bridgeid]["default"] = bridgeid;
+
+                this._refreshPrefs = true;
+                this.writeSettings();
+                break;
+
+            case "unset-default-bridge":
+
+                Utils.logDebug(`Default bridge unset.`);
+
+                this.unsetDefaultBridge();
 
                 this._refreshPrefs = true;
                 this.writeSettings();
@@ -1311,6 +1465,24 @@ var Prefs = class HuePrefs {
                 );
                 break;
 
+            case "compact-menu":
+
+                this._compactMenu = data["object"].get_active();
+                this._settings.set_boolean(
+                    Utils.HUELIGHTS_SETTINGS_COMPACTMENU,
+                    this._compactMenu
+                );
+                break;
+
+            case "compact-menu-remember":
+
+                this._compactMenuRemember = data["object"].get_active();
+                this._settings.set_boolean(
+                    Utils.HUELIGHTS_SETTINGS_COMPACTMENU_REMEMBER_OPENED,
+                    this._compactMenuRemember
+                );
+                break;
+
             case "zones-first":
 
                 this._zonesFirst = data["object"].get_active();
@@ -1371,7 +1543,7 @@ var Prefs = class HuePrefs {
 
                 } else {
                     if (this._notifyLights[lightId] !== undefined) {
-                        delete this._notifyLights[lightId];
+                        delete(this._notifyLights[lightId]);
                     }
                 }
 
@@ -1435,7 +1607,7 @@ var Prefs = class HuePrefs {
                 }
 
                 value = Math.round(data["object"].value);
-                this._entertainment[data["bridgeid"]]["intensity"] = 254 - value + 40;
+                this._entertainment[data["bridgeid"]]["intensity"] = 255 - value + 40;
                 this.writeEntertainmentSettings();
                 break;
 

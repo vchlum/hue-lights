@@ -98,6 +98,12 @@ class _Phue {
 
         Utils.logDebug(`Checking bridge: ${bridgeid}`);
 
+        if (this.bridges[bridgeid] !== undefined &&
+            this.bridges[bridgeid]["ip"] !== undefined) {
+            /* update IP in case it has been changed */
+            this.instances[bridgeid].ip = this.bridges[bridgeid]["ip"];
+        }
+
         let res = this.instances[bridgeid].getConfig();
 
         if (this.instances[bridgeid].checkError()) {
@@ -203,7 +209,7 @@ class _Phue {
             }
 
             if (!known) {
-                delete this.instances[bridgeidInstance];
+                delete(this.instances[bridgeidInstance]);
             }
         }
 

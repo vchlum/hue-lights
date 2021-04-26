@@ -150,7 +150,7 @@ var PhueEntertainment =  GObject.registerClass({
      * Sets the brightness of entertainment effects
      * 
      * @method setBrightness
-     * @param {Number} 0-254
+     * @param {Number} 0-255
      */
     setBrightness(brightness) {
         this.brightness = brightness;
@@ -194,9 +194,9 @@ var PhueEntertainment =  GObject.registerClass({
 
                 lightsArray = lightsArray.concat(this.lights[i]);
 
-                let r = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
-                let g = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
-                let b = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
+                let r = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
+                let g = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
+                let b = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
 
                 lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
                 lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
@@ -210,9 +210,9 @@ var PhueEntertainment =  GObject.registerClass({
                 for (let i = 0; i < 7; i++) {
                     lightsArray = lightsArray.concat([0x01, 0x00, i]);
 
-                    let r = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
-                    let g = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
-                    let b = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/254));
+                    let r = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
+                    let g = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
+                    let b = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
 
                     lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
                     lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
@@ -273,9 +273,9 @@ var PhueEntertainment =  GObject.registerClass({
         let green = this.adjustColorElement(color.green);
         let blue = this.adjustColorElement(color.blue);
 
-        let r = Math.round(red * (this.brightness/254));
-        let g = Math.round(green * (this.brightness/254));
-        let b = Math.round(blue * (this.brightness/254));
+        let r = Math.round(red * (this.brightness/255));
+        let g = Math.round(green * (this.brightness/255));
+        let b = Math.round(blue * (this.brightness/255));
 
         for (let i = 0; i < this.lights.length; i++) {
 
@@ -322,7 +322,7 @@ var PhueEntertainment =  GObject.registerClass({
         }
 
         if (c >= 249) {
-            return 254;
+            return 255;
         }
 
         return c;
@@ -416,9 +416,9 @@ var PhueEntertainment =  GObject.registerClass({
             green = this.adjustColorElement(green);
             blue = this.adjustColorElement(blue);
 
-            r = Math.round(red * (this.brightness/254));
-            g = Math.round(green * (this.brightness/254));
-            b = Math.round(blue * (this.brightness/254));
+            r = Math.round(red * (this.brightness/255));
+            g = Math.round(green * (this.brightness/255));
+            b = Math.round(blue * (this.brightness/255));
 
             lightsArray = lightsArray.concat(this.lights[i]);
 
@@ -454,9 +454,9 @@ var PhueEntertainment =  GObject.registerClass({
                 green = this.adjustColorElement(green);
                 blue = this.adjustColorElement(blue);
 
-                r = Math.round(red * (this.brightness/254));
-                g = Math.round(green * (this.brightness/254));
-                b = Math.round(blue * (this.brightness/254));
+                r = Math.round(red * (this.brightness/255));
+                g = Math.round(green * (this.brightness/255));
+                b = Math.round(blue * (this.brightness/255));
 
                 lightsArray = lightsArray.concat([0x01, 0x00, i]);
 

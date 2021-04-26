@@ -83,13 +83,14 @@ var PhueRequestype = {
     ALL_DATA: 2,
     LIGHTS_DATA: 3,
     GROUPS_DATA: 4,
-    CONFIG_DATA: 5,
-    SCHEDULES_DATA: 6,
-    SCENES_DATA: 7,
-    RULES_DATA: 8,
-    SENSORS_DATA: 9,
-    RESOURCE_LINKS_DATA: 10,
-    NEW_USER: 11
+    GROUPZERO_DATA: 5,
+    CONFIG_DATA: 6,
+    SCHEDULES_DATA: 7,
+    SCENES_DATA: 8,
+    RULES_DATA: 9,
+    SENSORS_DATA: 10,
+    RESOURCE_LINKS_DATA: 11,
+    NEW_USER: 12
 };
 
 
@@ -124,6 +125,7 @@ var PhueBridge =  GObject.registerClass({
         "all-data": {},
         "lights-data": {},
         "groups-data": {},
+        "group-zero-data": {},
         "config-data": {},
         "schedules-data": {},
         "scenes-data": {},
@@ -143,6 +145,7 @@ var PhueBridge =  GObject.registerClass({
         this._bridgeData = [];
         this._lightsData = [];
         this._groupsData = [];
+        this._groupZeroData = [];
         this._configData = [];
         this._schedulesData = [];
         this._scenesData = [];
@@ -349,6 +352,9 @@ var PhueBridge =  GObject.registerClass({
 
                             case PhueRequestype.ALL_DATA:
                                 this._bridgeData = this._data;
+                                if (this._groupZeroData) {
+                                    this._bridgeData["groups"][0] = this._groupZeroData;
+                                }
                                 this.emit("all-data");
                                 break;
 
@@ -360,6 +366,11 @@ var PhueBridge =  GObject.registerClass({
                             case PhueRequestype.GROUPS_DATA:
                                 this._groupsData = this._data;
                                 this.emit("groups-data");
+                                break;
+
+                            case PhueRequestype.GROUPZERO_DATA:
+                                this._groupZeroData = this._data;
+                                this.emit("group-zero-data");
                                 break;
 
                             case PhueRequestype.CONFIG_DATA:
@@ -656,10 +667,21 @@ var PhueBridge =  GObject.registerClass({
      */
     getAll(requestHueType = PhueRequestype.ALL_DATA) {
 
+        /* group zero is not listed with other data */
+        this.getGroupZero();
+
+        if (this.checkError()) {
+            return [];
+        }
+
         this._getData("", requestHueType);
 
         if (this.checkError()) {
             return [];
+        }
+
+        if (this._groupZeroData && this._bridgeData["groups"] !== undefined) {
+            this._bridgeData["groups"][0] = this._groupZeroData;
         }
 
         this._lightsData = this._bridgeData["lights"];
@@ -696,6 +718,18 @@ var PhueBridge =  GObject.registerClass({
 
         this._groupsData = this._getData("groups", requestHueType);
         return this._groupsData;
+    }
+
+    /**
+     * Check bridge and get data for group zero.
+     * 
+     * @method getGroups
+     * @return {Object} JSON data
+     */
+    getGroupZero(requestHueType = PhueRequestype.GROUPZERO_DATA) {
+
+        this._groupZeroData = this._getData("groups/0", requestHueType);
+        return this._groupZeroData;
     }
 
     /**
