@@ -133,6 +133,7 @@ var ColorPickerBox =  GObject.registerClass({
 
         super._init();
 
+        this._signals = {};
         this.slider = null;
         this.colorTemperature = 0;
         this.r = 0;
@@ -164,12 +165,14 @@ var ColorPickerBox =  GObject.registerClass({
      */
      createColorBox() {
 
+        let signal;
+
         let mainbox = new St.BoxLayout({vertical: true});
         this._centerObject(mainbox);
 
         if (this._useColorWheel) {
             let colorWheel =  new ColorSelectorButton(Me.dir.get_path() + '/media/color-wheel.svg');
-            colorWheel.connect(
+            signal = colorWheel.connect(
                 "button-press-event",
                 async () => {
                     let color = await colorWheel.getColor();
@@ -180,6 +183,7 @@ var ColorPickerBox =  GObject.registerClass({
                     this.emit("color-picked");
                 }
             );
+            this._signals[signal] = { "object": colorWheel };
             this._centerObject(colorWheel);
             mainbox.add(colorWheel);
 
@@ -196,7 +200,7 @@ var ColorPickerBox =  GObject.registerClass({
                     buttonHeight: 32
                 }
             );
-            whiteBox.connect(
+            signal = whiteBox.connect(
                 "button-press-event",
                 async () => {
 
@@ -213,6 +217,7 @@ var ColorPickerBox =  GObject.registerClass({
                     this.emit("color-picked");
                 }
             );
+            this._signals[signal] = { "object": whiteBox };
             this._centerObject(whiteBox);
             mainbox.add(whiteBox);
         }
@@ -224,7 +229,8 @@ var ColorPickerBox =  GObject.registerClass({
              * Brightness slider
              */
             this.slider = new Slider.Slider(0);
-            this.slider.connect("drag-end", this._brightnessEvent.bind(this));
+            signal = this.slider.connect("drag-end", this._brightnessEvent.bind(this));
+            this._signals[signal] = { "object": this.slider };
             mainbox.add(this.slider);
         }
 
@@ -281,6 +287,23 @@ var ColorPickerBox =  GObject.registerClass({
 
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }
+
+    /**
+     * Disconect signals
+     * 
+     * @method disconnectSignals
+     * @param {Boolean} disconnect all
+     */
+     disconnectSignals() {
+        for (let id in this._signals) {
+            try {
+                this._signals[id]["object"].disconnect(id);
+                delete(this._signals[id]);
+            } catch {
+                continue;
+            }
+        }
+    }
 })
 
 /**
@@ -315,6 +338,9 @@ var ColorPicker =  GObject.registerClass({
 
         super._init();
 
+        this._signals = {};
+        let signal;
+
         this._dialogLayout = typeof this.dialogLayout === "undefined"
             ? this._dialogLayout
             : this.dialogLayout;
@@ -336,7 +362,7 @@ var ColorPicker =  GObject.registerClass({
             showBrightness: true
         });
 
-        this.colorPickerBox.connect(
+        signal = this.colorPickerBox.connect(
             "color-picked",
             () => {
                 this.colorTemperature = this.colorPickerBox.colorTemperature;
@@ -347,8 +373,9 @@ var ColorPicker =  GObject.registerClass({
                 this.emit("color-picked");
             }
         );
+        this._signals[signal] = { "object": this.colorPickerBox };
 
-        this.colorPickerBox.connect(
+        signal = this.colorPickerBox.connect(
             "brightness-picked",
             () => {
                 this.brightness = this.colorPickerBox.slider;
@@ -356,6 +383,7 @@ var ColorPicker =  GObject.registerClass({
                 this.emit("brightness-picked");
             }
         );
+        this._signals[signal] = { "object": this.colorPickerBox };
 
         this.contentLayout.add(this.colorPickerBox.createColorBox());
     }
@@ -394,8 +422,26 @@ var ColorPicker =  GObject.registerClass({
      */
     _colorPickedFinish() {
 
+        this.colorPickerBox.disconnectSignals();
         this.emit("finish");
+        this.disconnectSignals();
         this.destroy();
     }
 
+    /**
+     * Disconect signals
+     * 
+     * @method disconnectSignals
+     * @param {Boolean} disconnect all
+     */
+    disconnectSignals() {
+        for (let id in this._signals) {
+            try {
+                this._signals[id]["object"].disconnect(id);
+                delete(this._signals[id]);
+            } catch {
+                continue;
+            }
+        }
+    }
 });

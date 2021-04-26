@@ -186,19 +186,6 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
-     * Disconect all signals
-     * 
-     * @method disconnectAll
-     */
-    disconnectAll() {
-        for (let id of this._signals) {
-            this.disconnect(id);
-        }
-
-        this._signals = [];
-    }
-
-    /**
      * Enables async http requests
      * 
      * @method enableAsyncRequest

@@ -78,14 +78,20 @@ var PhueEntertainment =  GObject.registerClass({
     _init(props={}) {
         super._init(props);
 
+        let signal;
+
         this.gradient = false;
         this.intensity = 40;
         this.brightness = 0xFF;
 
+        this._signals = {};
+
         this.dtls = new DTLSClient.DTLSClient({ip: this._ip, port: 2100, pskidentity: this._username, psk: this._clientkey});
-        this.dtls.connect("connected", () => {
+        signal = this.dtls.connect("connected", () => {
             this.emit("connected");
         });
+
+        this._signals[signal] = { "object": this.dtls };
     }
 
     set ip(value) {
@@ -133,6 +139,16 @@ var PhueEntertainment =  GObject.registerClass({
     closeBridge() {
         this.stopStreaming();
         this.dtls.closeBridge();
+
+        for (let id in this._signals) {
+            try {
+                this._signals[id]["object"].disconnect(id);
+                delete(this._signals[id]);
+            } catch {
+                continue;
+            }
+        }
+
         this.emit("disconnected");
     }
 

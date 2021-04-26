@@ -98,6 +98,10 @@ var PhueMenu = GObject.registerClass({
 
         super._init(0.0, Me.metadata.name, false);
 
+        let signal;
+
+        this._signals = {};
+
         this.refreshMenuObjects = {};
         this.oldNotifylight = {};
         this.bridgeInProblem = {}
@@ -107,13 +111,14 @@ var PhueMenu = GObject.registerClass({
         this._waitingNotification = {};
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
-        this._settings.connect("changed", Lang.bind(this, function() {
+        signal = this._settings.connect("changed", Lang.bind(this, function() {
             if (this.readSettings()) {
                 this.rebuildMenu();
             }
             this.setPositionInPanel();
             this.hue.setConnectionTimeout(this._connectionTimeout);
         }));
+        this._appendSignal(signal, this._settings, false);
 
         this.hue = new Hue.Phue(true);
 
@@ -134,9 +139,9 @@ var PhueMenu = GObject.registerClass({
 
         this.add_child(icon);
 
-        this.rebuildMenu();
+        this.rebuildMenu(true);
 
-        this.menu.connect("open-state-changed", () => {
+        signal = this.menu.connect("open-state-changed", () => {
             if (this.menu.isOpen) {
                 for (let i in this.hue.instances) {
                         /* this will invoke this.refreshMenu via "all-data" */
@@ -148,6 +153,7 @@ var PhueMenu = GObject.registerClass({
                 }
             }
         });
+        this._appendSignal(signal, this.menu, false);
     }
 
     /**
@@ -635,13 +641,10 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case StreamState.STARTING:
-                if (object.state) {
-                    this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
-                    this._checkHueLightsIsStreaming(bridgeid);
-                    break;
-                }
+                this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
+                this._checkHueLightsIsStreaming(bridgeid);
 
-                object.state = true;
+                object.state = false;
                 break;
 
             case StreamState.STOPPING:
@@ -671,10 +674,6 @@ var PhueMenu = GObject.registerClass({
                     this.hue.instances[bridgeid].disableStream(
                         parsedBridgePath[2],
                     );
-
-                    if (this._isStreaming[bridgeid]["entertainment"] === undefined) {
-                        break;
-                    }
                 }
 
                 break;
@@ -3462,6 +3461,7 @@ var PhueMenu = GObject.registerClass({
      */
     _checkHueLightsIsStreaming(bridgeid) {
         let groupid;
+        let signal;
 
         if (this._isStreaming[bridgeid] === undefined) {
             return;
@@ -3514,12 +3514,13 @@ var PhueMenu = GObject.registerClass({
                     this._isStreaming[bridgeid]["brightness"]
                 );
 
-                this._isStreaming[bridgeid]["entertainment"].connect("connected", () => {
+                signal = this._isStreaming[bridgeid]["entertainment"].connect("connected", () => {
                     this._startEntertainmentStream(bridgeid, groupid);
                     this._isStreaming[bridgeid]["state"] = StreamState.RUNNING;
                 });
+                this._appendSignal(signal, this._isStreaming[bridgeid]["entertainment"], true);
 
-                this._isStreaming[bridgeid]["entertainment"].connect("disconnected", () => {
+                signal = this._isStreaming[bridgeid]["entertainment"].connect("disconnected", () => {
                     this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
                     delete(this._isStreaming[bridgeid]["entertainment"]);
 
@@ -3529,8 +3530,8 @@ var PhueMenu = GObject.registerClass({
 
                         this.hue.instances[bridgeid].disableStream(groupid);
                     }
-
                 });
+                this._appendSignal(signal, this._isStreaming[bridgeid]["entertainment"], true);
 
                 this._isStreaming[bridgeid]["entertainment"].connectBridge();
 
@@ -3574,6 +3575,8 @@ var PhueMenu = GObject.registerClass({
                 }
 
                 this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+
+                Utils.logDebug(`Bridge ${bridgeid} failed to start entertainment group ${groupid}`);
                 break;
 
             default:
@@ -3865,7 +3868,9 @@ var PhueMenu = GObject.registerClass({
      */
     _connectHueInstance(bridgeid) {
 
-        this.hue.instances[bridgeid].connect(
+        let signal;
+
+        signal = this.hue.instances[bridgeid].connect(
             "change-occurred",
             () => {
                 /* ask for async all data,
@@ -3873,8 +3878,9 @@ var PhueMenu = GObject.registerClass({
                 this.hue.instances[bridgeid].getAll();
             }
         );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
 
-        this.hue.instances[bridgeid].connect(
+        signal = this.hue.instances[bridgeid].connect(
             "all-data",
             () => {
                 if (this.hue.instances[bridgeid].isConnected()) {
@@ -3895,8 +3901,9 @@ var PhueMenu = GObject.registerClass({
                 this._checkHueLightsIsStreaming(bridgeid);
             }
         );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
 
-        this.hue.instances[bridgeid].connect(
+        signal = this.hue.instances[bridgeid].connect(
             "lights-data",
             () => {
                 this.checkNotifications(
@@ -3905,8 +3912,9 @@ var PhueMenu = GObject.registerClass({
                 );
             }
         );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
 
-        this.hue.instances[bridgeid].connect(
+        signal = this.hue.instances[bridgeid].connect(
             "connection-problem",
             () => {
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
@@ -3925,6 +3933,7 @@ var PhueMenu = GObject.registerClass({
                 this._checkHueLightsIsStreaming(bridgeid);
             }
         );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
     }
 
     /**
@@ -3962,7 +3971,7 @@ var PhueMenu = GObject.registerClass({
      * @method entertainmentInit
      * @param {String} bridgeid
      */
-    entertainmentInit(bridgeid) {
+    entertainmentInit(bridgeid, tryAutostart = false) {
 
         Utils.logDebug(`Bridge ${bridgeid} is initializing entertainment.`);
 
@@ -3996,7 +4005,8 @@ var PhueMenu = GObject.registerClass({
             }
         }
 
-        if (this._entertainment[bridgeid] !== undefined &&
+        if (tryAutostart &&
+            this._entertainment[bridgeid] !== undefined &&
             this._entertainment[bridgeid]["autostart"] !== undefined &&
             this._entertainment[bridgeid]["autostart"] >= 0) {
 
@@ -4069,10 +4079,46 @@ var PhueMenu = GObject.registerClass({
                 }
 
                 delete(this._isStreaming[bridgeid]["entertainment"]);
-                delete(this._isStreaming[bridgeid]["entertainmentMode"])
             }
 
             this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
+        }
+
+        this.hue.enableAsyncMode();
+    }
+
+    /**
+     * Append signal to the disctonary with signals.
+     * 
+     * @method _appendSignal
+     * @private
+     * @param {Number} signal number
+     * @param {Object} object signal is connected
+     * @param {Boolean} disconnect all signals
+     */
+    _appendSignal(signal, object, rebuild) {
+        this._signals[signal] = {
+            "object": object,
+            "rebuild": rebuild
+        }
+    }
+
+    /**
+     * Disconect signals
+     * 
+     * @method disconnectSignals
+     * @param {Boolean} disconnect all
+     */
+    disconnectSignals(all = false) {
+        for (let id in this._signals) {
+            if (this._signals[id]["rebuild"] || all) {
+                try {
+                    this._signals[id]["object"].disconnect(id);
+                    delete(this._signals[id]);
+                } catch {
+                    continue;
+                }
+            }
         }
     }
 
@@ -4155,6 +4201,7 @@ var PhueMenu = GObject.registerClass({
     _createSettingItems(reduced) {
         let icon;
         let items = [];
+        let signal;
 
         if (!reduced) {
             /**
@@ -4179,13 +4226,14 @@ var PhueMenu = GObject.registerClass({
                 }
             }
 
-            switchMenuItem.connect(
+            signal = switchMenuItem.connect(
                 'button-press-event',
                 () => {
                     this._compactMenu = !this._compactMenu;
                     this.rebuildMenu();
                 }
             );
+            this._appendSignal(signal, switchMenuItem, true);
 
             items.push(switchMenuItem);
         }
@@ -4205,10 +4253,11 @@ var PhueMenu = GObject.registerClass({
             }
         }
 
-        refreshMenuItem.connect(
+        signal = refreshMenuItem.connect(
             'button-press-event',
             () => { this.rebuildMenu(); }
         );
+        this._appendSignal(signal, refreshMenuItem, true);
 
         items.push(refreshMenuItem);
 
@@ -4227,10 +4276,11 @@ var PhueMenu = GObject.registerClass({
             }
         }
 
-        prefsMenuItem.connect(
+        signal = prefsMenuItem.connect(
             'button-press-event',
             () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
         );
+        this._appendSignal(signal, prefsMenuItem, true);
         items.push(prefsMenuItem);
 
         return items;
@@ -4241,9 +4291,12 @@ var PhueMenu = GObject.registerClass({
      * 
      * @method rebuildMenu
      */
-    rebuildMenu() {
+    rebuildMenu(firstTime = false) {
 
         Utils.logDebug("Rebuilding menu.");
+
+        this.disableStreams();
+        this.disconnectSignals();
 
         let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
@@ -4285,11 +4338,9 @@ var PhueMenu = GObject.registerClass({
 
             instanceCounter++;
  
-            this.hue.instances[bridgeid].disconnectAll;
-
             this._connectHueInstance(bridgeid);
 
-            this.entertainmentInit(bridgeid);
+            this.entertainmentInit(bridgeid, firstTime);
 
             if (!this._compactMenu) {
                 bridgeItems = this._createMenuBridge(bridgeid);
