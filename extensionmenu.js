@@ -41,6 +41,7 @@ const HueEntertainment = Me.imports.phueentertainmentapi;
 const PhueRequestype = Me.imports.phueapi.PhueRequestype;
 const Utils = Me.imports.utils;
 const ColorPicker = Me.imports.colorpicker;
+const Queue = Me.imports.queue;
 const Util = imports.misc.util;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
@@ -109,6 +110,7 @@ var PhueMenu = GObject.registerClass({
         this._openMenuDefault = null;
         this._isStreaming = {};
         this._waitingNotification = {};
+        this._notificationQueues = {};
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         signal = this._settings.connect("changed", Lang.bind(this, function() {
@@ -3906,10 +3908,18 @@ var PhueMenu = GObject.registerClass({
         signal = this.hue.instances[bridgeid].connect(
             "lights-data",
             () => {
-                this.checkNotifications(
-                    bridgeid,
-                    this.hue.instances[bridgeid].getAsyncData()
-                );
+                if (this._waitingNotification[bridgeid] !== undefined &&
+                    this._waitingNotification[bridgeid]) {
+
+                    this._waitingNotification[bridgeid] = false;
+
+                    this.notifyBackupLight(
+                        bridgeid,
+                        this.hue.instances[bridgeid].getAsyncData()
+                    );
+
+                    this.queueNotify(bridgeid);
+                }
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
@@ -4466,49 +4476,41 @@ var PhueMenu = GObject.registerClass({
      */
     startNotify(reqBirdgeid) {
 
-        return new Promise(resolve => {
+        Utils.logDebug(`Starting notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this._notifyLights)}`);
 
-            Utils.logDebug(`Starting notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this._notifyLights)}`);
+        for (let i in this._notifyLights) {
 
-            for (let i in this._notifyLights) {
+            let bridgeid = i.split("::")[0];
+            let lightid = parseInt(i.split("::")[1]);
 
-                let bridgeid = i.split("::")[0];
-                let lightid = parseInt(i.split("::")[1]);
-
-                if (reqBirdgeid !== bridgeid) {
-                    continue;
-                }
-
-                let bri = 255;
-                if (this._notifyLights[i]["bri"] !== undefined) {
-                    bri = this._notifyLights[i]["bri"];
-                }
-
-                let r = 255;
-                let g = 255;
-                let b = 255;
-                if (this._notifyLights[i]["r"] !== undefined) {
-                    r = this._notifyLights[i]["r"];
-                    g = this._notifyLights[i]["g"];
-                    b = this._notifyLights[i]["b"];
-                }
-
-                let xy = Utils.colorToHueXY(r, g, b);
-
-                this.hue.instances[bridgeid].setLights(
-                    lightid,
-                    {"on": true, "bri":bri, "xy":xy, "transitiontime": 0 },
-                    PhueRequestype.NO_RESPONSE_NEED
-                );
-
+            if (reqBirdgeid !== bridgeid) {
+                continue;
             }
 
-            GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
-                this.endNotify(reqBirdgeid);
-                return GLib.SOURCE_REMOVE;
-            });
-            resolve();
-        })
+            let bri = 255;
+            if (this._notifyLights[i]["bri"] !== undefined) {
+                bri = this._notifyLights[i]["bri"];
+            }
+
+            let r = 255;
+            let g = 255;
+            let b = 255;
+            if (this._notifyLights[i]["r"] !== undefined) {
+                r = this._notifyLights[i]["r"];
+                g = this._notifyLights[i]["g"];
+                b = this._notifyLights[i]["b"];
+            }
+
+            let xy = Utils.colorToHueXY(r, g, b);
+
+            this.hue.instances[bridgeid].setLights(
+                lightid,
+                {"on": true, "bri":bri, "xy":xy, "transitiontime": 0 },
+                PhueRequestype.NO_RESPONSE_NEED
+            );
+
+        }
+
     }
 
     /**
@@ -4547,46 +4549,56 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
-     * Check if notification should run on bridge
-     * 
-     * @method checkNotifications
-     * @param {String} bridge
-     * @param {Object} lights data
-     */
-    async checkNotifications(birdgeid, dataLights) {
-
-        if (this._waitingNotification[birdgeid] !== undefined &&
-            this._waitingNotification[birdgeid]) {
-
-            Utils.logDebug("Checking notifications for bridge: " + birdgeid);
-
-            this.notifyBackupLight(birdgeid, dataLights);
-            await this.startNotify(birdgeid);
-
-            this._waitingNotification[birdgeid] = false;
-        }
-    }
-
-    /**
      * A notification occurred in the system.
      * Ask to get lights from all bridges.
-     * It will invoke checkNotifications() for all bridges
+     * It will invoke queueNotify() for first notification
+     * throught the getLights().
      * 
      * @method runNotify
      */
     runNotify() {
-
         Utils.logDebug("Notification happend in the system.");
 
-        this._waitingNotification = {};
-
-        for (let birdgeid in this.hue.instances) {
-            if (!this.hue.instances[birdgeid].isConnected()) {
+        for (let bridgeid in this.hue.instances) {
+            if (!this.hue.instances[bridgeid].isConnected()) {
                 continue;
             }
-            this._waitingNotification[birdgeid] = true;
 
-            this.hue.instances[birdgeid].getLights();
+            if (this._notificationQueues[bridgeid] === undefined) {
+                this._notificationQueues[bridgeid] = new Queue.Queue(Queue.handlerType.TIMED);
+            }
+
+            if (this._notificationQueues[bridgeid].getQueueLength() === 0 &&
+                ! this._waitingNotification[bridgeid]) {
+
+                this._waitingNotification[bridgeid] = true;
+                this.hue.instances[bridgeid].getLights();
+            } else {
+                this.queueNotify(bridgeid);
+            }
         }
+    }
+
+    /**
+     * Queue notification for a bridge.
+     * 
+     * @method queueNotify
+     * @param {String} bridge
+     */
+    queueNotify(bridgeid){
+
+        this._notificationQueues[bridgeid].append([
+            () => {
+                this.startNotify(bridgeid);
+            },
+            100
+        ]);
+
+        this._notificationQueues[bridgeid].append([
+            () => {
+                this.endNotify(bridgeid);
+            },
+            1000
+        ]);
     }
 });
