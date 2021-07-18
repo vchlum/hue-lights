@@ -776,27 +776,7 @@ var PhueMenu = GObject.registerClass({
 
             case "entertainmentMode":
 
-                if (object.value <= 0.25) {
-                    value = Utils.entertainmentMode.SYNC;
-                    object.value = 0;
-                }
-
-                if (object.value > 0.25 && object.value <= 0.50) {
-                    value = Utils.entertainmentMode.SELECTION;
-                    object.value = 0.33;
-                }
-
-                if (object.value > 0.50 && object.value <= 0.75) {
-                    value = Utils.entertainmentMode.CURSOR;
-                    object.value = 0.66;
-                }
-
-                if (object.value > 0.75) {
-                    value = Utils.entertainmentMode.RANDOM;
-                    object.value = 1;
-                }
-
-                data["objectLabel"].set_text(Utils.entertainmentModeText[value]);
+                value = data["service"];
 
                 this._isStreaming[bridgeid]["entertainmentMode"] = value;
 
@@ -3053,66 +3033,77 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
-     * Creates item with possible entertainment effects
+     * Creates items with possible entertainment effects
      * 
-     * @method _createsEntertainmentServiceItem
+     * @method _createsEntertainmentServiceItems
      * @private
      * @param {String} bridgeid which bridge we use here
-     * @return {Object} menuitem with slider to chaneg the mode
+     * @return {Object} menuitems
      */
-    _createsEntertainmentServiceItem(bridgeid) {
+    _createsEntertainmentServiceItems(bridgeid) {
         let bridgePath = `${this._rndID()}`;
-        let entertainmentServiceItem = new PopupMenu.PopupMenuItem(_("Mode"));
+        let items = [];
+        let switchBoxes = [];
+        let modes = [
+            Utils.entertainmentMode.SYNC,
+            Utils.entertainmentMode.SELECTION,
+            Utils.entertainmentMode.CURSOR,
+            Utils.entertainmentMode.RANDOM,
+        ];
 
-        entertainmentServiceItem.set_x_align(Clutter.ActorAlign.FILL);
-        entertainmentServiceItem.label.set_x_expand(false);
+        for (let service of modes) {
+            let serviceItem = new PopupMenu.PopupMenuItem(
+                Utils.entertainmentModeText[service]
+            );
 
-        let slider = new Slider.Slider(0);
-        slider.set_width(150);
-        slider.set_x_align(Clutter.ActorAlign.END);
-        slider.set_x_expand(false);
+            let switchBox = new PopupMenu.Switch(false);
+            switchBoxes.push(switchBox);
+            let switchButton = new St.Button({reactive: true, can_focus: true});
+            switchButton.set_x_align(Clutter.ActorAlign.END);
+            switchButton.set_x_expand(false);
+            switchButton.child = switchBox;
 
-        switch (this._isStreaming[bridgeid]["entertainmentMode"]) {
-            case Utils.entertainmentMode.SYNC:
-                slider.value = 0;
-                break;
-            case Utils.entertainmentMode.SELECTION:
-                slider.value = 0.33;
-                break;
-            case Utils.entertainmentMode.CURSOR:
-                slider.value = 0.66;
-                break;
-            case Utils.entertainmentMode.RANDOM:
-                slider.value = 1;
-                break;
-            default:
-                slider.value = 0;
-        }
+            if (this._isStreaming[bridgeid]["entertainmentMode"] === service) {
+                switchBox.state = true;
+            }
 
-        let label = new St.Label({
-            text: Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]
-        });
-        label.set_x_expand(true);
+            switchButton.connect(
+                "button-press-event",
+                () => {
+                    switchBox.toggle();
 
-        slider.connect(
-            "drag-end",
-            this._menuEventHandler.bind(
-                this,
-                {
-                    "bridgePath": bridgePath,
-                    "bridgeid": bridgeid,
-                    "object":slider,
-                    "objectLabel":label,
-                    "type": "entertainmentMode"
+                    if (switchBox.state === false) {
+                        switchBox.state = true;
+                    }
+                    for (let i of switchBoxes) {
+                        if (i !== switchBox) {
+                            i.state = false;
+                        }
+                    }
                 }
-            )
-        );
+            );
+            switchButton.connect(
+                "button-press-event",
+                this._menuEventHandler.bind(
+                    this,
+                    {
+                        "bridgePath": bridgePath,
+                        "bridgeid": bridgeid,
+                        "object":switchButton,
+                        "service":service,
+                        "type": "entertainmentMode"
+                    }
+                )
+            );
 
-        entertainmentServiceItem.add(slider);
+            serviceItem.set_x_align(Clutter.ActorAlign.FILL);
+            serviceItem.label.set_x_expand(true);
 
-        entertainmentServiceItem.add(label);
+            serviceItem.add(switchButton);
 
-        return entertainmentServiceItem;
+            items.push(serviceItem);
+        }
+        return items;
     }
 
     /**
@@ -3171,8 +3162,13 @@ var PhueMenu = GObject.registerClass({
         );
         entertainmentMainItem.menu.addMenuItem(entertainmentBrightnessItem);
 
-        let entertainmentServiceItem = this._createsEntertainmentServiceItem(bridgeid);
-        entertainmentMainItem.menu.addMenuItem(entertainmentServiceItem);
+        entertainmentMainItem.menu.addMenuItem(
+            new PopupMenu.PopupSeparatorMenuItem()
+        );
+
+        for (let serviceItem of this._createsEntertainmentServiceItems(bridgeid)) {
+            entertainmentMainItem.menu.addMenuItem(serviceItem);
+        }
 
         entertainmentMainItem.menu.addMenuItem(
             new PopupMenu.PopupSeparatorMenuItem()
