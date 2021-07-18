@@ -355,7 +355,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @param {Object} coordinates of the light in Entertainment settings
      * @return {Object} rectangle of the light in actual screen
      */
-    getRectangleOfLight(screenWidth, screenHeight, location) {
+    getRectangleOfLight(startX, startY, screenWidth, screenHeight, location) {
         /* 2 because the demo room in app has TV of half the size of the room */
         let tmpWidth = 2 * location[0] * (screenWidth/2) + screenWidth/2;
         if (tmpWidth < 0) {
@@ -373,7 +373,11 @@ var PhueEntertainment =  GObject.registerClass({
         let minHeight = Math.round(Math.max(0, tmpHeight - screenHeight * LightRectangle.HEIGHT / 2));
         let maxHeight = Math.round(Math.min(screenHeight, tmpHeight + screenHeight * LightRectangle.HEIGHT / 2));
 
-        return [[minWidth, maxWidth],[],[minHeight, maxHeight]]
+        return [
+            [startX + minWidth, startX + maxWidth],
+            [],
+            [startY + minHeight, startY + maxHeight]
+        ]
     }
 
     /**
@@ -381,7 +385,7 @@ var PhueEntertainment =  GObject.registerClass({
      * 
      * @method doSyncSreen
      */
-    async doSyncSreen() {
+    async doSyncSreen(screenRectangle) {
         if (!this._doStreaming) {
             return;
         }
@@ -390,8 +394,9 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
-        if (this.screenWidth !== global.screen_width ||
-            this.screenHeight !== global.screen_height) {
+        if (screenRectangle === null &&
+            (this.screenWidth !== global.screen_width ||
+            this.screenHeight !== global.screen_height)) {
             /* screen has been changed */
             this.closeBridge();
             return;
@@ -647,7 +652,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @param {Array} relative locations of lights
      * @param {Boolean} Is the gradient light strip in the group?
      */
-    startSyncScreen(lights, lightsLocations, gradient) {
+    startSyncScreen(screenRectangle, lights, lightsLocations, gradient) {
         if (this._doStreaming) {
             this._changeToMe = {
                 "done": false,
@@ -658,7 +663,7 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
-        if (!this.checkSyncSuitableResolution()) {
+        if (screenRectangle === null && !this.checkSyncSuitableResolution()) {
             Main.notify(
                 _("Hue Lights - Sync screen"),
                 _("Your screen is not a solid rectangle.")
@@ -679,28 +684,89 @@ var PhueEntertainment =  GObject.registerClass({
 
         this.screenshot = new PhueScreenshot.PhueScreenshot();
 
+        let startX = 0;
+        let startY = 0;
         this.screenWidth = global.screen_width;
         this.screenHeight = global.screen_height;
 
+        if (screenRectangle !== null) {
+            startX = screenRectangle[0];
+            startY = screenRectangle[1];
+            this.screenWidth = screenRectangle[2];
+            this.screenHeight = screenRectangle[3];
+        }
+
         this.lightsRectangles = [];
         for (let i = 0; i < this.lights.length; i++) {
-            this.lightsRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, this.lightsLocations[i]));
+            this.lightsRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                this.lightsLocations[i]
+            ));
         }
 
         this.gradientRectangles = [];
         if (this.gradient) {
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [-0.5, 0.75, -1]));
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [-0.5, 0.75, 0]));
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [-0.5, 0.75, -1]
+            ));
 
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [-0.35, 0.75, 1]));
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [0, 0.75, 1]));
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [0.35, 0.75, 1]));
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [-0.5, 0.75, 0]
+            ));
 
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [0.5, 0.75, 0]));
-            this.gradientRectangles.push(this.getRectangleOfLight(this.screenWidth, this.screenHeight, [0.5, 0.75, -1]));
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [-0.35, 0.75, 1]
+            ));
+
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [0, 0.75, 1]
+            ));
+
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [0.35, 0.75, 1]
+            ));
+
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [0.5, 0.75, 0]
+            ));
+
+            this.gradientRectangles.push(this.getRectangleOfLight(
+                startX,
+                startY,
+                this.screenWidth,
+                this.screenHeight,
+                [0.5, 0.75, -1]
+            ));
         }
 
-        this.doSyncSreen();
+        this.doSyncSreen(screenRectangle);
     }
 
     /**

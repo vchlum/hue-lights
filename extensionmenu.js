@@ -41,6 +41,7 @@ const HueEntertainment = Me.imports.phueentertainmentapi;
 const PhueRequestype = Me.imports.phueapi.PhueRequestype;
 const Utils = Me.imports.utils;
 const ColorPicker = Me.imports.colorpicker;
+const AreaSelector = Me.imports.areaselector;
 const Queue = Me.imports.queue;
 const Util = imports.misc.util;
 const Main = imports.ui.main;
@@ -775,17 +776,22 @@ var PhueMenu = GObject.registerClass({
 
             case "entertainmentMode":
 
-                if (object.value <= 0.33) {
+                if (object.value <= 0.25) {
                     value = Utils.entertainmentMode.SYNC;
                     object.value = 0;
                 }
 
-                if (object.value > 0.33 && object.value <= 0.66) {
-                    value = Utils.entertainmentMode.CURSOR;
-                    object.value = 0.5;
+                if (object.value > 0.25 && object.value <= 0.50) {
+                    value = Utils.entertainmentMode.SELECTION;
+                    object.value = 0.33;
                 }
 
-                if (object.value > 0.66) {
+                if (object.value > 0.50 && object.value <= 0.75) {
+                    value = Utils.entertainmentMode.CURSOR;
+                    object.value = 0.66;
+                }
+
+                if (object.value > 0.75) {
                     value = Utils.entertainmentMode.RANDOM;
                     object.value = 1;
                 }
@@ -3070,8 +3076,11 @@ var PhueMenu = GObject.registerClass({
             case Utils.entertainmentMode.SYNC:
                 slider.value = 0;
                 break;
+            case Utils.entertainmentMode.SELECTION:
+                slider.value = 0.33;
+                break;
             case Utils.entertainmentMode.CURSOR:
-                slider.value = 0.5;
+                slider.value = 0.66;
                 break;
             case Utils.entertainmentMode.RANDOM:
                 slider.value = 1;
@@ -3398,9 +3407,45 @@ var PhueMenu = GObject.registerClass({
                 Utils.logDebug(`Starting sync screen entertainment for bridge ${bridgeid} group ${groupid}`);
 
                 this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
+                    null,
                     streamingLights,
                     streamingLightsLocations,
                     gradient);
+                break;
+
+            case Utils.entertainmentMode.SELECTION:
+                Utils.logDebug(`Start select screen entertainment for bridge ${bridgeid} group ${groupid}`);
+
+                let areaSelector = new AreaSelector.AreaSelector();
+                let areaSelectorSignals = [];
+
+                let signal = areaSelector.connect("area-selected", () => {
+                    Utils.logDebug(`Select screen entertainment for bridge ${bridgeid} group ${groupid}`);
+                    this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
+                        areaSelector.getRectangle(),
+                        streamingLights,
+                        streamingLightsLocations,
+                        gradient);
+
+                    for(let s in areaSelectorSignals) {
+                        areaSelector.disconnect(areaSelectorSignals[s]);
+                    }
+                });
+                areaSelectorSignals.push(signal);
+
+                areaSelector.connect("area-canceled", () => {
+                    Utils.logDebug("Select streaming canceled.");
+
+                    this._isStreaming[bridgeid]["entertainment"].closeBridge();
+
+                    for(let s in areaSelectorSignals) {
+                        areaSelector.disconnect(areaSelectorSignals[s]);
+                    }
+
+                    return;
+                });
+                areaSelectorSignals.push(signal);
+
                 break;
 
             case Utils.entertainmentMode.CURSOR:

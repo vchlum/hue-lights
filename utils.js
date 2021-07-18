@@ -253,14 +253,16 @@ var getHueIconFile = {
 
 var entertainmentMode = {
     SYNC: 0,
-    CURSOR: 1,
-    RANDOM: 2
+    SELECTION: 1,
+    CURSOR: 2,
+    RANDOM: 3
 };
 
 var entertainmentModeText = {
     0: _("Sync screen"),
-    1: _("Track cursor"),
-    2: _("Random")
+    1: _("Sync selection"),
+    2: _("Track cursor"),
+    3: _("Random")
 };
 
 var debug = false;
