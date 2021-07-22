@@ -746,6 +746,19 @@ var PhueMenu = GObject.registerClass({
 
             case "switchEntertainment":
 
+                if (data["object"].state &&
+                    this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.SELECTION
+                    ) {
+
+                    this._entertainmentSelectArea(
+                        bridgeid,
+                        this._switchEntertainmentProcess,
+                        data
+                    );
+
+                    return;
+                }
+
                 this._switchEntertainmentProcess(data);
                 break;
 
@@ -778,10 +791,26 @@ var PhueMenu = GObject.registerClass({
 
                 value = data["service"];
 
+                this._isStreaming[bridgeid]["syncGeometry"] = [];
+
                 this._isStreaming[bridgeid]["entertainmentMode"] = value;
+
+                if (value === Utils.entertainmentMode.DISPLAYN) {
+                    this._isStreaming[bridgeid]["syncGeometry"] = data["syncGeometry"];
+                }
 
                 if (this._isStreaming[bridgeid] !== undefined &&
                     this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
+
+                    if (value === Utils.entertainmentMode.SELECTION) {
+                        this._entertainmentSelectArea(
+                            bridgeid,
+                            this._startEntertainmentStream,
+                            bridgeid,
+                            this._isStreaming[bridgeid]["groupid"]
+                        );
+                        return;
+                    }
 
                     this._startEntertainmentStream(
                         bridgeid,
@@ -3044,6 +3073,7 @@ var PhueMenu = GObject.registerClass({
         let bridgePath = `${this._rndID()}`;
         let items = [];
         let switchBoxes = [];
+        let displaysItems = [];
         let modes = [
             Utils.entertainmentMode.SYNC,
             Utils.entertainmentMode.SELECTION,
@@ -3051,9 +3081,36 @@ var PhueMenu = GObject.registerClass({
             Utils.entertainmentMode.RANDOM,
         ];
 
+
+        let displaysNumber = global.display.get_n_monitors();
+        for (let i = 0; i < displaysNumber; i++) {
+            displaysItems.push([Utils.entertainmentMode.DISPLAYN, i]);
+        }
+
+        modes = displaysItems.concat(modes);
+
         for (let service of modes) {
+            let serviceLabel;
+            let displayGeometry = [];
+
+            if (service instanceof Array && service[0] === Utils.entertainmentMode.DISPLAYN) {
+                let i = service[1];
+                let monitorRectangle = global.display.get_monitor_geometry(i);
+
+                displayGeometry = [
+                    monitorRectangle.x,
+                    monitorRectangle.y,
+                    monitorRectangle.width,
+                    monitorRectangle.height
+                ];
+
+                serviceLabel = _("Display") + ` ${i + 1} (${displayGeometry[2]}x${displayGeometry[3]})`;
+            } else {
+                serviceLabel = Utils.entertainmentModeText[service];
+            }
+
             let serviceItem = new PopupMenu.PopupMenuItem(
-                Utils.entertainmentModeText[service]
+                serviceLabel
             );
 
             let switchBox = new PopupMenu.Switch(false);
@@ -3090,7 +3147,8 @@ var PhueMenu = GObject.registerClass({
                         "bridgePath": bridgePath,
                         "bridgeid": bridgeid,
                         "object":switchButton,
-                        "service":service,
+                        "service":service instanceof Array ? service[0]: service,
+                        "syncGeometry": displayGeometry,
                         "type": "entertainmentMode"
                     }
                 )
@@ -3371,6 +3429,48 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Let the user select area on screen and call callback.
+     * 
+     * @method _entertainmentSelectArea
+     * @private
+     * @param {bridgeid} bridgeid
+     * @param {object} callback
+     * @param {object} arguments for callback
+     */
+    _entertainmentSelectArea(bridgeid, callback, ...args) {
+        Utils.logDebug(`Select area for entertainment for bridge ${bridgeid}`);
+
+        let areaSelector = new AreaSelector.AreaSelector();
+        let areaSelectorSignals = [];
+
+        let signal = areaSelector.connect("area-selected", () => {
+            this._isStreaming[bridgeid]["syncGeometry"] = areaSelector.getRectangle();
+
+            for(let s in areaSelectorSignals) {
+                areaSelector.disconnect(areaSelectorSignals[s]);
+            }
+
+            callback.apply(this, args);
+
+            return;
+        });
+        areaSelectorSignals.push(signal);
+
+        areaSelector.connect("area-canceled", () => {
+            Utils.logDebug("Select streaming canceled.");
+
+            this._isStreaming[bridgeid]["entertainment"].closeBridge();
+
+            for(let s in areaSelectorSignals) {
+                areaSelector.disconnect(areaSelectorSignals[s]);
+            }
+
+            return;
+        });
+        areaSelectorSignals.push(signal);
+    }
+
+    /**
      * Starts the entertainment stream with selected effect
      * 
      * @method _startEntertainmentStream
@@ -3400,48 +3500,18 @@ var PhueMenu = GObject.registerClass({
         switch(this._isStreaming[bridgeid]["entertainmentMode"]) {
 
             case Utils.entertainmentMode.SYNC:
-                Utils.logDebug(`Starting sync screen entertainment for bridge ${bridgeid} group ${groupid}`);
+                this._isStreaming[bridgeid]["syncGeometry"] = null;
+            case Utils.entertainmentMode.SELECTION:
+            case Utils.entertainmentMode.DISPLAYN:
+                Utils.logDebug(`Starting sync sreen ${
+                    JSON.stringify(this._isStreaming[bridgeid]["syncGeometry"])
+                } entertainment for bridge ${bridgeid} group ${groupid}`);
 
                 this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
-                    null,
+                    this._isStreaming[bridgeid]["syncGeometry"],
                     streamingLights,
                     streamingLightsLocations,
                     gradient);
-                break;
-
-            case Utils.entertainmentMode.SELECTION:
-                Utils.logDebug(`Start select screen entertainment for bridge ${bridgeid} group ${groupid}`);
-
-                let areaSelector = new AreaSelector.AreaSelector();
-                let areaSelectorSignals = [];
-
-                let signal = areaSelector.connect("area-selected", () => {
-                    Utils.logDebug(`Select screen entertainment for bridge ${bridgeid} group ${groupid}`);
-                    this._isStreaming[bridgeid]["entertainment"].startSyncScreen(
-                        areaSelector.getRectangle(),
-                        streamingLights,
-                        streamingLightsLocations,
-                        gradient);
-
-                    for(let s in areaSelectorSignals) {
-                        areaSelector.disconnect(areaSelectorSignals[s]);
-                    }
-                });
-                areaSelectorSignals.push(signal);
-
-                areaSelector.connect("area-canceled", () => {
-                    Utils.logDebug("Select streaming canceled.");
-
-                    this._isStreaming[bridgeid]["entertainment"].closeBridge();
-
-                    for(let s in areaSelectorSignals) {
-                        areaSelector.disconnect(areaSelectorSignals[s]);
-                    }
-
-                    return;
-                });
-                areaSelectorSignals.push(signal);
-
                 break;
 
             case Utils.entertainmentMode.CURSOR:

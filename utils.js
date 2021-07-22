@@ -252,17 +252,19 @@ var getHueIconFile = {
 };
 
 var entertainmentMode = {
-    SYNC: 0,
-    SELECTION: 1,
-    CURSOR: 2,
-    RANDOM: 3
+    DISPLAYN: 0,
+    SYNC: 1,
+    SELECTION: 2,
+    CURSOR: 3,
+    RANDOM: 4
 };
 
 var entertainmentModeText = {
-    0: _("Sync screen"),
-    1: _("Sync selection"),
-    2: _("Track cursor"),
-    3: _("Random")
+    0: _("Display"),
+    1: _("Sync screen"),
+    2: _("Sync selection"),
+    3: _("Track cursor"),
+    4: _("Random")
 };
 
 var debug = false;

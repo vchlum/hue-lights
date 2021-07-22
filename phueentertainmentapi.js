@@ -356,6 +356,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @return {Object} rectangle of the light in actual screen
      */
     getRectangleOfLight(startX, startY, screenWidth, screenHeight, location) {
+
         /* 2 because the demo room in app has TV of half the size of the room */
         let tmpWidth = 2 * location[0] * (screenWidth/2) + screenWidth/2;
         if (tmpWidth < 0) {
@@ -570,10 +571,9 @@ var PhueEntertainment =  GObject.registerClass({
         this._doStreaming = false; /* start function will reactivate this */
         this._changeToMe["done"] = true;
 
-        this._changeToMe["func"].bind(this)(
-            this._changeToMe["prams"][0],
-            this._changeToMe["prams"][1],
-            this._changeToMe["prams"][2]
+        this._changeToMe["func"].bind(this).apply(
+            this,
+            this._changeToMe["prams"]
         );
 
 
@@ -657,7 +657,7 @@ var PhueEntertainment =  GObject.registerClass({
             this._changeToMe = {
                 "done": false,
                 "func": this.startSyncScreen,
-                "prams": [lights, lightsLocations, gradient]
+                "prams": [screenRectangle, lights, lightsLocations, gradient]
             }
 
             return;
