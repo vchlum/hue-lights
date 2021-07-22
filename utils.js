@@ -261,8 +261,8 @@ var entertainmentMode = {
 
 var entertainmentModeText = {
     0: _("Display"),
-    1: _("Sync screen"),
-    2: _("Sync selection"),
+    1: _("Screen"),
+    2: _("Selection"),
     3: _("Track cursor"),
     4: _("Random")
 };

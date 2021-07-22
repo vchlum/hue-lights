@@ -53,6 +53,7 @@ const GObject = imports.gi.GObject;
 const Lang = imports.lang;
 const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
+const Meta = imports.gi.Meta;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
@@ -798,6 +799,8 @@ var PhueMenu = GObject.registerClass({
                 if (value === Utils.entertainmentMode.DISPLAYN) {
                     this._isStreaming[bridgeid]["syncGeometry"] = data["syncGeometry"];
                 }
+
+                this.refreshMenu();
 
                 if (this._isStreaming[bridgeid] !== undefined &&
                     this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
@@ -3176,6 +3179,7 @@ var PhueMenu = GObject.registerClass({
     _createEntertainment(bridgeid, data) {
 
         let entertainmentMainItem;
+        let entertainmentModeItem;
         let entertainmentIcon = null;
         let itemCounter = 0;
 
@@ -3186,6 +3190,9 @@ var PhueMenu = GObject.registerClass({
         entertainmentMainItem = new PopupMenu.PopupSubMenuMenuItem(
             _("Entertainment areas")
         );
+
+        /* disable closing menu on item activated */
+        entertainmentMainItem.menu.itemActivated = (animate) => {};
 
         this.refreshMenuObjects[`special::${bridgeid}::entertainment-label`] = {
             "bridgeid": bridgeid,
@@ -3224,14 +3231,6 @@ var PhueMenu = GObject.registerClass({
             new PopupMenu.PopupSeparatorMenuItem()
         );
 
-        for (let serviceItem of this._createsEntertainmentServiceItems(bridgeid)) {
-            entertainmentMainItem.menu.addMenuItem(serviceItem);
-        }
-
-        entertainmentMainItem.menu.addMenuItem(
-            new PopupMenu.PopupSeparatorMenuItem()
-        );
-
         for (let groupid in data["groups"]) {
 
             if (data["groups"][groupid]["type"] !== "Entertainment") {
@@ -3250,10 +3249,40 @@ var PhueMenu = GObject.registerClass({
         }
 
         if (itemCounter === 0) {
-            entertainmentMainItem = [];
+            return [];
         }
 
-        return entertainmentMainItem;
+        entertainmentModeItem = new PopupMenu.PopupSubMenuMenuItem(
+            _("Entertainment mode")
+        );
+
+        /* disable closing menu on item activated */
+        entertainmentModeItem.menu.itemActivated = (animate) => {};
+
+        this.refreshMenuObjects[`special::${bridgeid}::entertainment-mode-label`] = {
+            "bridgeid": bridgeid,
+            "object": entertainmentModeItem.label,
+            "type": "entertainment-mode-label",
+            "tmpTier": 0
+        }
+
+        if (this._iconPack !== PhueIconPack.NONE) {
+            let iconPath = "";
+
+            iconPath = Me.dir.get_path() + `/media/HueIcons/roomsMancave.svg`
+
+            entertainmentIcon = this._getIconByPath(iconPath);
+        }
+
+        if (entertainmentIcon !== null) {
+            entertainmentModeItem.insert_child_at_index(entertainmentIcon, 1);
+        }
+
+        for (let serviceItem of this._createsEntertainmentServiceItems(bridgeid)) {
+            entertainmentModeItem.menu.addMenuItem(serviceItem);
+        }
+
+        return [entertainmentMainItem, entertainmentModeItem];
     }
 
     /**
@@ -3963,6 +3992,28 @@ var PhueMenu = GObject.registerClass({
                             object.text = `${this.bridesData[bridgeid]["groups"][groupid]["name"]} ` + _("is syncing");
                         }
                     }
+
+                    break;
+
+                case "entertainment-mode-label":
+
+                    object.text = _("Entertainment mode");
+
+                    if (this._isStreaming[bridgeid] === undefined ||
+                        this._isStreaming[bridgeid]["entertainmentMode"] === undefined) {
+
+                        break;
+                    }
+
+                    let additionlLabel = "";
+                    if (this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.DISPLAYN) {
+                        let [x, y, w, h] = this._isStreaming[bridgeid]["syncGeometry"];
+                        let rect = new Meta.Rectangle({ x, y, width: w, height: h });
+                        let monitorN = global.display.get_monitor_index_for_rect(rect);
+                        additionlLabel = ` ${monitorN + 1} (${w}x${h})`;
+                    }
+
+                    object.text = _("Sync") + ` ${Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]}${additionlLabel}`;
 
                     break;
 
