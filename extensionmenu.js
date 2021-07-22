@@ -3083,11 +3083,15 @@ var PhueMenu = GObject.registerClass({
             Utils.entertainmentMode.CURSOR,
             Utils.entertainmentMode.RANDOM,
         ];
+        let signal;
+        let icon;
 
 
         let displaysNumber = global.display.get_n_monitors();
-        for (let i = 0; i < displaysNumber; i++) {
-            displaysItems.push([Utils.entertainmentMode.DISPLAYN, i]);
+        if (displaysNumber > 1) {
+            for (let i = 0; i < displaysNumber; i++) {
+                displaysItems.push([Utils.entertainmentMode.DISPLAYN, i]);
+            }
         }
 
         modes = displaysItems.concat(modes);
@@ -3127,7 +3131,7 @@ var PhueMenu = GObject.registerClass({
                 switchBox.state = true;
             }
 
-            switchButton.connect(
+            signal = switchButton.connect(
                 "button-press-event",
                 () => {
                     switchBox.toggle();
@@ -3142,7 +3146,9 @@ var PhueMenu = GObject.registerClass({
                     }
                 }
             );
-            switchButton.connect(
+            this._appendSignal(signal, switchButton, true);
+
+            signal = switchButton.connect(
                 "button-press-event",
                 this._menuEventHandler.bind(
                     this,
@@ -3156,6 +3162,7 @@ var PhueMenu = GObject.registerClass({
                     }
                 )
             );
+            this._appendSignal(signal, switchButton, true);
 
             serviceItem.set_x_align(Clutter.ActorAlign.FILL);
             serviceItem.label.set_x_expand(true);
@@ -3164,6 +3171,34 @@ var PhueMenu = GObject.registerClass({
 
             items.push(serviceItem);
         }
+
+        items.push(
+            new PopupMenu.PopupSeparatorMenuItem()
+        );
+
+        /**
+         * Refresh menu item
+         */
+        let refreshMenuItem = new PopupMenu.PopupMenuItem(
+            _("Refresh displays")
+        );
+
+        if (this._iconPack !== PhueIconPack.NONE) {
+            icon = this._getGnomeIcon("emblem-synchronizing-symbolic");
+
+            if (icon !== null){
+                refreshMenuItem.insert_child_at_index(icon, 1);
+            }
+        }
+
+        signal = refreshMenuItem.connect(
+            'button-press-event',
+            () => { this.rebuildMenu(); }
+        );
+        this._appendSignal(signal, refreshMenuItem, true);
+
+        items.push(refreshMenuItem);
+
         return items;
     }
 
@@ -4146,6 +4181,13 @@ var PhueMenu = GObject.registerClass({
     entertainmentInit(bridgeid, tryAutostart = false) {
 
         Utils.logDebug(`Bridge ${bridgeid} is initializing entertainment.`);
+
+        if (this._isStreaming[bridgeid] !== undefined &&
+            this._isStreaming[bridgeid]["entertainmentMode"] !== undefined &&
+            this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.DISPLAYN) {
+
+            delete(this._isStreaming[bridgeid]);
+        }
 
         if (this._isStreaming[bridgeid] === undefined) {
             this._isStreaming[bridgeid] = {};
