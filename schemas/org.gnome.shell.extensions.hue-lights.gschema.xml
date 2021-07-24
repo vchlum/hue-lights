@@ -58,5 +58,9 @@
       <default>{}</default>
       <summary>Entertainment areas</summary>
     </key>
+    <key name="sync-selection" type="as">
+      <default><![CDATA[['<Super><Alt>a']]]></default>
+      <summary>Start sync sreen selection</summary>
+    </key>
   </schema>
 </schemalist>

@@ -41,6 +41,7 @@ const HueEntertainment = Me.imports.phueentertainmentapi;
 const PhueRequestype = Me.imports.phueapi.PhueRequestype;
 const Utils = Me.imports.utils;
 const ColorPicker = Me.imports.colorpicker;
+const ModalSelector = Me.imports.modalselector;
 const AreaSelector = Me.imports.areaselector;
 const Queue = Me.imports.queue;
 const Util = imports.misc.util;
@@ -54,6 +55,7 @@ const Lang = imports.lang;
 const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 const Meta = imports.gi.Meta;
+const Shell = imports.gi.Shell;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
@@ -354,6 +356,20 @@ var PhueMenu = GObject.registerClass({
         this._entertainment = this._settings.get_value(
             Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT
         ).deep_unpack();
+
+        /**
+         * this._syncSelectionKeyShortcut needs rebuild
+         */
+        tmpVal = this._syncSelectionKeyShortcut;
+
+        this._syncSelectionKeyShortcut = this._settings.get_value(
+            Utils.HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT
+        ).deep_unpack();
+
+        if (tmpVal !== this._syncSelectionKeyShortcut) {
+            menuNeedsRebuild = true;
+        }
+
         return menuNeedsRebuild;
     }
 
@@ -586,11 +602,11 @@ var PhueMenu = GObject.registerClass({
      * Process entertainment data for
      * "switchEntertainment" event.
      * 
-     * @method _switchEntertainmentProcess
+     * @method _switchEntertainmentDo
      * @private
      * @param {Object} data for event
      */
-    _switchEntertainmentProcess(data) {
+    _switchEntertainmentDo(data) {
 
         let bridgeid = data["bridgeid"];
         let object = data["object"];
@@ -662,7 +678,6 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case StreamState.RUNNING:
-
                 if (this._isStreaming[bridgeid]["groupid"] !== parsedBridgePath[2]) {
                     object.state = false;
 
@@ -748,19 +763,20 @@ var PhueMenu = GObject.registerClass({
             case "switchEntertainment":
 
                 if (data["object"].state &&
-                    this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.SELECTION
+                    this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.SELECTION &&
+                    this._isStreaming[bridgeid]["state"] === StreamState.STOPPED
                     ) {
 
                     this._entertainmentSelectArea(
                         bridgeid,
-                        this._switchEntertainmentProcess,
+                        this._switchEntertainmentDo,
                         data
                     );
 
                     return;
                 }
 
-                this._switchEntertainmentProcess(data);
+                this._switchEntertainmentDo(data);
                 break;
 
             case "entertainmentIntensity":
@@ -3086,7 +3102,6 @@ var PhueMenu = GObject.registerClass({
         let signal;
         let icon;
 
-
         let displaysNumber = global.display.get_n_monitors();
         if (displaysNumber > 1) {
             for (let i = 0; i < displaysNumber; i++) {
@@ -3095,6 +3110,8 @@ var PhueMenu = GObject.registerClass({
         }
 
         modes = displaysItems.concat(modes);
+
+        this._isStreaming[bridgeid]["entertainmentModeSwitches"] = [];
 
         for (let service of modes) {
             let serviceLabel;
@@ -3155,8 +3172,8 @@ var PhueMenu = GObject.registerClass({
                     {
                         "bridgePath": bridgePath,
                         "bridgeid": bridgeid,
-                        "object":switchButton,
-                        "service":service instanceof Array ? service[0]: service,
+                        "object": switchButton,
+                        "service": service instanceof Array ? service[0]: service,
                         "syncGeometry": displayGeometry,
                         "type": "entertainmentMode"
                     }
@@ -3164,12 +3181,27 @@ var PhueMenu = GObject.registerClass({
             );
             this._appendSignal(signal, switchButton, true);
 
+            if (!(service instanceof Array) && service === Utils.entertainmentMode.SELECTION) {
+                serviceItem.label.text = `${Utils.entertainmentModeText[service]} (${this._syncSelectionKeyShortcut})`;
+            }
+
             serviceItem.set_x_align(Clutter.ActorAlign.FILL);
             serviceItem.label.set_x_expand(true);
 
             serviceItem.add(switchButton);
 
+            this._isStreaming[bridgeid]["entertainmentModeSwitches"].push(
+                [service, switchBox]
+            );
+
             items.push(serviceItem);
+        }
+
+        this.refreshMenuObjects[`special::${bridgeid}::entertainment-mode-switches`] = {
+            "bridgeid": bridgeid,
+            "object": null,
+            "type": "entertainment-mode-switches",
+            "tmpTier": 0
         }
 
         items.push(
@@ -3211,7 +3243,7 @@ var PhueMenu = GObject.registerClass({
      * @param {Object} dictionary data for the bridgeid
      * @return {Object} menuitem with group controls
      */
-    _createEntertainment(bridgeid, data) {
+     _createEntertainment(bridgeid, data) {
 
         let entertainmentMainItem;
         let entertainmentModeItem;
@@ -3597,6 +3629,61 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             default:
+        }
+    }
+
+    /**
+     * This is called when sync selection area shortcut is pressed.
+     * 
+     * @method _syncSelectionShortCut
+     * @private
+     */
+    _syncSelectionShortCut(bridgeid, groupid) {
+
+        if (this._isStreaming === undefined) {
+            return;
+        }
+
+        groupid = parseInt(groupid);
+
+        this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SELECTION;
+
+        if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
+            this._entertainmentSelectArea(
+                bridgeid,
+                this._startEntertainmentStream,
+                bridgeid,
+                groupid
+            );
+        } else {
+            this._entertainmentSelectArea(
+                bridgeid,
+                () => {
+                    if (!this.hue.instances[bridgeid].isConnected()){
+                        this._checkHueLightsIsStreaming(bridgeid);
+                        return;
+                    }
+
+                    if (!this._checkClientKey(bridgeid)) {
+                        return;
+                    }
+
+                    if (this._checkAnyEntertainmentActive(bridgeid)) {
+                        return;
+                    }
+
+                    if (this._isStreaming[bridgeid]["state"] === StreamState.STOPPED) {
+                        this._isStreaming[bridgeid]["groupid"] = groupid;
+
+                        this._isStreaming[bridgeid]["state"] = StreamState.STARTING;
+
+                        /* ask to start a new stream with select area service */
+                        this.hue.instances[bridgeid].enableStream(
+                            groupid,
+                        );
+                    }
+                }
+            );
         }
     }
 
@@ -4034,9 +4121,11 @@ var PhueMenu = GObject.registerClass({
 
                     object.text = _("Entertainment mode");
 
-                    if (this._isStreaming[bridgeid] === undefined ||
-                        this._isStreaming[bridgeid]["entertainmentMode"] === undefined) {
+                    if (this._isStreaming[bridgeid] === undefined) {
+                        break;
+                    }
 
+                    if (this._isStreaming[bridgeid]["entertainmentMode"] === undefined) {
                         break;
                     }
 
@@ -4052,7 +4141,56 @@ var PhueMenu = GObject.registerClass({
 
                     break;
 
+                case "entertainment-mode-switches":
+
+                    if (this._isStreaming[bridgeid] === undefined) {
+                        break;
+                    }
+
+                    if (this._isStreaming[bridgeid]["entertainmentMode"] === undefined) {
+                        break;
+                    }
+
+                    if (this._isStreaming[bridgeid]["entertainmentModeSwitches"] === undefined) {
+                        break;
+                    }
+
+                    let entertainmentSwitchBoxes = this._isStreaming[bridgeid]["entertainmentModeSwitches"];
+
+                    for (let [service, modeSwitch] of entertainmentSwitchBoxes) {
+
+                        if (service instanceof Array &&
+                            service[0] === Utils.entertainmentMode.DISPLAYN) {
+
+                            if (this._isStreaming[bridgeid]["entertainmentMode"] !== Utils.entertainmentMode.DISPLAYN ||
+                                this._isStreaming[bridgeid]["syncGeometry"] === undefined) {
+
+                                modeSwitch.state = false;
+                                continue;
+                            }
+
+                            let [x, y, w, h] = this._isStreaming[bridgeid]["syncGeometry"];
+                            let rect = new Meta.Rectangle({ x, y, width: w, height: h });
+                            let monitorN = global.display.get_monitor_index_for_rect(rect);
+
+                            if (service[1] !== monitorN) {
+                                modeSwitch.state = false;
+                            } else {
+                                modeSwitch.state = true;
+                            }
+
+                        } else if (this._isStreaming[bridgeid]["entertainmentMode"] !== service) {
+                            modeSwitch.state = false;
+                        } else {
+                            modeSwitch.state = true;
+                        }
+                    }
+
+                    break;
+
                 default:
+
+                    break;
             }
         }
     }
@@ -4575,7 +4713,90 @@ var PhueMenu = GObject.registerClass({
             }
         }
 
+        Main.wm.removeKeybinding("sync-selection");
+        Main.wm.addKeybinding(
+            "sync-selection",
+            this._settings,
+            Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+            Shell.ActionMode.NORMAL,
+            () => {
+                let bridgesSyncSelectedArea = {};
+                for (let bridgeid of this._bridgesInMenu) {
+                    bridgesSyncSelectedArea[bridgeid] = this.bridesData[bridgeid]["config"]["name"];
+                }
+                this._openSyncSelectAreaDialog(bridgesSyncSelectedArea);
+            }
+        );
+
         this.refreshMenu();
+    }
+
+    /**
+     * Open modal dialog for entertainment group selection.
+     * Once the group is selected, the sync selected area is started.
+     * 
+     * @method _openSyncSelectAreaDialogGroup
+     * @private
+     * @param {String} bridgeid
+     */
+    _openSyncSelectAreaDialogGroup(bridgeid) {
+        let signal;
+        let groups = this.bridesData[bridgeid]["groups"];
+        let groupsForSelection = {};
+
+        for (let groupid in groups) {
+            if (groups[groupid]["type"] !== "Entertainment") {
+                continue;
+            }
+
+            groupsForSelection[groupid] = groups[groupid]["name"];
+        }
+
+        let groupSelector = new ModalSelector.ModalSelector({
+            options: groupsForSelection,
+            label: _("Select an entertainment group:")
+        });
+        groupSelector.show();
+        groupSelector.newPosition();
+
+        signal = groupSelector.connect(
+            "selected",
+            () => {
+                this._syncSelectionShortCut(bridgeid, groupSelector.result);
+            }
+        );
+        this._appendSignal(signal, groupSelector, true);
+    }
+
+    /**
+     * Open modal dialog before starting sync selected area.
+     * 
+     * @method _openSyncSelectAreaDialog
+     * @private
+     * @param {Object} dictionary with bridges present in menu
+     */
+    _openSyncSelectAreaDialog(bridgesInMenu) {
+        let signal;
+
+        if (Object.keys(bridgesInMenu).length === 1) {
+            this._openSyncSelectAreaDialogGroup(Object.keys(bridgesInMenu)[0]);
+            return;
+        }
+
+        let bridgeSelector = new ModalSelector.ModalSelector({
+            options: bridgesInMenu,
+            label: _("Select a bridge:")
+        });
+        bridgeSelector.show();
+        bridgeSelector.newPosition();
+
+        signal = bridgeSelector.connect(
+            "selected",
+            () => {
+                this._openSyncSelectAreaDialogGroup(bridgeSelector.result);
+            }
+        );
+        this._appendSignal(signal, bridgeSelector, true);
     }
 
     /**
