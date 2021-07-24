@@ -98,6 +98,7 @@ function disable() {
 
     MessageTray.Notification.prototype.createBanner = origCreateBanner;
 
+    hueLightsMenu.disableKeyShortcuts();
     hueLightsMenu.disableStreams();
     hueLightsMenu.disconnectSignals(true);
     hueLightsMenu.destroy();

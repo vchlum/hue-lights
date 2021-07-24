@@ -3181,10 +3181,6 @@ var PhueMenu = GObject.registerClass({
             );
             this._appendSignal(signal, switchButton, true);
 
-            if (!(service instanceof Array) && service === Utils.entertainmentMode.SELECTION) {
-                serviceItem.label.text = `${Utils.entertainmentModeText[service]} (${this._syncSelectionKeyShortcut})`;
-            }
-
             serviceItem.set_x_align(Clutter.ActorAlign.FILL);
             serviceItem.label.set_x_expand(true);
 
@@ -3207,6 +3203,29 @@ var PhueMenu = GObject.registerClass({
         items.push(
             new PopupMenu.PopupSeparatorMenuItem()
         );
+
+        /**
+         * Selected area default group selector.
+         */
+        let setSelectionGroupItem = new PopupMenu.PopupMenuItem(
+            ""
+        );
+
+        signal = setSelectionGroupItem.connect(
+            'button-press-event',
+            () => { this.setDefaultSelectionGroup(); }
+        );
+        this._appendSignal(signal, setSelectionGroupItem, true);
+
+        this.refreshMenuObjects[`special::${bridgeid}::entertainment-default-selection-label`] = {
+            "bridgeid": bridgeid,
+            "object": setSelectionGroupItem.label,
+            "type": "entertainment-default-selection-label",
+            "tmpTier": 0
+        }
+
+        items.push(setSelectionGroupItem);
+
 
         /**
          * Refresh menu item
@@ -3646,9 +3665,19 @@ var PhueMenu = GObject.registerClass({
 
         groupid = parseInt(groupid);
 
-        this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SELECTION;
-
         if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
+            if (this._isStreaming[bridgeid]["groupid"] !== groupid) {
+                Main.notify(
+                    _("Hue Lights - key shortcut: ") + this._syncSelectionKeyShortcut,
+                    _("Disable previous entertainment stream.")
+                );
+
+                Utils.logDebug(`Entertainment group ${this._isStreaming[bridgeid]["groupid"]} is already streaming.`);
+                return;
+            }
+
+            this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SELECTION;
+
             this._entertainmentSelectArea(
                 bridgeid,
                 this._startEntertainmentStream,
@@ -3656,6 +3685,8 @@ var PhueMenu = GObject.registerClass({
                 groupid
             );
         } else {
+            this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SELECTION;
+
             this._entertainmentSelectArea(
                 bridgeid,
                 () => {
@@ -3856,6 +3887,7 @@ var PhueMenu = GObject.registerClass({
     refreshMenu() {
 
         let bridgeid = "";
+        let groupid = "";
         let type = "";
         let object = null;
         let parsedBridgePath = [];
@@ -4186,6 +4218,26 @@ var PhueMenu = GObject.registerClass({
                         }
                     }
 
+                    break;
+
+                case "entertainment-default-selection-label":
+
+                    object.text = _("Set shortcut for ") + `${Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]}`;
+
+                    if (this._syncSelectionDefault !== {}) {
+                        bridgeid = this._syncSelectionDefault["bridgeid"];
+                        groupid = this._syncSelectionDefault["groupid"];
+
+                        if (this.bridesData[bridgeid] === undefined) {
+                            break;
+                        }
+
+                        let bridgeName = this.bridesData[bridgeid]["config"]["name"];
+                        let groupName = this.bridesData[bridgeid]["groups"][groupid]["name"]
+                        object.text = Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION];
+                        object.text = object.text + ` ${_("shortcut")}: ${bridgeName}-${groupName}`;
+                        object.text = object.text + ` (${this._syncSelectionKeyShortcut})`;
+                    }
                     break;
 
                 default:
@@ -4655,6 +4707,7 @@ var PhueMenu = GObject.registerClass({
         let instanceCounter = 0;
         this._openMenuDefault = null;
         this.refreshMenuObjects = {};
+        this._syncSelectionDefault = {};
 
         this.hue.disableAsyncMode();
         this.bridesData = this.hue.checkBridges(false);
@@ -4720,11 +4773,17 @@ var PhueMenu = GObject.registerClass({
             Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
             Shell.ActionMode.NORMAL,
             () => {
-                let bridgesSyncSelectedArea = {};
-                for (let bridgeid of this._bridgesInMenu) {
-                    bridgesSyncSelectedArea[bridgeid] = this.bridesData[bridgeid]["config"]["name"];
+                if (Object.keys(this._syncSelectionDefault).length >= 2) {
+                    this._syncSelectionShortCut(
+                        this._syncSelectionDefault["bridgeid"],
+                        this._syncSelectionDefault["groupid"]
+                    );
+                } else {
+                    Main.notify(
+                        _("Hue Lights - key shortcut: ") + this._syncSelectionKeyShortcut,
+                        _("Set the shortcut for sync ") + Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]
+                    );
                 }
-                this._openSyncSelectAreaDialog(bridgesSyncSelectedArea);
             }
         );
 
@@ -4735,11 +4794,11 @@ var PhueMenu = GObject.registerClass({
      * Open modal dialog for entertainment group selection.
      * Once the group is selected, the sync selected area is started.
      * 
-     * @method _openSyncSelectAreaDialogGroup
+     * @method _openSetDefaultSelectionGroup
      * @private
      * @param {String} bridgeid
      */
-    _openSyncSelectAreaDialogGroup(bridgeid) {
+     _openSetDefaultSelectionGroup(bridgeid) {
         let signal;
         let groups = this.bridesData[bridgeid]["groups"];
         let groupsForSelection = {};
@@ -4762,7 +4821,10 @@ var PhueMenu = GObject.registerClass({
         signal = groupSelector.connect(
             "selected",
             () => {
-                this._syncSelectionShortCut(bridgeid, groupSelector.result);
+                this._syncSelectionDefault = {
+                    "bridgeid": bridgeid,
+                    "groupid": groupSelector.result
+                }
             }
         );
         this._appendSignal(signal, groupSelector, true);
@@ -4771,15 +4833,15 @@ var PhueMenu = GObject.registerClass({
     /**
      * Open modal dialog before starting sync selected area.
      * 
-     * @method _openSyncSelectAreaDialog
+     * @method _openSetDefaultSelectionBridge
      * @private
      * @param {Object} dictionary with bridges present in menu
      */
-    _openSyncSelectAreaDialog(bridgesInMenu) {
+     _openSetDefaultSelectionBridge(bridgesInMenu) {
         let signal;
 
         if (Object.keys(bridgesInMenu).length === 1) {
-            this._openSyncSelectAreaDialogGroup(Object.keys(bridgesInMenu)[0]);
+            this._openSetDefaultSelectionGroup(Object.keys(bridgesInMenu)[0]);
             return;
         }
 
@@ -4793,10 +4855,33 @@ var PhueMenu = GObject.registerClass({
         signal = bridgeSelector.connect(
             "selected",
             () => {
-                this._openSyncSelectAreaDialogGroup(bridgeSelector.result);
+                this._openSetDefaultSelectionGroup(bridgeSelector.result);
             }
         );
         this._appendSignal(signal, bridgeSelector, true);
+    }
+
+    /**
+     * Preparation for opening modal dialog for selecting
+     * default Bridge and group for sync selection.
+     * 
+     * @method setDefaultSelectionGroup
+     */
+    setDefaultSelectionGroup() {
+        let bridgesSyncSelectedArea = {};
+        for (let bridgeid of this._bridgesInMenu) {
+            bridgesSyncSelectedArea[bridgeid] = this.bridesData[bridgeid]["config"]["name"];
+        }
+        this._openSetDefaultSelectionBridge(bridgesSyncSelectedArea);
+    }
+
+    /**
+     * Remove all key binding.
+     * 
+     * @method disableKeyShortcuts
+     */
+    disableKeyShortcuts() {
+        Main.wm.removeKeybinding("sync-selection");
     }
 
     /**
