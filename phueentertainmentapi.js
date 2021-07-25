@@ -387,6 +387,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @method doSyncSreen
      */
     async doSyncSreen(screenRectangle) {
+
         if (!this._doStreaming) {
             return;
         }
@@ -395,7 +396,7 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
-        if (screenRectangle === null &&
+        if (screenRectangle === undefined &&
             (this.screenWidth !== global.screen_width ||
             this.screenHeight !== global.screen_height)) {
             /* screen has been changed */
@@ -494,7 +495,7 @@ var PhueEntertainment =  GObject.registerClass({
         this.dtls.sendEncrypted(lightsArray);
 
         GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
-            this.doSyncSreen();
+            this.doSyncSreen(screenRectangle);
         });
     }
 
@@ -663,7 +664,7 @@ var PhueEntertainment =  GObject.registerClass({
             return;
         }
 
-        if (screenRectangle === null && !this.checkSyncSuitableResolution()) {
+        if (screenRectangle === undefined && !this.checkSyncSuitableResolution()) {
             Main.notify(
                 _("Hue Lights - Sync screen"),
                 _("Your screen is not a solid rectangle.")
@@ -689,7 +690,7 @@ var PhueEntertainment =  GObject.registerClass({
         this.screenWidth = global.screen_width;
         this.screenHeight = global.screen_height;
 
-        if (screenRectangle !== null) {
+        if (screenRectangle !== undefined) {
             startX = screenRectangle[0];
             startY = screenRectangle[1];
             this.screenWidth = screenRectangle[2];

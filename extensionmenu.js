@@ -760,6 +760,22 @@ var PhueMenu = GObject.registerClass({
 
                 break;
 
+            case "mainSwitchEntertainment":
+                if (!data["object"].state) {
+
+                    data["object"].visible = false;
+
+                    if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
+                        this._isStreaming[bridgeid]["state"] = StreamState.STOPPING;
+
+                        this.hue.instances[bridgeid].disableStream(
+                            this._isStreaming[bridgeid]["groupid"],
+                        );
+                    }
+                }
+
+                break;
+
             case "switchEntertainment":
 
                 if (data["object"].state &&
@@ -808,7 +824,7 @@ var PhueMenu = GObject.registerClass({
 
                 value = data["service"];
 
-                this._isStreaming[bridgeid]["syncGeometry"] = [];
+                this._isStreaming[bridgeid]["syncGeometry"] = undefined;
 
                 this._isStreaming[bridgeid]["entertainmentMode"] = value;
 
@@ -2993,7 +3009,7 @@ var PhueMenu = GObject.registerClass({
                 {
                     "bridgePath": bridgePath,
                     "bridgeid": bridgeid,
-                    "object":switchBox,
+                    "object": switchBox,
                     "type": "switchEntertainment"
                 }
             )
@@ -3001,7 +3017,7 @@ var PhueMenu = GObject.registerClass({
 
         this.refreshMenuObjects[bridgePath] = {
             "bridgeid": bridgeid,
-            "object":switchBox,
+            "object": switchBox,
             "type": "switch",
             "tmpTier": 0
         }
@@ -3253,6 +3269,47 @@ var PhueMenu = GObject.registerClass({
         return items;
     }
 
+    _createEntertainmentMainSwitch(bridgeid) {
+        let switchBox;
+        let switchButton;
+
+        let bridgePath = `${this._rndID()}`;
+
+        switchBox = new PopupMenu.Switch(false);
+        switchButton = new St.Button({reactive: true, can_focus: true});
+        switchButton.set_x_align(Clutter.ActorAlign.END);
+        switchButton.set_x_expand(false);
+        switchButton.child = switchBox;
+        switchButton.connect(
+            "button-press-event",
+            () => {
+                switchBox.toggle();
+            }
+        );
+
+        switchButton.connect(
+            "button-press-event",
+            this._menuEventHandler.bind(
+                this,
+                {
+                    "bridgePath": bridgePath,
+                    "bridgeid": bridgeid,
+                    "object": switchBox,
+                    "type": "mainSwitchEntertainment"
+                }
+            )
+        );
+
+        this.refreshMenuObjects[`special::${bridgeid}::main-switch-entertainment`] = {
+            "bridgeid": bridgeid,
+            "object": switchBox,
+            "type": "main-switch-entertainment",
+            "tmpTier": 0
+        }
+
+        return switchButton;
+    }
+
     /**
      * Creates entertainment menu
      * 
@@ -3286,6 +3343,11 @@ var PhueMenu = GObject.registerClass({
             "type": "entertainment-label",
             "tmpTier": 0
         }
+
+        entertainmentMainItem.set_x_align(Clutter.ActorAlign.FILL);
+        entertainmentMainItem.label.set_x_expand(true);
+
+        entertainmentMainItem.add(this._createEntertainmentMainSwitch(bridgeid));
 
         if (this._iconPack !== PhueIconPack.NONE) {
             let iconPath = "";
@@ -3615,7 +3677,7 @@ var PhueMenu = GObject.registerClass({
         switch(this._isStreaming[bridgeid]["entertainmentMode"]) {
 
             case Utils.entertainmentMode.SYNC:
-                this._isStreaming[bridgeid]["syncGeometry"] = null;
+                this._isStreaming[bridgeid]["syncGeometry"] = undefined;
             case Utils.entertainmentMode.SELECTION:
             case Utils.entertainmentMode.DISPLAYN:
                 Utils.logDebug(`Starting sync sreen ${
@@ -4163,6 +4225,11 @@ var PhueMenu = GObject.registerClass({
 
                     let additionlLabel = "";
                     if (this._isStreaming[bridgeid]["entertainmentMode"] === Utils.entertainmentMode.DISPLAYN) {
+
+                        if (this._isStreaming[bridgeid]["syncGeometry"] === undefined) {
+                            break;
+                        }
+
                         let [x, y, w, h] = this._isStreaming[bridgeid]["syncGeometry"];
                         let rect = new Meta.Rectangle({ x, y, width: w, height: h });
                         let monitorN = global.display.get_monitor_index_for_rect(rect);
@@ -4238,6 +4305,25 @@ var PhueMenu = GObject.registerClass({
                         object.text = object.text + ` ${_("shortcut")}: ${bridgeName}-${groupName}`;
                         object.text = object.text + ` (${this._syncSelectionKeyShortcut})`;
                     }
+
+                    break;
+
+                case "main-switch-entertainment":
+                    if (this._isStreaming[bridgeid] === undefined) {
+                        object.visible = false;
+                        break;
+                    }
+
+                    if (this._isStreaming[bridgeid]["state"] !== StreamState.RUNNING &&
+                        this._isStreaming[bridgeid]["state"] !== StreamState.STARTING) {
+
+                        object.visible = false;
+                        break;
+                    }
+
+                    object.visible = true;
+                    object.state = true;
+
                     break;
 
                 default:
