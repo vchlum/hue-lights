@@ -160,14 +160,6 @@ var PhueMenu = GObject.registerClass({
             }
         });
         this._appendSignal(signal, this.menu, false);
-
-        signal = global.display.connect(
-            'workareas-changed',
-            () => {
-                this.rebuildMenu();
-            }
-        );
-        this._appendSignal(signal, global.display, false);
     }
 
     /**
@@ -773,12 +765,19 @@ var PhueMenu = GObject.registerClass({
 
                     data["object"].visible = false;
 
-                    if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
-                        this._isStreaming[bridgeid]["state"] = StreamState.STOPPING;
+                    if (!this.hue.instances[bridgeid].isConnected()) {
+                        break;
+                    }
 
-                        this.hue.instances[bridgeid].disableStream(
-                            this._isStreaming[bridgeid]["groupid"],
-                        );
+                    /* disable any active stream */
+                    for (let groupid in this.bridesData[bridgeid]["groups"]) {
+                        if (this.bridesData[bridgeid]["groups"][groupid]["type"] === "Entertainment" &&
+                            this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+
+                            this.hue.instances[bridgeid].disableStream(
+                                groupid,
+                            );
+                        }
                     }
                 }
 
@@ -3733,6 +3732,15 @@ var PhueMenu = GObject.registerClass({
             return;
         }
 
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            Main.notify(
+                _("Hue Lights - key shortcut: ") + this._syncSelectionKeyShortcut,
+                _("Please check the connection to Philips Hue bridge.")
+            );
+
+            return;
+        }
+
         groupid = parseInt(groupid);
 
         if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
@@ -4422,7 +4430,7 @@ var PhueMenu = GObject.registerClass({
 
                 Main.notify(
                     _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
-                    _("Please check the connection to Philips Hue bridge ")
+                    _("Please check the connection to Philips Hue bridge.")
                 );
 
                 this.bridgeInProblem[bridgeid] = true;
@@ -4940,6 +4948,14 @@ var PhueMenu = GObject.registerClass({
      _openSetDefaultSelectionBridge(bridgesInMenu) {
         let signal;
 
+        if (Object.keys(bridgesInMenu).length === 0) {
+            Main.notify(
+                _("Hue Lights - key shortcut: ") + this._syncSelectionKeyShortcut,
+                _("No bridge connected.")
+            );
+            return;
+        }
+
         if (Object.keys(bridgesInMenu).length === 1) {
             this._openSetDefaultSelectionGroup(Object.keys(bridgesInMenu)[0]);
             return;
@@ -4970,7 +4986,9 @@ var PhueMenu = GObject.registerClass({
     setDefaultSelectionGroup() {
         let bridgesSyncSelectedArea = {};
         for (let bridgeid of this._bridgesInMenu) {
-            bridgesSyncSelectedArea[bridgeid] = this.bridesData[bridgeid]["config"]["name"];
+            if (this.hue.instances[bridgeid].isConnected()){
+                bridgesSyncSelectedArea[bridgeid] = this.bridesData[bridgeid]["config"]["name"];
+            }
         }
         this._openSetDefaultSelectionBridge(bridgesSyncSelectedArea);
     }
@@ -5084,16 +5102,16 @@ var PhueMenu = GObject.registerClass({
      * @method startNotify
      * @param {String} requested bridge
      */
-    startNotify(reqBirdgeid) {
+    startNotify(reqBridgeid) {
 
-        Utils.logDebug(`Starting notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this._notifyLights)}`);
+        Utils.logDebug(`Starting notify lights of bridge ${reqBridgeid}: ${JSON.stringify(this._notifyLights)}`);
 
         for (let i in this._notifyLights) {
 
             let bridgeid = i.split("::")[0];
             let lightid = parseInt(i.split("::")[1]);
 
-            if (reqBirdgeid !== bridgeid) {
+            if (reqBridgeid !== bridgeid) {
                 continue;
             }
 
@@ -5129,34 +5147,34 @@ var PhueMenu = GObject.registerClass({
      * @method endNotify
      * @param {String} requested bridge
      */
-    endNotify(reqBirdgeid) {
+    endNotify(reqBridgeid) {
 
         if (this.oldNotifylight === undefined) {
             return;
         }
 
-        if (this.oldNotifylight[reqBirdgeid] === undefined) {
+        if (this.oldNotifylight[reqBridgeid] === undefined) {
             return;
         }
 
-        Utils.logDebug(`Ending notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this.oldNotifylight[reqBirdgeid])}`);
+        Utils.logDebug(`Ending notify lights of bridge ${reqBridgeid}: ${JSON.stringify(this.oldNotifylight[reqBridgeid])}`);
 
         for (let i in this._notifyLights) {
 
             let bridgeid = i.split("::")[0];
             let lightid = parseInt(i.split("::")[1]);
 
-            if (reqBirdgeid !== bridgeid) {
+            if (reqBridgeid !== bridgeid) {
                 continue;
             }
 
-            if (this.oldNotifylight[reqBirdgeid][i] === undefined) {
+            if (this.oldNotifylight[reqBridgeid][i] === undefined) {
                 continue;
             }
 
             this.hue.instances[bridgeid].setLights(
                 lightid,
-                this.oldNotifylight[reqBirdgeid][i],
+                this.oldNotifylight[reqBridgeid][i],
                 PhueRequestype.NO_RESPONSE_NEED
             );
         }
