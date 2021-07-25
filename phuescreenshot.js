@@ -36,7 +36,7 @@
 const Screenshot = imports.ui.screenshot;
 const Shell = imports.gi.Shell;
 const GObject = imports.gi.GObject;
-
+const Clutter = imports.gi.Clutter;
 
 /**
  * PhueScreenshot class for taking screenshots
@@ -65,11 +65,23 @@ var PhueScreenshot =  GObject.registerClass({
      */
     getColorPixel(x, y) {
         return new Promise((resolve, reject) => {
+            if (!this.pixelWithinScreen(x, y)) {
+                let color = new Clutter.Color();
+                color.red = 0;
+                color.green = 0;
+                color.blue = 0;
+                color.alfa = 0;
+
+                resolve(color);
+                return;
+            }
+
             try {
                 this._screenshot.pick_color(x, y, (o, res) => {
                     let [ok, color] = this._screenshot.pick_color_finish(res);
                     if (ok) {
                         resolve(color);
+                        return;
                     }
 
                     reject();
@@ -78,6 +90,23 @@ var PhueScreenshot =  GObject.registerClass({
                 logError(e);
             }
         });
+    }
+
+    pixelWithinScreen(x, y) {
+        if (x < 0 || y < 0) {
+            return false;
+        }
+
+        if (x > global.screen_width) {
+            return false;
+        }
+
+        if (y > global.screen_height) {
+            return false;
+        }
+
+
+        return true;
     }
 });
     

@@ -160,6 +160,14 @@ var PhueMenu = GObject.registerClass({
             }
         });
         this._appendSignal(signal, this.menu, false);
+
+        signal = global.display.connect(
+            'workareas-changed',
+            () => {
+                this.rebuildMenu();
+            }
+        );
+        this._appendSignal(signal, global.display, false);
     }
 
     /**
@@ -4211,6 +4219,28 @@ var PhueMenu = GObject.registerClass({
 
                     break;
 
+                case "main-switch-entertainment":
+
+                    object.visible = false;
+                    object.state = false;
+
+                    if (this._isStreaming[bridgeid] === undefined) {
+                        break;
+                    }
+
+                    for (let groupid in this.bridesData[bridgeid]["groups"]) {
+                        if (this.bridesData[bridgeid]["groups"][groupid]["type"] !== "Entertainment") {
+                            continue;
+                        }
+
+                        if (this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
+                            object.visible = true;
+                            object.state = true;
+                        }
+                    }
+
+                    break;
+
                 case "entertainment-mode-label":
 
                     object.text = _("Entertainment mode");
@@ -4308,24 +4338,6 @@ var PhueMenu = GObject.registerClass({
 
                     break;
 
-                case "main-switch-entertainment":
-                    if (this._isStreaming[bridgeid] === undefined) {
-                        object.visible = false;
-                        break;
-                    }
-
-                    if (this._isStreaming[bridgeid]["state"] !== StreamState.RUNNING &&
-                        this._isStreaming[bridgeid]["state"] !== StreamState.STARTING) {
-
-                        object.visible = false;
-                        break;
-                    }
-
-                    object.visible = true;
-                    object.state = true;
-
-                    break;
-
                 default:
 
                     break;
@@ -4385,6 +4397,8 @@ var PhueMenu = GObject.registerClass({
                     this._waitingNotification[bridgeid]) {
 
                     this._waitingNotification[bridgeid] = false;
+
+                    this.oldNotifylight[bridgeid] = {};
 
                     this.notifyBackupLight(
                         bridgeid,
@@ -5058,10 +5072,10 @@ var PhueMenu = GObject.registerClass({
                 cmd["xy"] = lightState["xy"];
             }
 
-            this.oldNotifylight[i] = cmd;
+            this.oldNotifylight[reqBridgeid][i] = cmd;
         }
 
-        Utils.logDebug(`Notify lights backed up: ${JSON.stringify(this.oldNotifylight)}`);
+        Utils.logDebug(`Notify lights of bridge: ${reqBridgeid} backed up: ${JSON.stringify(this.oldNotifylight[reqBridgeid])}`);
     }
 
     /**
@@ -5121,7 +5135,11 @@ var PhueMenu = GObject.registerClass({
             return;
         }
 
-        Utils.logDebug(`Ending notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this.oldNotifylight)}`);
+        if (this.oldNotifylight[reqBirdgeid] === undefined) {
+            return;
+        }
+
+        Utils.logDebug(`Ending notify lights of bridge ${reqBirdgeid}: ${JSON.stringify(this.oldNotifylight[reqBirdgeid])}`);
 
         for (let i in this._notifyLights) {
 
@@ -5132,13 +5150,13 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
-            if (this.oldNotifylight[i] === undefined) {
+            if (this.oldNotifylight[reqBirdgeid][i] === undefined) {
                 continue;
             }
 
             this.hue.instances[bridgeid].setLights(
                 lightid,
-                this.oldNotifylight[i],
+                this.oldNotifylight[reqBirdgeid][i],
                 PhueRequestype.NO_RESPONSE_NEED
             );
         }
@@ -5182,6 +5200,13 @@ var PhueMenu = GObject.registerClass({
      * @param {String} bridge
      */
     queueNotify(bridgeid){
+
+        if (this.oldNotifylight[bridgeid] === undefined ||
+            Object.keys(this.oldNotifylight[bridgeid]).length === 0) {
+
+            Utils.logDebug(`Back up of notify lights for bridge ${bridgeid} empty. Ignoring notification.`);
+            return;
+        }
 
         this._notificationQueues[bridgeid].append([
             () => {
