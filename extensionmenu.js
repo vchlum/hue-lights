@@ -160,6 +160,43 @@ var PhueMenu = GObject.registerClass({
             }
         });
         this._appendSignal(signal, this.menu, false);
+
+        /* if the desktop is starting up, wait until starting is finished */
+        this._startingUpSignal = undefined;
+        if (Main.layoutManager._startingUp) {
+            this._startingUpSignal = Main.layoutManager.connect(
+                "startup-complete",
+                () => {
+                    this._setScreenChangeDetection();
+                }
+            );
+        } else {
+            this._setScreenChangeDetection();
+        }
+    }
+
+    /**
+     * Connects signals with change of displays
+     * to rebuild menu and detect new displays.
+     * 
+     * @method _setScreenChangeDetection
+     * @private
+     */
+    _setScreenChangeDetection() {
+        let signal;
+
+        if (this._startingUpSignal !== undefined) {
+            Main.layoutManager.disconnect(this._startingUpSignal);
+            this._startingUpSignal = undefined;
+        }
+
+        signal = Main.layoutManager.connect(
+            "monitors-changed",
+            () => {
+                this.rebuildMenu();
+            }
+        );
+        this._appendSignal(signal, Main.layoutManager, false);
     }
 
     /**

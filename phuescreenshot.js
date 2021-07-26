@@ -105,8 +105,21 @@ var PhueScreenshot =  GObject.registerClass({
             return false;
         }
 
+        /* check if [x, y] is within any screen */
+        let displaysNumber = global.display.get_n_monitors();
+        for (let i = 0; i < displaysNumber; i++) {
+            let monitorRectangle = global.display.get_monitor_geometry(i);
+            if (monitorRectangle.x <= x &&
+                x <= (monitorRectangle.x + monitorRectangle.width) &&
+                monitorRectangle.y <= y &&
+                y <= (monitorRectangle.y + monitorRectangle.height)) {
 
-        return true;
+                return true;
+            }
+        }
+
+
+        return false;
     }
 });
     
