@@ -4985,6 +4985,9 @@ var PhueMenu = GObject.registerClass({
      _openSetDefaultSelectionBridge(bridgesInMenu) {
         let signal;
 
+        /* close the main manu */
+        this.menu.close(false);
+
         if (Object.keys(bridgesInMenu).length === 0) {
             Main.notify(
                 _("Hue Lights - key shortcut: ") + this._syncSelectionKeyShortcut,
