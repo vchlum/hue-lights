@@ -184,7 +184,7 @@ var PhueBridge =  GObject.registerClass({
     }
 
     get ip() {
-        this._ip;
+        return this._ip;
     }
 
     /**

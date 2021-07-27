@@ -62,5 +62,13 @@
       <default>{}</default>
       <summary>Current selection in menu.</summary>
     </key>
+    <key name="syncboxes" type="a{sa{ss}}">
+      <default>{}</default>
+      <summary>All syncboxes</summary>
+    </key>
+    <key name="connection-timeout-sb" type="i">
+      <default>8</default>
+      <summary>Sync box connection timeout</summary>
+    </key>
   </schema>
 </schemalist>

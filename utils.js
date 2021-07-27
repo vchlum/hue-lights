@@ -60,6 +60,9 @@ var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT = "sync-selection";
 var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT_TYPE = "as";
 var HUELIGHTS_SETTINGS_MENU_SELECTED = "menu-selected";
 var HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
+var HUELIGHTS_SETTINGS_SYNCBOXES = "syncboxes";
+var HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
+var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/

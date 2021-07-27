@@ -36,11 +36,13 @@
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const HueMenu = Me.imports.extensionmenu;
+const HueSyncBox = Me.imports.syncboxmenu;
 const Utils = Me.imports.utils;
 const Main = imports.ui.main;
 const MessageTray = imports.ui.messageTray;
 
 var hueLightsMenu; /* main widget */
+var hueSyncBoxMenu; /* widget for sync boxes */
 
 let origCreateBanner;
 
@@ -82,6 +84,10 @@ function enable() {
 
     Main.panel.addToStatusArea('hue-lights', hueLightsMenu);
 
+    hueSyncBoxMenu = new HueSyncBox.PhueSyncBoxMenu();
+
+    Main.panel.addToStatusArea('hue-sync-box', hueSyncBoxMenu);
+
     origCreateBanner = MessageTray.Notification.prototype.createBanner;
     MessageTray.Notification.prototype.createBanner = createBannerHue;
 
@@ -97,6 +103,9 @@ function enable() {
 function disable() {
 
     MessageTray.Notification.prototype.createBanner = origCreateBanner;
+
+    hueSyncBoxMenu.disconnectSignals(true);
+    hueSyncBoxMenu.destroy();
 
     hueLightsMenu.disableKeyShortcuts();
     hueLightsMenu.disableStreams();

@@ -71,6 +71,11 @@ class _Phue {
         }
     }
 
+    /**
+     * Enable asynchronous requests for all bridges.
+     * 
+     * @method enableAsyncMode
+     */
     enableAsyncMode() {
         this._asyncMode = true;
         for (let i in this.instances) {
@@ -78,6 +83,11 @@ class _Phue {
         }
     }
 
+    /**
+     * Disable asynchronous requests for all bridges.
+     * 
+     * @method disableAsyncMode
+     */
     disableAsyncMode() {
         this._asyncMode = false;
 

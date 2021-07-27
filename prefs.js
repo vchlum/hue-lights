@@ -40,11 +40,13 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
+const HueSB = Me.imports.phuesyncbox;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
 
 var hue;
+var hueSB;
 
 /**
  * HuePrefs class for creating preference window
@@ -56,10 +58,13 @@ var hue;
  */
 var Prefs = class HuePrefs {
 
-    constructor(hue) {
+    constructor(hue, hueSB) {
 
         this._refreshPrefs = false;
+        this._defaultPage = 0;
         this._hue = hue;
+        this._hueSB = hueSB;
+        this._dialogSynBoxPress = null;
         this._prefsWidget = new Gtk.ScrolledWindow(
             {
                 hscrollbar_policy: Gtk.PolicyType.NEVER,
@@ -82,7 +87,38 @@ var Prefs = class HuePrefs {
 
         this.readSettings();
 
+        this._hueSB.connect(
+            "registration-complete",
+            () => {
+                if (this._dialogSynBoxPress !== null) {
+                    this._dialogSynBoxPress.destroy();
+                    this._dialogSynBoxPress = null;
+                }
+
+                this._hueSB.checkSyncBoxes();
+                this._refreshPrefs = true;
+                this._defaultPage = 3;
+                this.writeSettings();
+            }
+        );
+
+        this._hueSB.connect(
+            "registration-failed",
+            () => {
+                if (this._dialogSynBoxPress !== null) {
+                    this._dialogSynBoxPress.destroy();
+                    this._dialogSynBoxPress = null;
+                }
+
+                this._hueSB.checkSyncBoxes();
+                this._refreshPrefs = true;
+                this._defaultPage = 3;
+                this.writeSettings();
+            }
+        );
+
         this._hue.checkBridges();
+        this._hueSB.checkSyncBoxes();
 
         this.writeSettings();
     }
@@ -104,6 +140,8 @@ var Prefs = class HuePrefs {
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
         this._iconPack = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_ICONPACK);
         this._entertainment = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT).deep_unpack();
+        this._hueSB.syncboxes = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_SYNCBOXES).deep_unpack();
+        this._connectionTimeoutSB = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB);
     }
 
     /**
@@ -118,6 +156,14 @@ var Prefs = class HuePrefs {
             new GLib.Variant(
                 Utils.HUELIGHTS_SETTINGS_BRIDGES_TYPE,
                 this._hue.bridges
+            )
+        );
+
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_SYNCBOXES,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_SYNCBOXES_TYPE,
+                this._hueSB.syncboxes
             )
         );
     }
@@ -213,6 +259,13 @@ var Prefs = class HuePrefs {
             new Gtk.Label({label: _("Entertainment areas")})
         );
 
+        let pageSyncBox = this._buildSyncBoxesWidget();
+        pageSyncBox.border_width = 10;
+        notebook.append_page(
+            pageSyncBox,
+            new Gtk.Label({label: _("HDMI Sync Boxes")})
+        );
+
         let pageAdvanced = this._buildAdvancedWidget();
         pageAdvanced.border_width = 10;
         notebook.append_page(
@@ -233,6 +286,8 @@ var Prefs = class HuePrefs {
             pageAbout,
             aboutIcon
         );
+
+        notebook.set_current_page(this._defaultPage);
 
         return notebook;
     }
@@ -1088,6 +1143,127 @@ var Prefs = class HuePrefs {
     }
 
     /**
+     * Create the widget with HDMI sync boxes settings.
+     *
+     * @method _buildSyncBoxesWidget
+     * @private
+     * @return {Object} the widget with advancedsettings
+     */
+    _buildSyncBoxesWidget() {
+
+        let top = 1;
+        let tmpWidged = null;
+        let nameWidget = null;
+        let ipWidget = null;
+        let statusWidget = null;
+        let connectWidget = null;
+        let removeWidget = null;
+        let addWidget = null;
+
+        let syncBoxesWidget = new Gtk.Grid(
+            {
+                hexpand: true,
+                vexpand: true,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+
+        for (let sb in this._hueSB.syncboxes) {
+            let name = _("unknown name");
+
+            if (this._hueSB.syncboxes[sb]["name"] !== undefined) {
+                name = this._hueSB.syncboxes[sb]["name"];
+            }
+
+            nameWidget = new Gtk.Label({label: name});
+            syncBoxesWidget.attach(nameWidget, 1, top, 1, 1);
+
+            ipWidget = new Gtk.Entry();
+            ipWidget.set_text(this._hueSB.syncboxes[sb]["ip"]);
+            syncBoxesWidget.attach_next_to(
+                ipWidget,
+                nameWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            if (this._hueSB.instances[sb].isConnected()) {
+                statusWidget = new Gtk.Label({label: _("Connected")});
+                syncBoxesWidget.attach_next_to(
+                    statusWidget,
+                    ipWidget,
+                    Gtk.PositionType.RIGHT,
+                    1,
+                    1
+                );
+                tmpWidged = statusWidget;
+            } else if (this._hueSB.syncboxes[sb]["accessToken"] !== undefined) {
+                statusWidget = new Gtk.Label({label: _("Unreachable")});
+                syncBoxesWidget.attach_next_to(
+                    statusWidget,
+                    ipWidget,
+                    Gtk.PositionType.RIGHT,
+                    1,
+                    1
+                );
+                tmpWidged = statusWidget;
+            } else {
+                connectWidget = new Gtk.Button({label: _("Connect")});
+                connectWidget.connect(
+                    "clicked",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {"event": "connect-syncbox", "syncboxid":sb, "object":ipWidget}
+                    )
+                );
+                syncBoxesWidget.attach_next_to(
+                    connectWidget,
+                    ipWidget,
+                    Gtk.PositionType.RIGHT,
+                    1,
+                    1
+                );
+                tmpWidged = connectWidget;
+            }
+            removeWidget = new Gtk.Button({label: _("Remove")});
+            removeWidget.connect(
+                "clicked",
+                this._widgetEventHandler.bind(
+                    this,
+                    {"event": "remove-syncbox", "syncboxid": sb}
+                )
+            );
+            syncBoxesWidget.attach_next_to(
+                removeWidget,
+                tmpWidged,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
+            top++;
+        }
+
+        addWidget = new Gtk.Button(
+            {label: _("Add Philips Hue Sync Box IP")}
+        );
+        addWidget.connect(
+            "clicked",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "add-syncbox-ip", "object": null}
+            )
+        );
+        syncBoxesWidget.attach(addWidget, 1, top, 4, 1);
+
+        top++;
+
+        return syncBoxesWidget;
+    }
+
+    /**
      * Create the widget with advanced settings.
      *
      * @method _buildAdvancedWidget
@@ -1109,11 +1285,11 @@ var Prefs = class HuePrefs {
         );
 
         /**
-         * Set connection timeout
+         * Set bridge connection timeout
          */
 
         labelWidget = new Gtk.Label(
-            {label: _("Connection timeout (seconds):")}
+            {label: _("Bridge connection timeout (seconds):")}
         );
         advancedWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -1123,6 +1299,11 @@ var Prefs = class HuePrefs {
         connectionTimeoutWidget.append_text("3");
         connectionTimeoutWidget.append_text("4");
         connectionTimeoutWidget.append_text("5");
+        connectionTimeoutWidget.append_text("6");
+        connectionTimeoutWidget.append_text("7");
+        connectionTimeoutWidget.append_text("8");
+        connectionTimeoutWidget.append_text("9");
+        connectionTimeoutWidget.append_text("10");
         connectionTimeoutWidget.set_active(this._connectionTimeout - 1);
         connectionTimeoutWidget.connect(
             "changed",
@@ -1133,6 +1314,49 @@ var Prefs = class HuePrefs {
         )
         advancedWidget.attach_next_to(
             connectionTimeoutWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
+        top++;
+
+        /**
+         * Set sync box connection timeout
+         */
+
+        labelWidget = new Gtk.Label(
+            {label: _("Sync box connection timeout (seconds):")}
+        );
+        advancedWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let connectionTimeoutWidgetSB = new Gtk.ComboBoxText();
+        connectionTimeoutWidgetSB.append_text("1");
+        connectionTimeoutWidgetSB.append_text("2");
+        connectionTimeoutWidgetSB.append_text("3");
+        connectionTimeoutWidgetSB.append_text("4");
+        connectionTimeoutWidgetSB.append_text("5");
+        connectionTimeoutWidgetSB.append_text("6");
+        connectionTimeoutWidgetSB.append_text("7");
+        connectionTimeoutWidgetSB.append_text("8");
+        connectionTimeoutWidgetSB.append_text("9");
+        connectionTimeoutWidgetSB.append_text("10");
+        connectionTimeoutWidgetSB.append_text("11");
+        connectionTimeoutWidgetSB.append_text("12");
+        connectionTimeoutWidgetSB.append_text("13");
+        connectionTimeoutWidgetSB.append_text("14");
+        connectionTimeoutWidgetSB.append_text("15");
+        connectionTimeoutWidgetSB.set_active(this._connectionTimeoutSB - 1);
+        connectionTimeoutWidgetSB.connect(
+            "changed",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "connection-timeout-sb", "object": connectionTimeoutWidgetSB}
+            )
+        )
+        advancedWidget.attach_next_to(
+            connectionTimeoutWidgetSB,
             labelWidget,
             Gtk.PositionType.RIGHT,
             1,
@@ -1196,7 +1420,7 @@ var Prefs = class HuePrefs {
         );
 
         let aboutTextLabel = new Gtk.Label({
-            label: `${Me.metadata.name}, version: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
+            label: `${Me.metadata.name}, ${_("version")}: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
         });
 
         if (Utils.isGnome40()) {
@@ -1279,6 +1503,56 @@ var Prefs = class HuePrefs {
         }
     }
 
+    /**
+     * Show modal dialog for pressing sync box button.
+     * 
+     * @method showSyncBoxPressDialog
+     */
+    showSyncBoxPressDialog() {
+        if (this._dialogSynBoxPress !== null) {
+            this._dialogSynBoxPress.destroy();
+            this._dialogSynBoxPress = null;
+        }
+
+        let dialogSynBoxPress = new Gtk.Dialog(
+            {
+                modal: true,
+                title: _("Press HDMI sync box button")
+            }
+        );
+
+        this._dialogSynBoxPress = dialogSynBoxPress;
+
+        let contentArea = dialogSynBoxPress.get_content_area();
+
+        let pressButtonLabel = new Gtk.Label({
+                label: _("While this dialog is shown, hold the button on HDMI sync box\nuntil the led blinks green (~3 seconds) and release.")
+        });
+
+        if (Utils.isGnome40()) {
+            contentArea.append(pressButtonLabel);
+        } else {
+            contentArea.add(pressButtonLabel);
+        }
+
+        let button = Gtk.Button.new_with_label(_("Cancel"));
+        button.connect('clicked', () => {
+            this._hueSB.cancelAdding();
+            dialogSynBoxPress.destroy();
+        });
+
+        button.expand = true;
+        button.grab_focus();
+
+        if (Utils.isGnome40()) {
+            dialogSynBoxPress.add_action_widget(button, 0);
+            dialogSynBoxPress.show();
+        } else {
+            contentArea.add(button);
+            dialogSynBoxPress.show_all();
+        }
+    }
+
     unsetDefaultBridge() {
         for (let bridge in this._hue.bridges) {
             if (this._hue.bridges[bridge]["default"] !== undefined) {
@@ -1300,6 +1574,10 @@ var Prefs = class HuePrefs {
         let ip;
         let lightId;
         let value;
+        let dialog;
+        let entry;
+        let buttonOk;
+        let sb;
 
         switch(data["event"]) {
 
@@ -1316,6 +1594,7 @@ var Prefs = class HuePrefs {
 
                 this._hue.checkBridges();
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
@@ -1330,6 +1609,7 @@ var Prefs = class HuePrefs {
                 }
 
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
@@ -1342,6 +1622,7 @@ var Prefs = class HuePrefs {
                 this._hue.bridges[bridgeid]["default"] = bridgeid;
 
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
@@ -1352,6 +1633,7 @@ var Prefs = class HuePrefs {
                 this.unsetDefaultBridge();
 
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
@@ -1367,26 +1649,27 @@ var Prefs = class HuePrefs {
 
                 this._hue.checkBridges();
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
             case "add-ip":
 
-                let dialog = new Gtk.Dialog(
+                dialog = new Gtk.Dialog(
                     {
                         modal: true,
                         title: _("Enter new IP address")
                     }
                 );
 
-                let entry = new Gtk.Entry();
+                entry = new Gtk.Entry();
                 if (Utils.isGnome40()) {
                     dialog.get_content_area().append(entry);
                 } else {
                     dialog.get_content_area().add(entry);
                 }
 
-                let buttonOk = new Gtk.Button({label: _("OK")});
+                buttonOk = new Gtk.Button({label: _("OK")});
                 buttonOk.connect(
                     "clicked",
                     this._widgetEventHandler.bind(
@@ -1408,6 +1691,7 @@ var Prefs = class HuePrefs {
 
                 this._hue.checkBridges();
                 this._refreshPrefs = true;
+                this._defaultPage = 0;
                 this.writeSettings();
                 break;
 
@@ -1456,12 +1740,90 @@ var Prefs = class HuePrefs {
                 );
                 break;
 
+            case "connect-syncbox":
+
+                sb = data["syncboxid"];
+                ip = data["object"].get_text();
+                this._hueSB.syncboxes[sb]["ip"] = ip;
+
+                this.showSyncBoxPressDialog();
+                this._hueSB.addSyncBoxManual(ip);
+                break;
+
+            case "remove-syncbox":
+
+                sb = data["syncboxid"];
+                Utils.logDebug(`Removing sync box: ${sb}`);
+
+                delete(this._hueSB.syncboxes[sb]);
+                if (this._hueSB.instances[sb] !== undefined) {
+                    this._hueSB.instances[sb].deleteRegistration();
+                    delete(this._hueSB.instances[sb]);
+                }
+
+                this._refreshPrefs = true;
+                this._defaultPage = 3;
+                this.writeSettings();
+                break;
+
+            case "new-syncbox-ip":
+
+                ip = data["object2"].get_text();
+                data["object1"].destroy();
+
+                this.showSyncBoxPressDialog();
+                this._hueSB.addSyncBoxManual(ip);
+                break;
+
+            case "add-syncbox-ip":
+
+                dialog = new Gtk.Dialog(
+                    {
+                        modal: true,
+                        title: _("Enter new IP address")
+                    }
+                );
+
+                entry = new Gtk.Entry();
+                if (Utils.isGnome40()) {
+                    dialog.get_content_area().append(entry);
+                } else {
+                    dialog.get_content_area().add(entry);
+                }
+
+                buttonOk = new Gtk.Button({label: _("OK")});
+                buttonOk.connect(
+                    "clicked",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {"event": "new-syncbox-ip", "object1": dialog, "object2": entry}
+                    )
+                );
+
+                if (Utils.isGnome40()) {
+                    dialog.add_action_widget(buttonOk, 0);
+                    dialog.show();
+                } else {
+                    dialog.get_action_area().add(buttonOk);
+                    dialog.show_all();
+                }
+                break;
+
             case "connection-timeout":
 
                 this._connectionTimeout = data["object"].get_active() + 1;
                 this._settings.set_int(
                     Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT,
                     this._connectionTimeout
+                );
+                break;
+
+            case "connection-timeout-sb":
+
+                this._connectionTimeoutSB = data["object"].get_active() + 1;
+                this._settings.set_int(
+                    Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB,
+                    this._connectionTimeoutSB
                 );
                 break;
 
@@ -1592,6 +1954,7 @@ function init() {
     ExtensionUtils.initTranslations();
 
     hue = new Hue.Phue(false);
+    hueSB = new HueSB.PhueSyncBox({async: false});
 
     log(`initializing ${Me.metadata.name} Preferences`);
 }
@@ -1605,7 +1968,7 @@ function init() {
  */
 function buildPrefsWidget() {
 
-    let huePrefs = new Prefs(hue);
+    let huePrefs = new Prefs(hue, hueSB);
 
     return huePrefs.getPrefsWidget();
 }
