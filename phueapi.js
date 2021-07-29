@@ -90,7 +90,8 @@ var PhueRequestype = {
     RULES_DATA: 9,
     SENSORS_DATA: 10,
     RESOURCE_LINKS_DATA: 11,
-    NEW_USER: 12
+    ENABLE_STREAM: 12,
+    NEW_USER: 13
 };
 
 
@@ -132,7 +133,8 @@ var PhueBridge =  GObject.registerClass({
         "rules-data":{},
         "sensors-data": {},
         "resource-links-data": {},
-        "connection-problem": {}
+        "stream-enabled": {},
+        "connection-problem": {},
     }
 }, class PhueBridge extends GObject.Object {
 
@@ -388,6 +390,10 @@ var PhueBridge =  GObject.registerClass({
                             case PhueRequestype.RESOURCE_LINKS_DATA:
                                 this._resourcelinksData = this._data;
                                 this.emit("resource-links-data");
+                                break;
+
+                            case PhueRequestype.ENABLE_STREAM:
+                                this.emit("stream-enabled");
                                 break;
 
                             case PhueRequestype.NO_RESPONSE_NEED:
@@ -871,7 +877,7 @@ var PhueBridge =  GObject.registerClass({
         return res;
     }
 
-    enableStream(groupId, requestHueType = PhueRequestype.CHANGE_OCCURRED) {
+    enableStream(groupId, requestHueType = PhueRequestype.ENABLE_STREAM) {
 
         let url = "";
         let res = [];

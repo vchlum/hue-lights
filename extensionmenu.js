@@ -77,9 +77,10 @@ const PhueIconPack = {
 const StreamState = {
     STOPPED: 0,
     STARTING: 1,
-    STOPPING: 2,
-    RUNNING: 3,
-    FAILED: 4
+    STARTED: 2,
+    STOPPING: 3,
+    RUNNING: 4,
+    FAILED: 5
 };
 
 /**
@@ -698,6 +699,7 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case StreamState.STARTING:
+            case StreamState.STARTED:
                 this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
                 this._checkHueLightsIsStreaming(bridgeid);
 
@@ -3713,6 +3715,14 @@ var PhueMenu = GObject.registerClass({
             streamingLights.push(parseInt(light));
         }
 
+        /**
+         * gradient light strip not working with api 1 anymore:(
+         * It even disables the stream to the entertainment group now...
+         * We need to wait for api 2 to be publicized by Philips Hue...
+         * TODO
+         */
+        gradient = false;
+
         let streamingLightsLocations = {};
         for (let i in this.bridesData[bridgeid]["groups"][groupid]["locations"]) {
             streamingLightsLocations[parseInt(i)] = this.bridesData[bridgeid]["groups"][groupid]["locations"][i];
@@ -3896,7 +3906,9 @@ var PhueMenu = GObject.registerClass({
                 break;
 
             case StreamState.STARTING:
+                break;
 
+            case StreamState.STARTED:
                 if (!this._checkClientKey(bridgeid)) {
                     this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
                     return;
@@ -4452,6 +4464,33 @@ var PhueMenu = GObject.registerClass({
 
                     this.queueNotify(bridgeid);
                 }
+            }
+        );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
+
+        signal = this.hue.instances[bridgeid].connect(
+            "stream-enabled",
+            () => {
+                let streamRes = this.hue.instances[bridgeid].getAsyncData();
+
+                if (streamRes[0] !== undefined && streamRes[0]["success"] !== undefined) {
+                    /**
+                     * TODO After the last update 29/7/2021 an issue occured.
+                     * Even if we asynchronously check that the stream is successfully started,
+                     * the bridge is not ready to accept the UDP msg yet:(.
+                     * I suspect, the bridge will send a push notification when stream is ready,
+                     * but the new api with push notifications was not published yet and it is
+                     * unknown :-(.
+                     * So lets just wait a moment for bridge to be ready.
+                     * This is a workaround - the timeout should not be needed.
+                     * I will rewrite once they fix the bridge or provide the new api.
+                     */
+                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 700, () => {
+                        this._isStreaming[bridgeid]["state"] = StreamState.STARTED;
+                        this._checkHueLightsIsStreaming(bridgeid);
+                    });
+                }
+                this.hue.instances[bridgeid].getAll();
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
