@@ -1,3 +1,10 @@
+## Version 13
+ * new UI for entertainment areas and modes
+ * sync particular display
+ * sync screen selection
+ * screen selection on key shortcut
+ * queued notifications
+ * miscellaneous fixes
 ## Version 12
  * new UI and UX; standard and compact menu
  * multiple bridges - proper support
