@@ -7,6 +7,13 @@ hue-lights is a Gnome Shell extension for Philips Hue lights controlled by Phili
 ## Philips Hue Entertainment areas
 This Extension supports the Entertainment areas. Using the original app on the phone, you can create an Entertainment area. You can start synchronizing your lights with your screen afterward. The sync feature requires a special key generated on the bridge pairing. Upgrading from version 8 or earlier requires to remove and connect the Philips Hue bridge. Please, keep your bridge up to date. The feature also needs the api version 1.22 or newer. An example of this feature is in this video: https://youtu.be/4WEKdGSNbPY
 
+## Troubleshooting
+ 1. If you are experiencing any trouble with the upgrade, try to log out and log in again.
+ 1. If your troubles persist, reset this extension by reseting key: "/org/gnome/shell/extensions/hue-lights/" in gnome.
+    * You can call: `dconf reset -f /org/gnome/shell/extensions/hue-lights/` or use `dconf-editor`.
+ 1. Not vanishing your trouble, please file an issue on GitHub. If you can, please enable debug mode in the settings and attach the log file.
+    * You can obtain the logfile like this: `journalctl -f /usr/bin/gnome-shell 2>&1 | grep -i hue > hue-lights.log`.
+
 ## Warning
 This application makes use of fast changing light effects conditions alone, or in combination with certain content on the screen it may trigger previously undetected epileptic symptoms or seizures in persons who have no history of prior seizures or epilepsy.
 
