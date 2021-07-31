@@ -40,7 +40,6 @@ const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const GObject = imports.gi.GObject;
 const ByteArray = imports.byteArray;
-const Lang = imports.lang;
 const DTLSClient = Me.imports.dtlsclient;
 const PhueScreenshot = Me.imports.phuescreenshot;
 

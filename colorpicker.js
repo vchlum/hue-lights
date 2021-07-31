@@ -33,7 +33,6 @@
  */
 
 const St = imports.gi.St;
-const Lang = imports.lang;
 const Gio = imports.gi.Gio;
 const ModalDialog = imports.ui.modalDialog;
 const Clutter = imports.gi.Clutter;
@@ -352,7 +351,9 @@ var ColorPicker =  GObject.registerClass({
 
         this.setButtons([{
             label: _("Finish"),
-            action: Lang.bind(this, this._colorPickedFinish),
+            action: () => {
+                this._colorPickedFinish();
+            },
             key: Clutter.Escape
         }]);
 

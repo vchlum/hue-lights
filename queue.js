@@ -35,7 +35,6 @@
  * THE SOFTWARE.
  */
 
-const Lang = imports.lang;
 const GLib = imports.gi.GLib;
 
 var handlerType = {
@@ -103,6 +102,13 @@ class _Queue {
         callback();
     }
 
+    _delayTask(task, callback) {
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, task[1], () => {
+            task[0]();
+            callback();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
     /**
      * Predefined timed queue handler.
      * 
@@ -113,14 +119,7 @@ class _Queue {
      */
     async _timedHandler(task, callback) {
 
-        await Lang.bind(this, function() {
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, task[1], () => {
-                task[0]();
-                callback();
-                return GLib.SOURCE_REMOVE;
-            });
-
-        })();
+        await this._delayTask(task, callback);
     }
 
     /**

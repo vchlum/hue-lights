@@ -40,7 +40,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
-const Lang = imports.lang;
 
 const Gettext = imports.gettext;
 const _ = Gettext.gettext;
@@ -74,12 +73,12 @@ var Prefs = class HuePrefs {
         );
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
-        this._settings.connect("changed", Lang.bind(this, () => {
+        this._settings.connect("changed", () => {
             if (this._refreshPrefs) {
                 this.getPrefsWidget();
                 this._refreshPrefs = false;
             }
-        }));
+        });
 
         this.readSettings();
 

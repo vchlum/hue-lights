@@ -51,7 +51,6 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Gio = imports.gi.Gio;
 const GObject = imports.gi.GObject;
-const Lang = imports.lang;
 const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 const Meta = imports.gi.Meta;
@@ -118,13 +117,13 @@ var PhueMenu = GObject.registerClass({
         this._notificationQueues = {};
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
-        signal = this._settings.connect("changed", Lang.bind(this, function() {
+        signal = this._settings.connect("changed", () => {
             if (this.readSettings()) {
                 this.rebuildMenu();
             }
             this.setPositionInPanel();
             this.hue.setConnectionTimeout(this._connectionTimeout);
-        }));
+        });
         this._appendSignal(signal, this._settings, false);
 
         this.hue = new Hue.Phue(true);
@@ -1218,9 +1217,9 @@ var PhueMenu = GObject.registerClass({
         switchButton.child = switchBox;
         switchButton.connect(
             "button-press-event",
-            Lang.bind(this, function() {
+            () =>{
                 switchBox.toggle();
-            })
+            }
         );
         switchButton.connect(
             "button-press-event",
@@ -1558,9 +1557,9 @@ var PhueMenu = GObject.registerClass({
         switchButton.child = switchBox;
         switchButton.connect(
             "button-press-event",
-            Lang.bind(this, function() {
+            () => {
                 switchBox.toggle();
-            })
+            }
         );
         switchButton.connect(
             "button-press-event",
@@ -2024,9 +2023,9 @@ var PhueMenu = GObject.registerClass({
         switchButton.child = switchBox;
         switchButton.connect(
             "button-press-event",
-            Lang.bind(this, function() {
+            () => {
                 switchBox.toggle();
-            })
+            }
         );
         switchButton.connect(
             "button-press-event",
@@ -3044,9 +3043,9 @@ var PhueMenu = GObject.registerClass({
         switchButton.child = switchBox;
         switchButton.connect(
             "button-press-event",
-            Lang.bind(this, function() {
+            () => {
                 switchBox.toggle();
-            })
+            }
         );
         switchButton.connect(
             "button-press-event",
