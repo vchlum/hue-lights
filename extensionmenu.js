@@ -115,11 +115,14 @@ var PhueMenu = GObject.registerClass({
         this._isStreaming = {};
         this._waitingNotification = {};
         this._notificationQueues = {};
+        this._rebuildingMenu = false;
+        this._rebuildingMenuFirstTime = true;
+        this.bridesData = {};
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         signal = this._settings.connect("changed", () => {
             if (this.readSettings()) {
-                this.rebuildMenu();
+                this.rebuildMenuStart();
             }
             this.setPositionInPanel();
             this.hue.setConnectionTimeout(this._connectionTimeout);
@@ -145,7 +148,7 @@ var PhueMenu = GObject.registerClass({
 
         this.add_child(icon);
 
-        this.rebuildMenu(true);
+        this.rebuildMenuStart(true);
 
         signal = this.menu.connect("open-state-changed", () => {
             if (this.menu.isOpen) {
@@ -193,7 +196,7 @@ var PhueMenu = GObject.registerClass({
         signal = Main.layoutManager.connect(
             "monitors-changed",
             () => {
-                this.rebuildMenu();
+                this.rebuildMenuStart();
             }
         );
         this._appendSignal(signal, Main.layoutManager, false);
@@ -1371,7 +1374,7 @@ var PhueMenu = GObject.registerClass({
                     "button-press-event",
                     () => {
                         this._bridgesInMenu = [bridgeid];
-                        this.rebuildMenu();
+                        this.rebuildMenuStart();
                     }
                 );
 
@@ -3305,7 +3308,7 @@ var PhueMenu = GObject.registerClass({
 
         signal = refreshMenuItem.connect(
             'button-press-event',
-            () => { this.rebuildMenu(); }
+            () => { this.rebuildMenuStart(); }
         );
         this._appendSignal(signal, refreshMenuItem, true);
 
@@ -4426,9 +4429,13 @@ var PhueMenu = GObject.registerClass({
         signal = this.hue.instances[bridgeid].connect(
             "all-data",
             () => {
+                this.bridesData[bridgeid] = {};
+
                 if (this.hue.instances[bridgeid].isConnected()) {
                     this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
                 }
+
+                this._checkRebuildReady(bridgeid, this._rebuildingMenuFirstTime);
 
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
@@ -4439,9 +4446,11 @@ var PhueMenu = GObject.registerClass({
                 }
                 this.bridgeInProblem[bridgeid] = false;
 
-                this.refreshMenu();
+                if (this._rebuildingMenu === false) {
+                    this.refreshMenu();
 
-                this._checkHueLightsIsStreaming(bridgeid);
+                    this._checkHueLightsIsStreaming(bridgeid);
+                }
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
@@ -4463,6 +4472,16 @@ var PhueMenu = GObject.registerClass({
 
                     this.queueNotify(bridgeid);
                 }
+            }
+        );
+        this._appendSignal(signal, this.hue.instances[bridgeid], true);
+
+        signal = this.hue.instances[bridgeid].connect(
+            "config-data",
+            () => {
+                let data = this.hue.instances[bridgeid].getAsyncData();
+                this.hue.bridges[bridgeid]["name"] = data["name"];
+                this.hue.bridges[bridgeid]["mac"] = data["mac"];
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
@@ -4497,6 +4516,10 @@ var PhueMenu = GObject.registerClass({
         signal = this.hue.instances[bridgeid].connect(
             "connection-problem",
             () => {
+                this.bridesData[bridgeid] = {};
+
+                this._checkRebuildReady(bridgeid, this._rebuildingMenuFirstTime);
+
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
                     /* already noticed */
@@ -4634,17 +4657,12 @@ var PhueMenu = GObject.registerClass({
     /**
      * Disable entertainments streams
      * on extension disable.
-     * This is done in synchronous mode
-     * besause destroy of the extension
-     * follows.
      * 
      * @method disableStreams
      */
     disableStreams() {
 
-        Utils.logDebug(`Disabling all streams (using sync mode).`);
-
-        this.hue.disableAsyncMode();
+        Utils.logDebug(`Disabling all streams.`);
 
         for (let bridgeid in this.hue.instances) {
 
@@ -4670,8 +4688,6 @@ var PhueMenu = GObject.registerClass({
 
             this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
         }
-
-        this.hue.enableAsyncMode();
     }
 
     /**
@@ -4817,7 +4833,7 @@ var PhueMenu = GObject.registerClass({
                 'button-press-event',
                 () => {
                     this._compactMenu = !this._compactMenu;
-                    this.rebuildMenu();
+                    this.rebuildMenuStart();
                 }
             );
             this._appendSignal(signal, switchMenuItem, true);
@@ -4842,7 +4858,7 @@ var PhueMenu = GObject.registerClass({
 
         signal = refreshMenuItem.connect(
             'button-press-event',
-            () => { this.rebuildMenu(); }
+            () => { this.rebuildMenuStart(); }
         );
         this._appendSignal(signal, refreshMenuItem, true);
 
@@ -4874,29 +4890,18 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
-     * Rebuild the menu from scratch
+     * Invokes rebuilding the menu.
      * 
-     * @method rebuildMenu
+     * @method rebuildMenuStart
      */
-    rebuildMenu(firstTime = false) {
+    rebuildMenuStart() {
 
-        Utils.logDebug("Rebuilding menu.");
+        Utils.logDebug("Rebuilding menu started.");
 
         this.disableStreams();
         this.disconnectSignals();
 
-        let bridgeItems = [];
         let oldItems = this.menu._getMenuItems();
-        let instanceCounter = 0;
-        this._openMenuDefault = null;
-        this.refreshMenuObjects = {};
-        this._syncSelectionDefault = {};
-
-        this.hue.disableAsyncMode();
-        this.bridesData = this.hue.checkBridges(false);
-        this.hue.enableAsyncMode();
-
-        this._bridgesInMenu = this.getBridgesInMenu(this._bridgesInMenu);
 
         for (let bridgeid in this.colorPicker){
             if (this.colorPicker[bridgeid].destroy) {
@@ -4909,6 +4914,69 @@ var PhueMenu = GObject.registerClass({
         for (let item in oldItems){
             oldItems[item].destroy();
         }
+
+        this._rebuildingMenu = true;
+        this._rebuildingMenuRes = {};
+        for (let bridgeid in this.hue.bridges) {
+            this._rebuildingMenuRes[bridgeid] = false;
+        }
+
+        this.hue.checkBridges(false);
+
+        for (let bridgeid in this.hue.bridges) {
+            this._connectHueInstance(bridgeid);
+            this.hue.checkBridge(bridgeid);
+        }
+    }
+
+    /**
+     * Checks whether there are data form all bridges to build the menu.
+     * If all data are here, run rebuild menu.
+     * 
+     * @method _checkRebuildReady
+     * @private
+     * @param {String} bridgeid of bridge that provided last data
+     * @param {Boolean} is this first time building the menu
+     */
+    _checkRebuildReady(bridgeid, firstTime = false) {
+
+        if (! this._rebuildingMenu) {
+            return;
+        }
+
+        this._rebuildingMenuRes[bridgeid] = true;
+
+
+        for (let bridgeid in this._rebuildingMenuRes) {
+            if (this._rebuildingMenuRes[bridgeid] === false) {
+                return;
+            }
+        }
+
+        this._rebuildingMenu = false;
+        this._rebuildingMenuRes = {};
+
+        this._rebuildMenu(firstTime);
+    }
+
+    /**
+     * Rebuild the menu from scratch
+     * 
+     * @method rebuildMenu
+     * @private
+     * @param {Boolean} is this first time building the menu
+     */
+    _rebuildMenu(firstTime = false) {
+
+        Utils.logDebug("Rebuilding menu.");
+
+        let bridgeItems = [];
+        let instanceCounter = 0;
+        this._openMenuDefault = null;
+        this.refreshMenuObjects = {};
+        this._syncSelectionDefault = {};
+
+        this._bridgesInMenu = this.getBridgesInMenu(this._bridgesInMenu);
 
         for (let bridgeid of this._bridgesInMenu) {
 
@@ -4926,8 +4994,6 @@ var PhueMenu = GObject.registerClass({
 
             instanceCounter++;
  
-            this._connectHueInstance(bridgeid);
-
             this.entertainmentInit(bridgeid, firstTime);
 
             if (!this._compactMenu) {
@@ -4969,6 +5035,8 @@ var PhueMenu = GObject.registerClass({
                 }
             }
         );
+
+        this._rebuildingMenuFirstTime = false;
 
         this.refreshMenu();
     }

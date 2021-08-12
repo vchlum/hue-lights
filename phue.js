@@ -90,11 +90,10 @@ class _Phue {
      * Check if bridge with bridgeid is connected,
      * and refreshes info about bridge.
      * 
-     * @method _checkBridge
-     * @private
+     * @method checkBridge
      * @param {String} bridgeid which bridge we use here
      */
-    _checkBridge(bridgeid) {
+    checkBridge(bridgeid) {
 
         Utils.logDebug(`Checking bridge: ${bridgeid}`);
 
@@ -251,7 +250,7 @@ class _Phue {
                 instance.setUserName(this.bridges[bridgeid]["username"]);
             }
 
-            this._checkBridge(bridgeid);
+            this.checkBridge(bridgeid);
 
             /**
              * if error here, maybe bridge button is pressed
@@ -290,7 +289,7 @@ class _Phue {
                         Utils.logDebug(`bridge connected; got clientkey: ${this.bridges[bridgeid]["clientkey"]}`);
                     }
 
-                    this._checkBridge(bridgeid);
+                    this.checkBridge(bridgeid);
                 }
             }
         }
