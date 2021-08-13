@@ -4435,7 +4435,7 @@ var PhueMenu = GObject.registerClass({
                     this.bridesData[bridgeid] = this.hue.instances[bridgeid].getAsyncData();
                 }
 
-                this._checkRebuildReady(bridgeid, this._rebuildingMenuFirstTime);
+                this._checkRebuildReady(bridgeid);
 
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
@@ -4518,7 +4518,7 @@ var PhueMenu = GObject.registerClass({
             () => {
                 this.bridesData[bridgeid] = {};
 
-                this._checkRebuildReady(bridgeid, this._rebuildingMenuFirstTime);
+                this._checkRebuildReady(bridgeid);
 
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
@@ -4698,11 +4698,13 @@ var PhueMenu = GObject.registerClass({
      * @param {Number} signal number
      * @param {Object} object signal is connected
      * @param {Boolean} disconnect all signals
+     * @param {Boolean} disconnect temporal signals
      */
-    _appendSignal(signal, object, rebuild) {
+    _appendSignal(signal, object, rebuild, tmp = false) {
         this._signals[signal] = {
             "object": object,
-            "rebuild": rebuild
+            "rebuild": rebuild,
+            "tmp": tmp
         }
     }
 
@@ -4711,10 +4713,17 @@ var PhueMenu = GObject.registerClass({
      * 
      * @method disconnectSignals
      * @param {Boolean} disconnect all
+     * @param {Boolean} disconnect only tmp signals and return
      */
-    disconnectSignals(all = false) {
+    disconnectSignals(all, onlyTmp = false) {
+        let toDisconnect = "rebuild";
+
+        if (onlyTmp) {
+            toDisconnect = "tmp";
+        }
+
         for (let id in this._signals) {
-            if (this._signals[id]["rebuild"] || all) {
+            if (this._signals[id][toDisconnect] || all) {
                 try {
                     this._signals[id]["object"].disconnect(id);
                     delete(this._signals[id]);
@@ -4860,7 +4869,7 @@ var PhueMenu = GObject.registerClass({
             'button-press-event',
             () => { this.rebuildMenuStart(); }
         );
-        this._appendSignal(signal, refreshMenuItem, true);
+        this._appendSignal(signal, refreshMenuItem, true, true);
 
         items.push(refreshMenuItem);
 
@@ -4883,7 +4892,7 @@ var PhueMenu = GObject.registerClass({
             'button-press-event',
             () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
         );
-        this._appendSignal(signal, prefsMenuItem, true);
+        this._appendSignal(signal, prefsMenuItem, true, true);
         items.push(prefsMenuItem);
 
         return items;
@@ -4899,9 +4908,7 @@ var PhueMenu = GObject.registerClass({
         Utils.logDebug("Rebuilding menu started.");
 
         this.disableStreams();
-        this.disconnectSignals();
-
-        let oldItems = this.menu._getMenuItems();
+        this.disconnectSignals(false);
 
         for (let bridgeid in this.colorPicker){
             if (this.colorPicker[bridgeid].destroy) {
@@ -4911,8 +4918,13 @@ var PhueMenu = GObject.registerClass({
             delete(this.colorPicker[bridgeid]);
         }
 
+        let oldItems = this.menu._getMenuItems();
         for (let item in oldItems){
             oldItems[item].destroy();
+        }
+
+        for (let settingsItem of this._createSettingItems(true)) {
+            this.menu.addMenuItem(settingsItem);
         }
 
         this._rebuildingMenu = true;
@@ -4920,6 +4932,22 @@ var PhueMenu = GObject.registerClass({
         for (let bridgeid in this.hue.bridges) {
             this._rebuildingMenuRes[bridgeid] = false;
         }
+
+        /**
+         * In case of not getting any response from some bridge
+         * within the time
+         * this will build menu for bridges that responded so far
+         */
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5000, () => {
+            if (this._rebuildingMenu) {
+                Utils.logDebug("No response from all bridges. Rebuilding menu anyway.");
+
+                this._rebuildingMenu = false;
+                this._rebuildingMenuRes = {};
+
+                this._rebuildMenu(this._rebuildingMenuFirstTime);
+            }
+        });
 
         this.hue.checkBridges(false);
 
@@ -4938,7 +4966,7 @@ var PhueMenu = GObject.registerClass({
      * @param {String} bridgeid of bridge that provided last data
      * @param {Boolean} is this first time building the menu
      */
-    _checkRebuildReady(bridgeid, firstTime = false) {
+    _checkRebuildReady(bridgeid) {
 
         if (! this._rebuildingMenu) {
             return;
@@ -4956,13 +4984,13 @@ var PhueMenu = GObject.registerClass({
         this._rebuildingMenu = false;
         this._rebuildingMenuRes = {};
 
-        this._rebuildMenu(firstTime);
+        this._rebuildMenu(this._rebuildingMenuFirstTime);
     }
 
     /**
      * Rebuild the menu from scratch
      * 
-     * @method rebuildMenu
+     * @method _rebuildMenu
      * @private
      * @param {Boolean} is this first time building the menu
      */
@@ -4976,6 +5004,13 @@ var PhueMenu = GObject.registerClass({
         this.refreshMenuObjects = {};
         this._syncSelectionDefault = {};
 
+        this.disconnectSignals(false, true);
+
+        let oldItems = this.menu._getMenuItems();
+        for (let item in oldItems){
+            oldItems[item].destroy();
+        }
+
         this._bridgesInMenu = this.getBridgesInMenu(this._bridgesInMenu);
 
         for (let bridgeid of this._bridgesInMenu) {
@@ -4986,14 +5021,19 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
+            if (this.bridesData[bridgeid] === undefined ||
+                Object.keys(this.bridesData[bridgeid]).length === 0) {
+
+                Utils.logDebug(`Bridge ${bridgeid} provides no data.`);
+                continue;
+            }
+
             if (instanceCounter > 0) {
                 this.menu.addMenuItem(
                     new PopupMenu.PopupSeparatorMenuItem()
                 );
             }
 
-            instanceCounter++;
- 
             this.entertainmentInit(bridgeid, firstTime);
 
             if (!this._compactMenu) {
@@ -5006,6 +5046,10 @@ var PhueMenu = GObject.registerClass({
 
             for (let item in bridgeItems) {
                 this.menu.addMenuItem(bridgeItems[item]);
+            }
+
+            if (bridgeItems.length > 0) {
+                instanceCounter++;
             }
         }
 
