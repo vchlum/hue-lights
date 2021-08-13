@@ -111,6 +111,8 @@ var PhueMenu = GObject.registerClass({
         this.oldNotifylight = {};
         this.bridgeInProblem = {}
         this._bridgesInMenu = [];
+        this._bridgesInMenuShowed = [];
+        this._defaultBridgeInMenu = "";
         this._openMenuDefault = null;
         this._isStreaming = {};
         this._waitingNotification = {};
@@ -4443,6 +4445,13 @@ var PhueMenu = GObject.registerClass({
                             _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
                             _("Connection to Philips Hue bridge restored")
                         );
+
+                        if ((! this._bridgesInMenuShowed.includes(bridgeid)) &&
+                            (! this._bridgesInMenuShowed.includes(this._defaultBridgeInMenu))
+                            ) {
+
+                            this.rebuildMenuStart();
+                        }
                 }
                 this.bridgeInProblem[bridgeid] = false;
 
@@ -4744,6 +4753,7 @@ var PhueMenu = GObject.registerClass({
         let bridges = [];
         let currentConnected = [];
         let defaultIsConnected = false;
+        this._defaultBridgeInMenu = "";
 
         /**
          * check if any bridge is online,
@@ -4789,6 +4799,7 @@ var PhueMenu = GObject.registerClass({
 
             bridges.push(bridgeid);
             defaultExists = true;
+            this._defaultBridgeInMenu = bridgeid;
         }
 
         if (!defaultExists) {
@@ -5003,6 +5014,7 @@ var PhueMenu = GObject.registerClass({
         this._openMenuDefault = null;
         this.refreshMenuObjects = {};
         this._syncSelectionDefault = {};
+        this._bridgesInMenuShowed = [];
 
         this.disconnectSignals(false, true);
 
@@ -5050,6 +5062,7 @@ var PhueMenu = GObject.registerClass({
 
             if (bridgeItems.length > 0) {
                 instanceCounter++;
+                this._bridgesInMenuShowed.push(bridgeid);
             }
         }
 
