@@ -130,7 +130,7 @@ var Prefs = class HuePrefs {
      */
     writeNotifyLightsSettings() {
 
-    this._settings.set_value(
+        this._settings.set_value(
             Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS,
             new GLib.Variant(
                 Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE,
@@ -146,7 +146,7 @@ var Prefs = class HuePrefs {
      */
     writeEntertainmentSettings() {
 
-    this._settings.set_value(
+        this._settings.set_value(
             Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT,
             new GLib.Variant(
                 Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE,

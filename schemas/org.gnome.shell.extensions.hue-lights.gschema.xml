@@ -62,5 +62,9 @@
       <default><![CDATA[['<Super><Alt>a']]]></default>
       <summary>Start sync sreen selection</summary>
     </key>
+    <key name="menu-selected" type="a{sa{si}}">
+      <default>{}</default>
+      <summary>Current selection in menu.</summary>
+    </key>
   </schema>
 </schemalist>

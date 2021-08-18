@@ -59,6 +59,8 @@ var HUELIGHTS_SETTINGS_ENTERTAINMENT = "entertainment";
 var HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE = "a{sa{si}}";
 var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT = "sync-selection";
 var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT_TYPE = "as";
+var HUELIGHTS_SETTINGS_MENU_SELECTED = "menu-selected";
+var HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/
