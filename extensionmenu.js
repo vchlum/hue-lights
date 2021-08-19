@@ -1514,7 +1514,8 @@ var PhueMenu = GObject.registerClass({
         let bridgePath = "";
 
         let slider = new Slider.Slider(0);
-        slider.set_width(150);
+        slider.set_width(170);
+        slider.set_height(25);
         slider.set_x_align(Clutter.ActorAlign.START);
         slider.set_x_expand(false);
         slider.value = 100/255;
@@ -5001,7 +5002,6 @@ var PhueMenu = GObject.registerClass({
         let bridgeItems = [];
         let instanceCounter = 0;
         this._openMenuDefault = null;
-        this._lastOpenedMenu = {"last": null, "opening": null, "inProgress": false, "inProgress2": false, "inProgress3": false, "opened": null, "note": ""};
         this.refreshMenuObjects = {};
         this._syncSelectionDefault = {};
         this._bridgesInMenuShowed = [];
