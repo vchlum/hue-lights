@@ -30,10 +30,6 @@
       <default>true</default>
       <summary>Use compact menu</summary>
     </key>
-    <key name="compact-menu-remember-opened" type="b">
-      <default>false</default>
-      <summary>Remember opened submenu</summary>
-    </key>
     <key name="indicator-position" enum="org.gnome.shell.extensions.hue-lights.indicator-position">
       <default>"right"</default>
       <summary>Position in Panel</summary>

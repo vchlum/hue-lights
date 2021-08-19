@@ -49,7 +49,6 @@ var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
 var HUELIGHTS_SETTINGS_COMPACTMENU = "compact-menu";
-var HUELIGHTS_SETTINGS_COMPACTMENU_REMEMBER_OPENED = "compact-menu-remember-opened";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
 var HUELIGHTS_SETTINGS_DEBUG = "debug";
 var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
