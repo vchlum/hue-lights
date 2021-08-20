@@ -1432,6 +1432,15 @@ var PhueMenu = GObject.registerClass({
             data["config"]["name"]
         );
 
+        if (this._compactMenu) {
+            item.menu.connect(
+                'open-state-changed',
+                (menu, isOpen) => {
+                    this._handleLastOpenedMenu(menu, isOpen);
+                }
+            );
+        }
+
         if (this._iconPack !== PhueIconPack.NONE) {
             switch (data["config"]["modelid"]) {
 
@@ -2787,6 +2796,14 @@ var PhueMenu = GObject.registerClass({
             }
         );
 
+        this._lastOpenedMenu = {"last": groupsSubMenu.menu, "opening": null};
+        groupsSubMenu.menu.connect(
+            'open-state-changed',
+            (menu, isOpen) => {
+                this._handleLastOpenedMenu(menu, isOpen);
+            }
+        );
+
         menuItems.push(groupsSubMenu);
 
         items = items.concat(
@@ -2870,6 +2887,13 @@ var PhueMenu = GObject.registerClass({
             }
         );
 
+        lightsSubMenu.menu.connect(
+            'open-state-changed',
+            (menu, isOpen) => {
+                this._handleLastOpenedMenu(menu, isOpen);
+            }
+        );
+
         this._compactMenuBridges[bridgeid]["lights"] = {};
         this._compactMenuBridges[bridgeid]["lights"]["object"] = lightsSubMenu;
         this._compactMenuBridges[bridgeid]["lights"]["icon"] = null;
@@ -2910,6 +2934,13 @@ var PhueMenu = GObject.registerClass({
         if (scenesIcon !== null) {
             scenesSubMenu.insert_child_at_index(scenesIcon, 1);
         }
+
+        scenesSubMenu.menu.connect(
+            'open-state-changed',
+            (menu, isOpen) => {
+                this._handleLastOpenedMenu(menu, isOpen);
+            }
+        );
 
         this._compactMenuBridges[bridgeid]["scenes"] = {};
         this._compactMenuBridges[bridgeid]["scenes"]["object"] = scenesSubMenu;
@@ -2964,6 +2995,13 @@ var PhueMenu = GObject.registerClass({
         if (controlIcon !== null) {
             controlSubMenu.insert_child_at_index(controlIcon, 1);
         }
+
+        controlSubMenu.menu.connect(
+            'open-state-changed',
+            (menu, isOpen) => {
+                this._handleLastOpenedMenu(menu, isOpen);
+            }
+        );
 
         this._compactMenuBridges[bridgeid]["control"] = {};
         this._compactMenuBridges[bridgeid]["control"]["object"] = controlSubMenu;
@@ -3405,6 +3443,15 @@ var PhueMenu = GObject.registerClass({
         /* disable closing menu on item activated */
         entertainmentMainItem.menu.itemActivated = (animate) => {};
 
+        if (this._compactMenu) {
+            entertainmentMainItem.menu.connect(
+                'open-state-changed',
+                (menu, isOpen) => {
+                    this._handleLastOpenedMenu(menu, isOpen);
+                }
+            );
+        }
+
         this.refreshMenuObjects[`special::${bridgeid}::entertainment-label`] = {
             "bridgeid": bridgeid,
             "object": entertainmentMainItem.label,
@@ -3474,6 +3521,15 @@ var PhueMenu = GObject.registerClass({
 
         /* disable closing menu on item activated */
         entertainmentModeItem.menu.itemActivated = (animate) => {};
+
+        if (this._compactMenu) {
+            entertainmentModeItem.menu.connect(
+                'open-state-changed',
+                (menu, isOpen) => {
+                    this._handleLastOpenedMenu(menu, isOpen);
+                }
+            );
+        }
 
         this.refreshMenuObjects[`special::${bridgeid}::entertainment-mode-label`] = {
             "bridgeid": bridgeid,
@@ -5017,6 +5073,42 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Sets timer to open last opened menu if menu is closed.
+     * 
+     * @method _handleLastOpenedMenu
+     * @private
+     * @param {Object} menu
+     * @return {Boolean} is the menu opened
+     */
+    _handleLastOpenedMenu(menu, isOpen) {
+        if (isOpen) {
+            /* another menu opened instead, ignore timed event*/
+            this._lastOpenedMenu["opening"] = null;
+        }
+
+        if (!isOpen && this._lastOpenedMenu["last"] !== null) {
+            this._lastOpenedMenu["opening"] = this._lastOpenedMenu["last"];
+
+            /**
+             * sets timed event to open last closed menu
+             * the timer is needed because if I open another menu
+             * the first menu closes and without the timer I would open
+             * different menu instad
+             */
+            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                if (this._lastOpenedMenu["opening"] !== null) {
+                    this._lastOpenedMenu["opening"].open(true);
+                    this._lastOpenedMenu["opening"] = null;
+                }
+            });
+        }
+
+        if (!isOpen) {
+            this._lastOpenedMenu["last"] = menu;
+        }
+    }
+
+    /**
      * Invokes rebuilding the menu.
      * 
      * @method rebuildMenuStart
@@ -5122,6 +5214,7 @@ var PhueMenu = GObject.registerClass({
         this.refreshMenuObjects = {};
         this._syncSelectionDefault = {};
         this._bridgesInMenuShowed = [];
+        this._lastOpenedMenu = {"last": null, "opening": null};
 
         this.disconnectSignals(false, true);
 
