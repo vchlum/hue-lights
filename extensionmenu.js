@@ -1509,7 +1509,7 @@ var PhueMenu = GObject.registerClass({
      * @param {Number} groupid
      * @return {Object} Brightness slider
      */
-    _createBrightnessSlider(bridgeid, lightid, groupid, tmpTier = 0) {
+    _createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, tmpTier = 0) {
 
         let bridgePath = "";
 
@@ -1518,7 +1518,7 @@ var PhueMenu = GObject.registerClass({
         slider.set_height(25);
         slider.set_x_align(Clutter.ActorAlign.START);
         slider.set_x_expand(false);
-        slider.value = 100/255;
+        slider.value = defaultValue;
 
         this._createSliderColor(slider, bridgeid, lightid, groupid, tmpTier);
 
@@ -1561,7 +1561,7 @@ var PhueMenu = GObject.registerClass({
      * @param {Number} groupid
      * @return {Object} switch button
      */
-    _createLightSwitch(bridgeid, lightid, groupid, tier = 1) {
+    _createLightSwitch(bridgeid, lightid, groupid, defaultValue, tier = 1) {
 
         let bridgePath = "";
 
@@ -1572,6 +1572,8 @@ var PhueMenu = GObject.registerClass({
         }
 
         let switchBox = new PopupMenu.Switch(false);
+        switchBox.state = defaultValue;
+
         let switchButton = new St.Button(
             {reactive: true, can_focus: true}
         );
@@ -1620,35 +1622,49 @@ var PhueMenu = GObject.registerClass({
      * @param {Number} value coresponding to parsedBridgePath
      * @return {Object} RGB
      */
-    _getLightOrGroupColor(bridgeid, parsedBridgePath, value) {
+    _getLightOrGroupColor(bridgeid, groupid, lightid) {
         let r = 0;
         let g = 0;
         let b = 0;
 
-        if (parsedBridgePath[1] === "lights") {
-            switch (value["colormode"]) {
+        let data = this.bridesData[bridgeid];
+
+        if (groupid === null) {
+            if (!data["lights"][lightid]["state"]["on"]) {
+                return [r, g, b];
+            }
+
+            if (data["lights"][lightid]["state"]["xy"] == undefined &&
+                data["lights"][lightid]["state"]["ct"] == undefined) {
+
+                return [r, g, b];
+            }
+
+            switch (data["lights"][lightid]["state"]["colormode"]) {
 
                 case "xy":
                     [r, g, b] = Utils.XYBriToColor(
-                        value["xy"][0],
-                        value["xy"][1],
-                        255 /* or value["bri"] */
+                        data["lights"][lightid]["state"]["xy"][0],
+                        data["lights"][lightid]["state"]["xy"][1],
+                        255 /* or data["lights"][lightid]["state"]["bri"] */
                     );
 
                     break;
 
                 case "ct":
-                    let kelvin = Utils.ctToKelvin(value["ct"]);
+                    let kelvin = Utils.ctToKelvin(
+                        data["lights"][lightid]["state"]["ct"]
+                    );
                     [r, g, b] = Utils.kelvinToRGB(kelvin);
                     break;
 
                 default:
-                    return;
+                    return [r, g, b];
             }
         }
 
-        if (parsedBridgePath[1] === "groups") {
-            [r, g, b] = this._getGroupColor(bridgeid, parsedBridgePath[2]);
+        if (groupid !== null) {
+            [r, g, b] = this._getGroupColor(bridgeid, groupid);
         }
 
         return [r, g, b];
@@ -1693,6 +1709,20 @@ var PhueMenu = GObject.registerClass({
             "type": "slider-color",
             "tmpTier": tmpTier
         }
+
+        if (groupid !== null && this._getGroupBrightness(bridgeid, groupid) !== 0) {
+            this._setSliderColor(
+                slider,
+                this._getLightOrGroupColor(bridgeid, groupid, null)
+            );
+        }
+
+        if (groupid === null && this.bridesData[bridgeid]["lights"][lightid]["state"]["on"]) {
+            this._setSliderColor(
+                slider,
+                this._getLightOrGroupColor(bridgeid, null, lightid)
+            );
+        }
     }
 
     /**
@@ -1734,6 +1764,20 @@ var PhueMenu = GObject.registerClass({
             "type": "switch-color",
             "tmpTier": tmpTier
         }
+
+        if (groupid !== null && this._getGroupBrightness(bridgeid, groupid) !== 0) {
+            this._setSwitchColor(
+                switchItem,
+                this._getLightOrGroupColor(bridgeid, groupid, null)
+            );
+        }
+
+        if (groupid === null && this.bridesData[bridgeid]["lights"][lightid]["state"]["on"]) {
+            this._setSwitchColor(
+                switchItem,
+                this._getLightOrGroupColor(bridgeid, null, lightid)
+            );
+        }
     }
 
     /**
@@ -1752,6 +1796,7 @@ var PhueMenu = GObject.registerClass({
         let light;
         let bridgePath = "";
         let lightIcon = null;
+        let defaultValue;
 
         /**
          * Decide if this is item for one light or a group.
@@ -1823,6 +1868,10 @@ var PhueMenu = GObject.registerClass({
                  * 'button-press-event' signal correctly
                  */
 
+                 if (!this.hue.instances[bridgeid].isConnected()) {
+                    return light.originalActivate(event);
+                 }
+
                 this._menuSelected[bridgeid] = {
                     "groupid": this._menuSelected[bridgeid]["groupid"] !== undefined ? this._menuSelected[bridgeid]["groupid"] : groupid,
                     "lightid": lightid}
@@ -1875,15 +1924,27 @@ var PhueMenu = GObject.registerClass({
          * If brightness is possible, add a slider
          */
         if (groupid === null &&
-                data["lights"][lightid]["state"]["bri"] !== undefined) {
+            data["lights"][lightid]["state"]["bri"] !== undefined) {
 
-                itemBox.add(this._createBrightnessSlider(bridgeid, lightid, groupid, true));
+            defaultValue = 0;
+            if (data["lights"][lightid]["state"]["on"]) {
+                defaultValue = data["lights"][lightid]["state"]["bri"] / 255;
+            }
+
+            itemBox.add(this._createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, true));
         }
 
         /**
          * Add switch for turning the light on/off
          */
-        light.add(this._createLightSwitch(bridgeid, lightid, groupid));
+        defaultValue = false;
+        if (groupid !== null) {
+            defaultValue = data["groups"][groupid]["state"]["all_on"];
+        } else {
+            defaultValue = data["lights"][lightid]["state"]["on"];
+        }
+
+        light.add(this._createLightSwitch(bridgeid, lightid, groupid, defaultValue));
 
         return light;
     }
@@ -2381,6 +2442,7 @@ var PhueMenu = GObject.registerClass({
     _selectCompactMenuLights(bridgeid, groupid, lightid) {
         let lightIcon = null;
         let data = this.bridesData[bridgeid];
+        let defaultValue;
 
         this._compactMenuClearTmpObjects(bridgeid, 2);
 
@@ -2424,7 +2486,8 @@ var PhueMenu = GObject.registerClass({
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = _("All Lights");
 
-            let groupSwitch = this._createLightSwitch(bridgeid, null, groupid, 2);
+            defaultValue = data["groups"][groupid]["state"]["all_on"];
+            let groupSwitch = this._createLightSwitch(bridgeid, null, groupid, defaultValue, 2);
             this._compactMenuBridges[bridgeid]["lights"]["object"].add(groupSwitch);
             this._compactMenuBridges[bridgeid]["lights"]["switch"] = groupSwitch;
 
@@ -2441,11 +2504,18 @@ var PhueMenu = GObject.registerClass({
             let lightSlider = null;
             if (data["lights"][lightid]["state"]["bri"] !== undefined) {
 
-                lightSlider = this._createBrightnessSlider(bridgeid, lightid, groupid, true);
+                if (data["lights"][lightid]["state"]["on"]) {
+                    defaultValue = data["lights"][lightid]["state"]["bri"] / 255;
+                } else {
+                    defaultValue = 0;
+                }
+
+                lightSlider = this._createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, true);
                 this._compactMenuBridges[bridgeid]["lights"]["box"].add(lightSlider);
             }
 
-            let lightSwitch = this._createLightSwitch(bridgeid, lightid, groupid, 2);
+            defaultValue = data["lights"][lightid]["state"]["on"];
+            let lightSwitch = this._createLightSwitch(bridgeid, lightid, groupid, defaultValue, 2);
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].add(lightSwitch);
 
@@ -2465,6 +2535,7 @@ var PhueMenu = GObject.registerClass({
     _selectCompactMenuGroup(bridgeid, groupid) {
         let groupIcon = null;
         let data = this.bridesData[bridgeid];
+        let defaultValue;
 
         if (groupid === "0") {
             this._openMenuDefault = this._compactMenuBridges[bridgeid]["groups"]["object"].menu;
@@ -2501,7 +2572,9 @@ var PhueMenu = GObject.registerClass({
         }
 
         if (this._checkBrightnessAttributeLightOrGroup(bridgeid, "groups", groupid)) {
-            let groupSlider = this._createBrightnessSlider(bridgeid, null, groupid, true);
+            defaultValue = this._getGroupBrightness(bridgeid, groupid) / 255;
+
+            let groupSlider = this._createBrightnessSlider(bridgeid, null, groupid, defaultValue, true);
             this._compactMenuBridges[bridgeid]["groups"]["box"].insert_child_at_index(groupSlider, 1);
             this._compactMenuBridges[bridgeid]["groups"]["slider"] = groupSlider;
         }
@@ -2570,6 +2643,7 @@ var PhueMenu = GObject.registerClass({
 
         let menuItems = [];
         let groupIcon = null;
+        let defaultValue;
 
         if (data["groups"] === undefined) {
             return [];
@@ -2596,7 +2670,9 @@ var PhueMenu = GObject.registerClass({
             itemBox.vertical = true;
             itemBox.add(label);
             if (this._checkBrightnessAttributeLightOrGroup(bridgeid, "groups", groupid)) {
-                itemBox.add(this._createBrightnessSlider(bridgeid, null, groupid));
+                defaultValue = this._getGroupBrightness(bridgeid, groupid) / 255;
+
+                itemBox.add(this._createBrightnessSlider(bridgeid, null, groupid, defaultValue));
             }
             groupItem.insert_child_at_index(itemBox, 1);
 
@@ -2617,6 +2693,10 @@ var PhueMenu = GObject.registerClass({
                  * the menu.open(true) does not work with
                  * 'button-press-event' signal correctly
                  */
+
+                if (!this.hue.instances[bridgeid].isConnected()) {
+                    return groupItem.originalActivate(event);
+                }
 
                 this._menuSelected[bridgeid] = {"groupid": groupid}
                 this.writeMenuSelectedSettings();
@@ -2905,6 +2985,7 @@ var PhueMenu = GObject.registerClass({
 
         let menuItems = [];
         let groupIcon = null;
+        let defaultValue;
 
         if (data["groups"] === undefined) {
             return [];
@@ -2931,7 +3012,9 @@ var PhueMenu = GObject.registerClass({
             itemBox.vertical = true;
             itemBox.add(label);
             if (this._checkBrightnessAttributeLightOrGroup(bridgeid, "groups", groupid)) {
-                itemBox.add(this._createBrightnessSlider(bridgeid, null, groupid));
+                defaultValue = this._getGroupBrightness(bridgeid, groupid) / 255;
+
+                itemBox.add(this._createBrightnessSlider(bridgeid, null, groupid, defaultValue));
             }
             groupItem.insert_child_at_index(itemBox, 1);
 
@@ -3427,7 +3510,9 @@ var PhueMenu = GObject.registerClass({
      */
     _selectCompactMenu(bridgeid) {
 
-        if (this.bridesData[bridgeid] === undefined) {
+        if (this.bridesData[bridgeid] === undefined ||
+            this._menuSelected[bridgeid] === undefined) {
+
             this._menuSelected[bridgeid] = {};
         }
 
@@ -4000,6 +4085,36 @@ var PhueMenu = GObject.registerClass({
         }
     }
 
+    _setSliderColor(object, [r, g, b]) {
+        r = ('0' + r.toString(16)).slice(-2);
+        g = ('0' + g.toString(16)).slice(-2);
+        b = ('0' + b.toString(16)).slice(-2);
+
+        let styleColor = `#${r}${g}${b}`;
+
+        object.style = `-barlevel-active-background-color: ${styleColor}; -barlevel-active-border-color: ${styleColor}`;
+    }
+
+    _setSwitchColor(object, [r, g, b]) {
+        let color = new Clutter.Color({
+            red: r,
+            green: g,
+            blue: b,
+            alpha: 255
+        });
+
+        object.clear_effects();
+
+        let colorEffect = new Clutter.ColorizeEffect({tint: color});
+        object.add_effect(colorEffect);
+
+        let briConEffect = new Clutter.BrightnessContrastEffect();
+        briConEffect.set_brightness(0.4);
+        briConEffect.set_contrast(0.4);
+
+        object.add_effect(briConEffect);
+    }
+
     /**
      * If change happened, the controls in menu are refreshed.
      * 
@@ -4124,15 +4239,13 @@ var PhueMenu = GObject.registerClass({
                         break;
                     }
 
-                    [r, g, b] = this._getLightOrGroupColor(bridgeid, parsedBridgePath, value);
+                    if (parsedBridgePath[1] === "lights") {
+                        [r, g, b] = this._getLightOrGroupColor(bridgeid, null, parsedBridgePath[2]);
+                    } else {
+                        [r, g, b] = this._getLightOrGroupColor(bridgeid, parsedBridgePath[2], null);
+                    }
 
-                    r = ('0' + r.toString(16)).slice(-2);
-                    g = ('0' + g.toString(16)).slice(-2);
-                    b = ('0' + b.toString(16)).slice(-2);
-
-                    let styleColor = `#${r}${g}${b}`;
-
-                    object.style = `-barlevel-active-background-color: ${styleColor}; -barlevel-active-border-color: ${styleColor}`;
+                    this._setSliderColor(object, [r, g, b]);
 
                     break;
 
@@ -4161,25 +4274,13 @@ var PhueMenu = GObject.registerClass({
                         break;
                     }
 
-                    [r, g, b] = this._getLightOrGroupColor(bridgeid, parsedBridgePath, value);
+                    if (parsedBridgePath[1] === "lights") {
+                        [r, g, b] = this._getLightOrGroupColor(bridgeid, null, parsedBridgePath[2]);
+                    } else {
+                        [r, g, b] = this._getLightOrGroupColor(bridgeid, parsedBridgePath[2], null);
+                    }
 
-                    let color = new Clutter.Color({
-                        red: r,
-                        green: g,
-                        blue: b,
-                        alpha: 255
-                    });
-
-                    object.clear_effects();
-
-                    let colorEffect = new Clutter.ColorizeEffect({tint: color});
-                    object.add_effect(colorEffect);
-
-                    let briConEffect = new Clutter.BrightnessContrastEffect();
-                    briConEffect.set_brightness(0.4);
-                    briConEffect.set_contrast(0.4);
-
-                    object.add_effect(briConEffect);
+                    this._setSwitchColor(object, [r, g, b]);
 
                     break;
 
