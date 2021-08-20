@@ -4085,6 +4085,14 @@ var PhueMenu = GObject.registerClass({
         }
     }
 
+    /**
+     * Sets the color of slider
+     * 
+     * @method _setSliderColor
+     * @private
+     * @param {Object} slider
+     * @param {Array} array with RGB
+     */
     _setSliderColor(object, [r, g, b]) {
         r = ('0' + r.toString(16)).slice(-2);
         g = ('0' + g.toString(16)).slice(-2);
@@ -4095,6 +4103,14 @@ var PhueMenu = GObject.registerClass({
         object.style = `-barlevel-active-background-color: ${styleColor}; -barlevel-active-border-color: ${styleColor}`;
     }
 
+    /**
+     * Sets the color of switch
+     * 
+     * @method _setSwitchColor
+     * @private
+     * @param {Object} switch
+     * @param {Array} array with RGB
+     */
     _setSwitchColor(object, [r, g, b]) {
         let color = new Clutter.Color({
             red: r,
