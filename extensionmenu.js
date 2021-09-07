@@ -784,6 +784,12 @@ var PhueMenu = GObject.registerClass({
         let cmd = {};
 
         if (this.bridesData[bridgeid].length === 0) {
+            Utils.logDebug(`Bridge ${bridgeid} has no data.`);
+            return;
+        }
+
+        if (!this.hue.instances[bridgeid].isConnected()) {
+            Utils.logDebug(`Bridge ${bridgeid} not connected.`);
             return;
         }
 
@@ -4304,7 +4310,8 @@ var PhueMenu = GObject.registerClass({
                     }
 
                     if (parsedBridgePath[1] === "lights" &&  !value["on"] ||
-                        (parsedBridgePath[1] === "groups" && this._getGroupBrightness(bridgeid, parsedBridgePath[2]) === 0)) {
+                        (parsedBridgePath[1] === "groups" &&
+                        this._getGroupBrightness(bridgeid, parsedBridgePath[2]) === 0)) {
 
                         object.style = null;
 
@@ -4339,7 +4346,8 @@ var PhueMenu = GObject.registerClass({
                     }
 
                     if (parsedBridgePath[1] === "lights" &&  !value["on"] ||
-                        (parsedBridgePath[1] === "groups" && this._getGroupBrightness(bridgeid, parsedBridgePath[2]) === 0)) {
+                        (parsedBridgePath[1] === "groups" &&
+                        this._getGroupBrightness(bridgeid, parsedBridgePath[2]) === 0)) {
 
                         object.clear_effects();
 
