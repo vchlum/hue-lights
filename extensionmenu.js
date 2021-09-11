@@ -2330,6 +2330,7 @@ var PhueMenu = GObject.registerClass({
         let controlItem = new PopupMenu.PopupMenuItem(
             _("None")
         )
+        controlItem.x_align = Clutter.ActorAlign.CENTER;
 
         controlItem.remove_child(controlItem.label);
 
