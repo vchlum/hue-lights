@@ -2575,7 +2575,10 @@ var PhueMenu = GObject.registerClass({
 
             defaultValue = data["groups"][groupid]["state"]["all_on"];
             let groupSwitch = this._createLightSwitch(bridgeid, null, groupid, defaultValue, 2);
-            this._compactMenuBridges[bridgeid]["lights"]["object"].add(groupSwitch);
+            this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
+                groupSwitch,
+                this._compactMenuBridges[bridgeid]["lights"]["object"].get_children().length - 1
+            );
             this._compactMenuBridges[bridgeid]["lights"]["switch"] = groupSwitch;
 
         } else {
@@ -2603,14 +2606,18 @@ var PhueMenu = GObject.registerClass({
                 this._compactMenuBridges[bridgeid]["lights"]["box"].add(lightSlider);
             }
 
-            this._compactMenuBridges[bridgeid]["lights"]["object"].add(
-                this._createUnselectLightButton(bridgeid, this._menuSelected[bridgeid]["groupid"])
+            this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
+                this._createUnselectLightButton(bridgeid, this._menuSelected[bridgeid]["groupid"]),
+                this._compactMenuBridges[bridgeid]["lights"]["object"].get_children().length - 1
             );
 
             defaultValue = data["lights"][lightid]["state"]["on"];
             let lightSwitch = this._createLightSwitch(bridgeid, lightid, groupid, defaultValue, 2);
 
-            this._compactMenuBridges[bridgeid]["lights"]["object"].add(lightSwitch);
+            this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
+                lightSwitch,
+                this._compactMenuBridges[bridgeid]["lights"]["object"].get_children().length - 1
+            );
 
             this._compactMenuBridges[bridgeid]["lights"]["switch"] = lightSwitch;
             this._compactMenuBridges[bridgeid]["lights"]["slider"] = lightSlider;
@@ -2741,14 +2748,18 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["groups"]["icon"] = groupIcon;
         }
 
-        this._compactMenuBridges[bridgeid]["groups"]["object"].add(
-            this._createUnselectGroupButton(bridgeid, groupid)
+        this._compactMenuBridges[bridgeid]["groups"]["object"].insert_child_at_index(
+            this._createUnselectGroupButton(bridgeid, groupid),
+            this._compactMenuBridges[bridgeid]["groups"]["object"].get_children().length - 1
         );
 
         this._compactMenuBridges[bridgeid]["groups"]["object"].label.text = this._getGroupName(bridgeid, groupid);
 
         let groupSwitch = this._createGroupSwitch(bridgeid, groupid, true);
-        this._compactMenuBridges[bridgeid]["groups"]["object"].add(groupSwitch);
+        this._compactMenuBridges[bridgeid]["groups"]["object"].insert_child_at_index(
+            groupSwitch,
+            this._compactMenuBridges[bridgeid]["groups"]["object"].get_children().length - 1
+        );
         this._compactMenuBridges[bridgeid]["groups"]["switch"] = groupSwitch;
 
         /* lights */
@@ -3227,7 +3238,10 @@ var PhueMenu = GObject.registerClass({
                 groupItem.insert_child_at_index(groupIcon, 1);
             }
 
-            groupItem.add(this._createGroupSwitch(bridgeid, groupid));
+            groupItem.insert_child_at_index(
+                this._createGroupSwitch(bridgeid, groupid),
+                groupItem.get_children().length - 1
+            );
 
             menuItems.push(groupItem);
 
@@ -3625,7 +3639,10 @@ var PhueMenu = GObject.registerClass({
         entertainmentMainItem.set_x_align(Clutter.ActorAlign.FILL);
         entertainmentMainItem.label.set_x_expand(true);
 
-        entertainmentMainItem.add(this._createEntertainmentMainSwitch(bridgeid));
+        entertainmentMainItem.insert_child_at_index(
+            this._createEntertainmentMainSwitch(bridgeid),
+            entertainmentMainItem.get_children().length - 1
+        );
 
         if (this._iconPack !== PhueIconPack.NONE) {
             let iconPath = "";
