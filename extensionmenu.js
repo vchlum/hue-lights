@@ -1529,7 +1529,7 @@ var PhueMenu = GObject.registerClass({
         let bridgePath = "";
 
         let slider = new Slider.Slider(0);
-        slider.set_width(170);
+        slider.set_width(180);
         slider.set_height(25);
         slider.set_x_align(Clutter.ActorAlign.START);
         slider.set_x_expand(false);
@@ -1932,6 +1932,10 @@ var PhueMenu = GObject.registerClass({
                 light.visible = false;
                 this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = light;
                 this._compactMenuBridges[bridgeid]["lights"]["default-item"] = light;
+            }
+
+            if (groupid !== null) {
+                this._compactMenuBridges[bridgeid]["lights"]["all-lights-item"] = light;
             }
         }
 
@@ -2446,6 +2450,65 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Creates unselect button for lights menu item
+     * 
+     * @method _createUnselectLightButton
+     * @private
+     * @param {String} bridgeid
+     * @param {String} groupid
+     */
+    _createUnselectLightButton(bridgeid, groupid) {
+        if (this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] !== null){
+            this._compactMenuBridges[bridgeid]["lights"]["object"].remove_child(
+                this._compactMenuBridges[bridgeid]["lights"]["unselect-button"]
+            );
+
+            this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] = null;
+        }
+
+        let unselectButton = new St.Button({reactive: true, can_focus: true});
+
+        let buttonContent = null;
+        if (this._iconPack !== PhueIconPack.NONE) {
+            buttonContent = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/settingsSoftwareUpdate.svg");
+        }
+
+        if (buttonContent === null) {
+            buttonContent = new St.Label();
+            buttonContent.text = "<<<";
+        }
+
+        buttonContent.set_y_align(Clutter.ActorAlign.CENTER);
+        buttonContent.set_y_expand(true);
+
+        unselectButton.child = buttonContent;
+
+        unselectButton.connect(
+            "button-press-event",
+            () => {
+                if (this._menuSelected[bridgeid]["lightid"] !== undefined) {
+                    delete(this._menuSelected[bridgeid]["lightid"]);
+                }
+                this.writeMenuSelectedSettings();
+
+                if (this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] !== null) {
+                    this._compactMenuBridges[bridgeid]["lights"]["hidden-item"].visible = true;
+                    this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = this._compactMenuBridges[bridgeid]["lights"]["all-lights-item"];
+                    this._compactMenuBridges[bridgeid]["lights"]["hidden-item"].visible = false;
+                }
+
+                this._selectCompactMenuLights(bridgeid, groupid, null);
+
+                this._compactMenuBridges[bridgeid]["lights"]["object"].menu.open(true);
+            }
+        );
+
+        this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] = unselectButton;
+
+        return unselectButton;
+    }
+
+    /**
      * Sets the compact menu top-item of lights menu
      * to the selected light/group
      * 
@@ -2487,6 +2550,14 @@ var PhueMenu = GObject.registerClass({
         }
 
         if (groupid !== null) {
+
+            if (this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] !== null){
+                this._compactMenuBridges[bridgeid]["lights"]["object"].remove_child(
+                    this._compactMenuBridges[bridgeid]["lights"]["unselect-button"]
+                );
+
+                this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] = null;
+            }
 
             if (this._iconPack !== PhueIconPack.NONE) {
                 lightIcon = this._getIconByPath(
@@ -2532,6 +2603,10 @@ var PhueMenu = GObject.registerClass({
                 this._compactMenuBridges[bridgeid]["lights"]["box"].add(lightSlider);
             }
 
+            this._compactMenuBridges[bridgeid]["lights"]["object"].add(
+                this._createUnselectLightButton(bridgeid, this._menuSelected[bridgeid]["groupid"])
+            );
+
             defaultValue = data["lights"][lightid]["state"]["on"];
             let lightSwitch = this._createLightSwitch(bridgeid, lightid, groupid, defaultValue, 2);
 
@@ -2540,6 +2615,68 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["lights"]["switch"] = lightSwitch;
             this._compactMenuBridges[bridgeid]["lights"]["slider"] = lightSlider;
         }
+    }
+
+    /**
+     * Creates unselect button for groups menu item
+     * 
+     * @method _createUnselectGroupButton
+     * @private
+     * @param {String} bridgeid
+     * @param {String} groupid
+     */
+    _createUnselectGroupButton(bridgeid, groupid) {
+        if (this._compactMenuBridges[bridgeid]["groups"]["unselect-button"] !== null){
+            this._compactMenuBridges[bridgeid]["groups"]["object"].remove_child(
+                this._compactMenuBridges[bridgeid]["groups"]["unselect-button"]
+            );
+
+            this._compactMenuBridges[bridgeid]["groups"]["unselect-button"] = null;
+        }
+
+        let unselectButton = new St.Button({reactive: true, can_focus: true});
+
+        if (groupid === "0") {
+            this._compactMenuBridges[bridgeid]["groups"]["unselect-button"] = unselectButton;
+            return unselectButton;
+        }
+
+        let buttonContent = null;
+        if (this._iconPack !== PhueIconPack.NONE) {
+            buttonContent = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/settingsSoftwareUpdate.svg");
+        }
+
+        if (buttonContent === null) {
+            buttonContent = new St.Label();
+            buttonContent.text = "<<<";
+        }
+
+        buttonContent.set_y_align(Clutter.ActorAlign.CENTER);
+        buttonContent.set_y_expand(true);
+
+        unselectButton.child = buttonContent;
+
+        unselectButton.connect(
+            "button-press-event",
+            () => {
+                this._menuSelected[bridgeid] = {};
+                this.writeMenuSelectedSettings();
+
+                if (this._compactMenuBridges[bridgeid]["groups"]["hidden-item"] !== null) {
+                    this._compactMenuBridges[bridgeid]["groups"]["hidden-item"].visible = true;
+                    this._compactMenuBridges[bridgeid]["groups"]["hidden-item"] = this._compactMenuBridges[bridgeid]["groups"]["group-zero"];
+                    this._compactMenuBridges[bridgeid]["groups"]["hidden-item"].visible = false;
+                }
+
+                this._selectCompactMenuGroup(bridgeid, "0");
+
+                this._compactMenuBridges[bridgeid]["groups"]["object"].menu.open(true);
+            }
+        );
+
+        this._compactMenuBridges[bridgeid]["groups"]["unselect-button"] = unselectButton;
+
+        return unselectButton;
     }
 
     /**
@@ -2603,6 +2740,10 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["groups"]["object"].insert_child_at_index(groupIcon, 1);
             this._compactMenuBridges[bridgeid]["groups"]["icon"] = groupIcon;
         }
+
+        this._compactMenuBridges[bridgeid]["groups"]["object"].add(
+            this._createUnselectGroupButton(bridgeid, groupid)
+        );
 
         this._compactMenuBridges[bridgeid]["groups"]["object"].label.text = this._getGroupName(bridgeid, groupid);
 
@@ -2755,6 +2896,10 @@ var PhueMenu = GObject.registerClass({
                 this._compactMenuBridges[bridgeid]["groups"]["hidden-item"] = groupItem;
             }
 
+            if (groupid === "0") {
+                this._compactMenuBridges[bridgeid]["groups"]["group-zero"] = groupItem;
+            }
+
             menuItems.push(groupItem);
         }
 
@@ -2801,6 +2946,7 @@ var PhueMenu = GObject.registerClass({
         this._compactMenuBridges[bridgeid]["groups"]["box"] = itemBox;
         this._compactMenuBridges[bridgeid]["groups"]["switch"] = null;
         this._compactMenuBridges[bridgeid]["groups"]["slider"] = null;
+        this._compactMenuBridges[bridgeid]["groups"]["unselect-button"] = null;
         this._compactMenuBridges[bridgeid]["selected-group"] = null;
 
         this._openMenuDefault = groupsSubMenu.menu;
@@ -2916,6 +3062,7 @@ var PhueMenu = GObject.registerClass({
         this._compactMenuBridges[bridgeid]["lights"]["box"] = itemBox;
         this._compactMenuBridges[bridgeid]["lights"]["switch"] = null;
         this._compactMenuBridges[bridgeid]["lights"]["slider"] = null;
+        this._compactMenuBridges[bridgeid]["lights"]["unselect-button"] = null;
 
         return lightsSubMenu;
     }
