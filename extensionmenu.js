@@ -2509,9 +2509,11 @@ var PhueMenu = GObject.registerClass({
 
         } else {
             lightIcon = this._tryGetLightIcon(data["lights"][lightid]);
-            this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(lightIcon, 1);
+            if (lightIcon !== null) {
+                this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(lightIcon, 1);
+            }
             this._compactMenuBridges[bridgeid]["lights"]["icon"] = lightIcon;
-            
+
             this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = data["lights"][lightid]["name"];
 
             /**
