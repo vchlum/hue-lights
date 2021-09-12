@@ -1,3 +1,8 @@
+## Version 14
+ * asynchronously rebuild menu
+ * save selected group and light
+ * improved default menu opening
+ * disallow fully closed state of the menu
 ## Version 13
  * new UI for entertainment areas and modes
  * sync particular display
