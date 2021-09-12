@@ -2740,6 +2740,13 @@ var PhueMenu = GObject.registerClass({
                 hiddenGroup = true;
             }
 
+            if ((this._menuSelected[bridgeid] === undefined ||
+                Object.keys(this._menuSelected[bridgeid]).length === 0) &&
+                groupid === "0") {
+
+                hiddenGroup = true;
+            }
+
             if (hiddenGroup) {
 
                 groupItem.visible = false;
