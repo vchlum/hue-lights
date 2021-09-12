@@ -2498,6 +2498,7 @@ var PhueMenu = GObject.registerClass({
                 }
 
                 this._selectCompactMenuLights(bridgeid, groupid, null);
+                this._setCompactMenuControl(bridgeid, groupid, null);
 
                 this._compactMenuBridges[bridgeid]["lights"]["object"].menu.open(true);
             }
