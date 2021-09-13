@@ -5247,7 +5247,7 @@ var PhueMenu = GObject.registerClass({
 
         signal = prefsMenuItem.connect(
             'button-press-event',
-            () => {Util.spawn(["gnome-shell-extension-prefs", Me.uuid]);}
+            () => { ExtensionUtils.openPrefs(); }
         );
         this._appendSignal(signal, prefsMenuItem, true, true);
         items.push(prefsMenuItem);
