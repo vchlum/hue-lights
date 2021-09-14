@@ -2700,6 +2700,14 @@ var PhueMenu = GObject.registerClass({
         let data = this.bridesData[bridgeid];
         let defaultValue;
 
+        if (data["groups"] === undefined ||
+            data["groups"][groupid] === undefined ||
+            data["groups"][groupid]["lights"] === undefined) {
+
+            Utils.logDebug(`Can not select group ${groupid}. No data available.`);
+            return;
+        }
+
         if (groupid === "0") {
             this._openMenuDefault = this._compactMenuBridges[bridgeid]["groups"]["object"].menu;
         } else {
