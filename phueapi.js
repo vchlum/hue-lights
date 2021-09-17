@@ -91,7 +91,8 @@ var PhueRequestype = {
     SENSORS_DATA: 10,
     RESOURCE_LINKS_DATA: 11,
     ENABLE_STREAM: 12,
-    NEW_USER: 13
+    NEW_USER: 13,
+    EVENT: 14
 };
 
 
@@ -135,6 +136,7 @@ var PhueBridge =  GObject.registerClass({
         "resource-links-data": {},
         "stream-enabled": {},
         "connection-problem": {},
+        "event-stream-data": {},
     }
 }, class PhueBridge extends GObject.Object {
 
@@ -142,6 +144,9 @@ var PhueBridge =  GObject.registerClass({
         super._init(props);
         this._bridgeConnected = false;
         this._userName = "";
+
+        this._apiVersionMajor = 0;
+        this._apiVersionMinor = 0;
 
         this._data = [];
         this._bridgeData = [];
@@ -155,13 +160,20 @@ var PhueBridge =  GObject.registerClass({
         this._sensorsData = [];
         this._resourcelinksData = [];
         this._bridgeError = [];
+        this._eventStreamEnabled = false;
 
         this._baseUrl = `http://${this._ip}`;
         this._bridgeUrl = `${this._baseUrl}/api`;
+        this._eventStreamUrl = `https://${this._ip}/eventstream/clip/v2`;
 
         this._bridgeSession = Soup.Session.new();
         this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
+
+        this._eventStreamSession = Soup.Session.new();
+        this._eventStreamSession.set_property(Soup.SESSION_USER_AGENT, "hue-eventstream-session");
+        this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
+        this._eventStreamSession.ssl_strict = false;
 
         this._asyncRequest = false;
     }
@@ -170,6 +182,7 @@ var PhueBridge =  GObject.registerClass({
         this._ip = value;
         this._baseUrl = `http://${this._ip}`;
         this._bridgeUrl = `${this._baseUrl}/api`;
+        this._eventStreamUrl = `https://${this._ip}/eventstream/clip/v2`;
     }
 
     get ip() {
@@ -291,6 +304,26 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
+     * Checks bridge API version and enables suitable functions.
+     * 
+     * @method checkApiVersion
+     */
+    checkApiVersion() {
+        if (this._data !==  undefined &&
+            this._data["config"] !==  undefined &&
+            this._data["config"]["apiversion"] !==  undefined) {
+
+            let apiVersion = this._data["config"]["apiversion"].split(".");
+            this._apiVersionMajor = parseInt(apiVersion[0]);
+            this._apiVersionMinor = parseInt(apiVersion[1]);
+
+            if (this._apiVersionMajor >= 2 || (this._apiVersionMajor === 1 && this._apiVersionMinor >= 46)) {
+                this.enableEventStream();
+            }
+        }
+    }
+
+    /**
      * Process url request to the bridge.
      * 
      * @method _requestJson
@@ -327,6 +360,8 @@ var PhueBridge =  GObject.registerClass({
                         try {
                             this._bridgeConnected = true;
                             this._data = JSON.parse(mess.response_body.data);
+
+                            this.checkApiVersion();
                         } catch {
                             Utils.logDebug(`Bridge ${method} async-respond, failed to parse JSON`);
                             this._data = [];
@@ -514,7 +549,7 @@ var PhueBridge =  GObject.registerClass({
             let apiVersion = res["apiversion"].split(".");
             let major = parseInt(apiVersion[0]);
             let minor = parseInt(apiVersion[1]);
-            if (major >= 1 && minor >= 22) {
+            if (major >= 2 || (major === 1 && minor >= 22)) {
                 generateClientKey = true;
             }
         }
@@ -931,5 +966,88 @@ var PhueBridge =  GObject.registerClass({
         }
 
         return res;
+    }
+
+    /**
+     * Sends request to read event stream of the bridge.
+     * 
+     * @method _requestEventStream
+     * @private
+     */
+    _requestEventStream() {
+        if (! this._eventStreamEnabled) {
+            Utils.logDebug(`Event stream ${this._eventStreamUrl} not enabled`);
+            return;
+        }
+
+        Utils.logDebug(`Event stream ${this._eventStreamUrl} request`);
+
+        let msg = PhueMessage.new("GET", this._eventStreamUrl);
+
+        msg.requestHueType = PhueRequestype.EVENT;
+        msg.request_headers.append("ssl", "False");
+        msg.request_headers.append("hue-application-key", this._userName);
+
+        this._eventStreamSession.queue_message(msg, (sess, mess) => {
+            if (mess.status_code === Soup.Status.OK) {
+                try {
+                    this._eventStreamData = JSON.parse(mess.response_body.data);
+
+                    Utils.logDebug(`Event stream ${this._eventStreamUrl} provided data: ${JSON.stringify(this._eventStreamData)}`);
+
+                    this.emit("event-stream-data");
+                } catch {
+                    Utils.logDebug(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
+                    this._eventStreamData = [];
+                    this._eventStreamEnabled = false;
+                }
+
+                this._requestEventStream();
+            } else {
+                Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${mess.status_code}`);
+                this._eventStreamEnabled = false;
+            }
+        })
+    }
+
+    /**
+     * Enables event stream and sends the request to read it.
+     * 
+     * @method enableEventStream
+     */
+    enableEventStream() {
+        if (this._userName === "") {
+            return;
+        }
+
+        if (this._eventStreamEnabled) {
+            return;
+        }
+
+        Utils.logDebug(`Enabling event stream on: ${this._eventStreamUrl}`);
+
+        this._eventStreamEnabled = true;
+
+        this._requestEventStream();
+    }
+
+    /**
+     * Returns event data in JSON.
+     * 
+     * @method getEvent
+     * @return {Object} JSON data
+     */
+    getEvent() {
+        return this._eventStreamData;
+    }
+
+    /**
+     * Check if event stream is running.
+     * 
+     * @method isEventStream
+     * @returns {Boolean}
+     */
+    isEventStream() {
+        return this._eventStreamEnabled;
     }
 })
