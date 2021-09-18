@@ -81,7 +81,7 @@ var PhueEntertainment =  GObject.registerClass({
         let signal;
 
         this.gid = "";
-        this.gradient = false;
+        this.gradient = -1;
         this.intensity = 40;
         this.brightness = 0xFF;
 
@@ -259,12 +259,12 @@ var PhueEntertainment =  GObject.registerClass({
 
             this.dtls.sendEncrypted(lightsArray);
 
-            if (this.gradient) {
+            if (this.gradient >= 0) {
                 lightsArray = this._createLightHeader2("color");
 
                 lightsArray = lightsArray.concat(Utils.string2Hex(this.gid));
 
-                for (let i = 2; i < 9; i++) {
+                for (let i = this.gradient; i < 7 + this.gradient; i++) {
                     lightsArray = lightsArray.concat([i]);
 
                     let r = Math.round(DTLSClient.getRandomInt(0xFF) * (this.brightness/255));
@@ -351,12 +351,12 @@ var PhueEntertainment =  GObject.registerClass({
             this.dtls.sendEncrypted(lightsArray);
         }
 
-        if (this.gradient) {
+        if (this.gradient >= 0) {
             lightsArray = this._createLightHeader2("color");
 
             lightsArray = lightsArray.concat(Utils.string2Hex(this.gid));
 
-            for (let i = 2; i < 9; i++) {
+            for (let i = this.gradient; i < 7 + this.gradient; i++) {
                 lightsArray = lightsArray.concat([i]);
 
                 lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
@@ -508,13 +508,13 @@ var PhueEntertainment =  GObject.registerClass({
             this.dtls.sendEncrypted(lightsArray);
         }
 
-        if (this.gradient) {
+        if (this.gradient >= 0) {
             lightsArray = this._createLightHeader2("color");
 
             lightsArray = lightsArray.concat(Utils.string2Hex(this.gid));
 
-            for (let i = 2; i < 9; i++) {
-                [widthRectangle, roomRectangle, heightRectangle] = this.gradientRectangles[i - 2];
+            for (let i = this.gradient; i < 7 + this.gradient; i++) {
+                [widthRectangle, roomRectangle, heightRectangle] = this.gradientRectangles[i - this.gradient];
 
                 x = widthRectangle[0] + (widthRectangle[1] - widthRectangle[0]) / 2;
                 y = heightRectangle[0] + (heightRectangle[1] - heightRectangle[0]) / 2;
@@ -645,7 +645,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @method startRandom
      * @param {Array} lights to by synchronized
      * @param {Array} relative locations of lights
-     * @param {Boolean} Is the gradient light strip in the group?
+     * @param {Number} index of the gradient light strip in the group
      */
     startRandom(lights, lightsLocations, gradient) {
         if (this._doStreaming) {
@@ -677,7 +677,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @method startCursorColor
      * @param {Array} lights to by synchronized
      * @param {Array} relative locations of lights
-     * @param {Boolean} Is the gradient light strip in the group?
+     * @param {Number} index of the gradient light strip in the group
      */
     startCursorColor(lights, lightsLocations, gradient) {
         if (this._doStreaming) {
@@ -709,7 +709,7 @@ var PhueEntertainment =  GObject.registerClass({
      * @method startSyncScreen
      * @param {Array} lights to by synchronized
      * @param {Array} relative locations of lights
-     * @param {Boolean} Is the gradient light strip in the group?
+     * @param {Number} index of the gradient light strip in the group
      */
     startSyncScreen(screenRectangle, lights, lightsLocations, gradient) {
         if (this._doStreaming) {
@@ -767,7 +767,7 @@ var PhueEntertainment =  GObject.registerClass({
         }
 
         this.gradientRectangles = [];
-        if (this.gradient) {
+        if (this.gradient >= 0) {
             this.gradientRectangles.push(this.getRectangleOfLight(
                 startX,
                 startY,

@@ -4057,7 +4057,8 @@ var PhueMenu = GObject.registerClass({
      * @param {groupid} groupid
      */
     _startEntertainmentStream(bridgeid, groupid) {
-        let gradient = false;
+        let gradient = -1;
+        let counter = 0;
         let streamingLights = [];
         let gradientLightStrips = ["LCX001", "LCX002", "LCX003"];
 
@@ -4067,9 +4068,12 @@ var PhueMenu = GObject.registerClass({
             let light = this.bridesData[bridgeid]["groups"][groupid]["lights"][i];
 
             if (gradientLightStrips.includes(this.bridesData[bridgeid]["lights"][light]["modelid"])) {
-                gradient = true;
+                gradient = counter;
+                counter += 7;
                 continue;
             }
+
+            counter++;
 
             streamingLights.push(parseInt(light));
         }
