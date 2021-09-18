@@ -1087,6 +1087,37 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Process data from event stream
+     * 
+     * @method _handleEventStream
+     * @private
+     * @param {String} bridgeid
+     * @param {Object} data
+     */
+    _handleEventStream(bridgeid, data) {
+        for (let d of data) {
+            Utils.logDebug(`Bridge ${bridgeid} event from event stream: ${JSON.stringify(d)}`);
+
+            if (d["data"] !== undefined) {
+
+                for (let i of d["data"]) {
+                    if (i["type"] === "entertainment_configuration" &&
+                        i["status"] !== undefined &&
+                        i["status"] === "active") {
+
+                            this._isStreaming[bridgeid]["gid"] = i["id"];
+
+                            if (this._isStreaming[bridgeid]["state"] === StreamState.STARTING) {
+                                this._isStreaming[bridgeid]["state"] = StreamState.STARTED;
+                                this._checkHueLightsIsStreaming(bridgeid);
+                            }
+                        }
+                }
+            }
+        }
+    }
+
+    /**
      * Tries to discovery secondary sensor with temperature.
      * 
      * @method _tryaddSensorsTemperature
@@ -4028,24 +4059,20 @@ var PhueMenu = GObject.registerClass({
     _startEntertainmentStream(bridgeid, groupid) {
         let gradient = false;
         let streamingLights = [];
+        let gradientLightStrips = ["LCX001", "LCX002", "LCX003"];
+
+        this._isStreaming[bridgeid]["entertainment"].setGID(this._isStreaming[bridgeid]["gid"]);
+
         for (let i in this.bridesData[bridgeid]["groups"][groupid]["lights"]) {
             let light = this.bridesData[bridgeid]["groups"][groupid]["lights"][i];
 
-            if (this.bridesData[bridgeid]["lights"][light]["productname"].indexOf("gradient") >= 0) {
+            if (gradientLightStrips.includes(this.bridesData[bridgeid]["lights"][light]["modelid"])) {
                 gradient = true;
                 continue;
             }
 
             streamingLights.push(parseInt(light));
         }
-
-        /**
-         * gradient light strip not working with api 1 anymore:(
-         * It even disables the stream to the entertainment group now...
-         * We need to wait for api 2 to be publicized by Philips Hue...
-         * TODO
-         */
-        gradient = false;
 
         let streamingLightsLocations = {};
         for (let i in this.bridesData[bridgeid]["groups"][groupid]["locations"]) {
@@ -4289,6 +4316,8 @@ var PhueMenu = GObject.registerClass({
                 } else {
                     this._isStreaming[bridgeid]["state"] = StreamState.STOPPED;
                 }
+
+                this._isStreaming[bridgeid]["gid"] = "";
 
                 break;
 
@@ -4854,22 +4883,12 @@ var PhueMenu = GObject.registerClass({
             () => {
                 let streamRes = this.hue.instances[bridgeid].getAsyncData();
 
-                if (streamRes[0] !== undefined && streamRes[0]["success"] !== undefined) {
-                    /**
-                     * TODO After the last update 29/7/2021 an issue occured.
-                     * Even if we asynchronously check that the stream is successfully started,
-                     * the bridge is not ready to accept the UDP msg yet:(.
-                     * I suspect, the bridge will send a push notification when stream is ready,
-                     * but the new api with push notifications was not published yet and it is
-                     * unknown :-(.
-                     * So lets just wait a moment for bridge to be ready.
-                     * This is a workaround - the timeout should not be needed.
-                     * I will rewrite once they fix the bridge or provide the new api.
-                     */
-                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 700, () => {
-                        this._isStreaming[bridgeid]["state"] = StreamState.STARTED;
-                        this._checkHueLightsIsStreaming(bridgeid);
-                    });
+                /* if the event stream is running, the bridge uses the new api */
+                if (! this.hue.instances[bridgeid].isEventStream() &&
+                    streamRes[0] !== undefined && streamRes[0]["success"] !== undefined) {
+
+                    this._isStreaming[bridgeid]["state"] = StreamState.STARTED;
+                    this._checkHueLightsIsStreaming(bridgeid);
                 }
                 this.hue.instances[bridgeid].getAll();
             }
@@ -4900,6 +4919,16 @@ var PhueMenu = GObject.registerClass({
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
+
+        signal = this.hue.instances[bridgeid].connect(
+            "event-stream-data",
+            () => {
+                this._handleEventStream(
+                    bridgeid,
+                    this.hue.instances[bridgeid].getEvent()
+                );
+            }
+        );
     }
 
     /**
@@ -4976,6 +5005,8 @@ var PhueMenu = GObject.registerClass({
             } else {
                 this._isStreaming[bridgeid]["entertainmentMode"] = Utils.entertainmentMode.SYNC;
             }
+
+            this._isStreaming[bridgeid]["gid"] = "";
         }
 
         if (tryAutostart &&

@@ -634,3 +634,19 @@ function XYBriToColor(x, y, bri) {
 
     return [r, g, b];
 }
+
+/**
+ * Convert string to array of bytes.
+ *
+ * @param {String} s string to convert
+ * @return {Object} array of bytes
+ */
+function string2Hex(s) {
+    let ret = [];
+
+    for (let i = 0; i < s.length; i++) {
+        ret.push(s.charCodeAt(i));
+    }
+
+    return ret;
+}

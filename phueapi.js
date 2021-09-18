@@ -993,8 +993,6 @@ var PhueBridge =  GObject.registerClass({
                 try {
                     this._eventStreamData = JSON.parse(mess.response_body.data);
 
-                    Utils.logDebug(`Event stream ${this._eventStreamUrl} provided data: ${JSON.stringify(this._eventStreamData)}`);
-
                     this.emit("event-stream-data");
                 } catch {
                     Utils.logDebug(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
