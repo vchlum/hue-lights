@@ -170,10 +170,8 @@ var PhueBridge =  GObject.registerClass({
         this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
         this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
 
-        this._eventStreamSession = Soup.Session.new();
-        this._eventStreamSession.set_property(Soup.SESSION_USER_AGENT, "hue-eventstream-session");
-        this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
-        this._eventStreamSession.ssl_strict = false;
+        this._eventStreamMsg = null;
+        this._eventStreamSession = null;
 
         this._asyncRequest = false;
     }
@@ -443,6 +441,7 @@ var PhueBridge =  GObject.registerClass({
                     } catch {
                         this._bridgeConnected = false;
                         this._data = [];
+                        this.disableEventStream();
                         if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
                             this.emit("connection-problem");
                         }
@@ -450,6 +449,7 @@ var PhueBridge =  GObject.registerClass({
                 } else {
                     this._bridgeConnected = false;
                     this._data = [];
+                    this.disableEventStream();
                     if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
                         this.emit("connection-problem");
                     }
@@ -980,6 +980,16 @@ var PhueBridge =  GObject.registerClass({
             return;
         }
 
+        if (this._eventStreamSession === null) {
+            this._eventStreamEnabled = false;
+            this.enableEventStream();
+        }
+
+        if (this._eventStreamMsg !== null) {
+            Utils.logDebug(`Event stream message already requested on: ${this._eventStreamUrl}`);
+            return;
+        }
+
         Utils.logDebug(`Event stream ${this._eventStreamUrl} request`);
 
         let msg = PhueMessage.new("GET", this._eventStreamUrl);
@@ -988,8 +998,11 @@ var PhueBridge =  GObject.registerClass({
         msg.request_headers.append("ssl", "False");
         msg.request_headers.append("hue-application-key", this._userName);
 
+        this._eventStreamMsg = msg;
+
         this._eventStreamSession.queue_message(msg, (sess, mess) => {
             if (mess.status_code === Soup.Status.OK) {
+                this._eventStreamMsg = null;
                 try {
                     this._eventStreamData = JSON.parse(mess.response_body.data);
 
@@ -997,13 +1010,17 @@ var PhueBridge =  GObject.registerClass({
                 } catch {
                     Utils.logDebug(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
                     this._eventStreamData = [];
-                    this._eventStreamEnabled = false;
                 }
 
                 this._requestEventStream();
+            } else if (mess.status_code === Soup.Status.CANCELLED) {
+                /* event stream already disabled - this is what left from the msg, do nothing*/
+                Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
+                return;
             } else {
+                this._eventStreamMsg = null;
                 Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${mess.status_code}`);
-                this._eventStreamEnabled = false;
+                this._eventStreamData = [];
             }
         })
     }
@@ -1024,9 +1041,51 @@ var PhueBridge =  GObject.registerClass({
 
         Utils.logDebug(`Enabling event stream on: ${this._eventStreamUrl}`);
 
+        if (this._eventStreamSession === null) {
+            this._eventStreamSession = Soup.Session.new();
+            this._eventStreamSession.set_property(Soup.SESSION_USER_AGENT, "hue-eventstream-session");
+            this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
+            this._eventStreamSession.ssl_strict = false;
+        }
+
         this._eventStreamEnabled = true;
 
+        this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
+
         this._requestEventStream();
+    }
+
+    /**
+     * Disable event stream and let current request timeout.
+     * 
+     * @method disableEventStream
+     */
+    disableEventStream() {
+        if (this._userName === "") {
+            return;
+        }
+
+        if (!this._eventStreamEnabled) {
+            return;
+        }
+
+        if (this._eventStreamSession === null) {
+            return;
+        }
+
+        Utils.logDebug(`Disabling event stream on: ${this._eventStreamUrl}`);
+
+        this._eventStreamEnabled = false;
+
+        if (this._eventStreamMsg !== null) {
+            this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 1);
+            this._eventStreamSession.cancel_message(this._eventStreamMsg, Soup.Status.CANCELLED);
+        }
+
+        this._eventStreamSession.abort();
+
+        this._eventStreamMsg = null;
+        this._eventStreamSession = null;
     }
 
     /**

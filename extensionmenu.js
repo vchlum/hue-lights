@@ -4434,7 +4434,7 @@ var PhueMenu = GObject.registerClass({
             object = this.refreshMenuObjects[bridgePath]["object"];
             type = this.refreshMenuObjects[bridgePath]["type"];
 
-            if (this.bridesData[bridgeid].length === 0) {
+            if (Object.keys(this.bridesData[bridgeid]).length === 0) {
                 continue;
             }
 
