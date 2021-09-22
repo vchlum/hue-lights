@@ -57,7 +57,7 @@ const GLib = imports.gi.GLib;
 const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 
-const Gettext = imports.gettext;
+const Gettext = imports.gettext.domain('hue-lights');
 const _ = Gettext.gettext;
 
 const StreamState = {
@@ -1935,7 +1935,7 @@ var PhueMenu = GObject.registerClass({
      */
     _getGroupName(bridgeid, groupid) {
 
-        let groupName = _("no data");
+        let groupName = "";
 
         if (groupid === "0") {
             groupName = _("All Rooms & Zones");
@@ -2062,9 +2062,7 @@ var PhueMenu = GObject.registerClass({
 
         this._compactMenuBridges[bridgeid]["control"]["object"].label.text = _("Color & Temperature");
 
-        let controlItem = new PopupMenu.PopupMenuItem(
-            _("None")
-        )
+        let controlItem = new PopupMenu.PopupMenuItem("");
         controlItem.x_align = Clutter.ActorAlign.CENTER;
 
         controlItem.remove_child(controlItem.label);
@@ -2776,7 +2774,7 @@ var PhueMenu = GObject.registerClass({
      */
     _createCompactMenuLights(bridgeid, data) {
         let lightsSubMenu = new PopupMenu.PopupSubMenuMenuItem(
-            _("None")
+            _("No light selected")
         );
 
         /* disable closing menu on item activated */
@@ -2864,7 +2862,7 @@ var PhueMenu = GObject.registerClass({
 
             scenesSubMenu.menu.addMenuItem(
                 new PopupMenu.PopupMenuItem(
-                    _("No room/zone selected")
+                    _("No group selected")
                 )
             );
 
@@ -3836,7 +3834,7 @@ var PhueMenu = GObject.registerClass({
 
         if (!this.hue.instances[bridgeid].isConnected()) {
             Main.notify(
-                _("Hue Lights - ") +_("key shortcut: ") + this._syncSelectionKeyShortcut,
+                "Hue Lights - " + _("key shortcut") + ": " + this._syncSelectionKeyShortcut,
                 _("Please check the connection to Philips Hue bridge.")
             );
 
@@ -3848,7 +3846,7 @@ var PhueMenu = GObject.registerClass({
         if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
             if (this._isStreaming[bridgeid]["groupid"] !== groupid) {
                 Main.notify(
-                    _("Hue Lights - ") +_("key shortcut: ") + this._syncSelectionKeyShortcut,
+                    "Hue Lights - " + _("key shortcut") + ": " + this._syncSelectionKeyShortcut,
                     _("Disable previous entertainment stream.")
                 );
 
@@ -3912,7 +3910,7 @@ var PhueMenu = GObject.registerClass({
             this.hue.bridges[bridgeid]["clientkey"] === undefined) {
 
             Main.notify(
-                _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
                 _("Please, remove Philips hue bridge and connect it again.")
             );
 
@@ -4467,7 +4465,7 @@ var PhueMenu = GObject.registerClass({
 
                 case "entertainment-default-selection-label":
 
-                    object.text = _("Set shortcut for ") + `${Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]}`;
+                    object.text = _("Set shortcut for") + ` ${Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]}`;
 
                     if (this._syncSelectionDefault !== {}) {
                         bridgeid = this._syncSelectionDefault["bridgeid"];
@@ -4529,8 +4527,8 @@ var PhueMenu = GObject.registerClass({
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
                         Main.notify(
-                            _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
-                            _("Connection to Philips Hue bridge restored")
+                            "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
+                            _("Connection to Philips Hue bridge restored.")
                         );
 
                         if ((! this._bridgesInMenuShowed.includes(bridgeid)) &&
@@ -4613,7 +4611,7 @@ var PhueMenu = GObject.registerClass({
                     }
 
                 Main.notify(
-                    _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                    "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
                     _("Please check the connection to Philips Hue bridge.")
                 );
 
@@ -4652,7 +4650,7 @@ var PhueMenu = GObject.registerClass({
                 Utils.logDebug(`Another app already streaming group ${groupid} on bridge ${bridgeid}`);
 
                 Main.notify(
-                    _("Hue Lights - ") + this.hue.bridges[bridgeid]["name"],
+                    "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
                     _("Another app is already using the entertainment areas.")
                 );
                 return true;
@@ -5088,8 +5086,8 @@ var PhueMenu = GObject.registerClass({
                     );
                 } else {
                     Main.notify(
-                        _("Hue Lights - ") +_("key shortcut: ") + this._syncSelectionKeyShortcut,
-                        _("Set the shortcut for sync ") + Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]
+                        "Hue Lights - " +_("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
+                        _("Set the shortcut for sync") + " " + Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]
                     );
                 }
             }
@@ -5155,7 +5153,7 @@ var PhueMenu = GObject.registerClass({
 
         if (Object.keys(bridgesInMenu).length === 0) {
             Main.notify(
-                _("Hue Lights - ") +_("key shortcut: ") + this._syncSelectionKeyShortcut,
+                "Hue Lights - " +_("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
                 _("No bridge connected.")
             );
             return;

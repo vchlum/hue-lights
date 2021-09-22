@@ -44,6 +44,9 @@ const Gio = imports.gi.Gio;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 
+const Gettext = imports.gettext.domain('hue-lights');
+const _ = Gettext.gettext;
+
 const PhueMenuPosition = {
     CENTER: 0,
     RIGHT: 1,

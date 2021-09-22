@@ -47,7 +47,7 @@ const Utils = Me.imports.utils;
 const Params = imports.misc.params;
 const PhueScreenshot = Me.imports.phuescreenshot;
 
-const Gettext = imports.gettext;
+const Gettext = imports.gettext.domain('hue-lights');
 const _ = Gettext.gettext;
 
 /**

@@ -42,7 +42,7 @@ const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
 const HueSB = Me.imports.phuesyncbox;
 
-const Gettext = imports.gettext;
+const Gettext = imports.gettext.domain('hue-lights');
 const _ = Gettext.gettext;
 
 var hue;

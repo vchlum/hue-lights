@@ -44,6 +44,9 @@ const DTLSClient = Me.imports.dtlsclient;
 const PhueScreenshot = Me.imports.phuescreenshot;
 const Utils = Me.imports.utils;
 
+const Gettext = imports.gettext.domain('hue-lights');
+const _ = Gettext.gettext;
+
 const LightRectangle = {
     WIDTH: 0.3,
     HEIGHT: 0.4
@@ -724,7 +727,7 @@ var PhueEntertainment =  GObject.registerClass({
 
         if (screenRectangle === undefined && !this.checkSyncSuitableResolution()) {
             Main.notify(
-                _("Hue Lights - Sync screen"),
+                "Hue Lights - " + _("Sync screen"),
                 _("Your screen is not a solid rectangle.")
             );
             this.closeBridge();

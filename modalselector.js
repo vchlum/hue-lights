@@ -39,6 +39,9 @@ const Params = imports.misc.params;
 const Clutter = imports.gi.Clutter;
 const St = imports.gi.St;
 
+const Gettext = imports.gettext.domain('hue-lights');
+const _ = Gettext.gettext;
+
 /**
  * ModalSelector class. Modal dialog for selecting an option.
  * 

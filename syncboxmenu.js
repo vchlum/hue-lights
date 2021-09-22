@@ -48,6 +48,9 @@ const Main = imports.ui.main;
 const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 
+const Gettext = imports.gettext.domain('hue-lights');
+const _ = Gettext.gettext;
+
 var syncModes = {
     "game": _("Game"),
     "video": _("Video"),
@@ -181,7 +184,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
                 if (this.syncBoxesData[id]["hdmi"][value]["status"] === "unplugged") {
                     Main.notify(
-                        _("Hue Lights - ") + this.syncBoxesData[id]["hdmi"][value]["name"],
+                        "Hue Lights - " + this.syncBoxesData[id]["hdmi"][value]["name"],
                         _("Device unplugged.")
                     );
                 } else {
@@ -329,7 +332,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
     _createMenuHDMI(id, data) {
 
         let hdmi = new PopupMenu.PopupSubMenuMenuItem(
-            _("Selected HDMI")
+            _("Selected HDMI input")
         );
 
         /* disable closing menu on item activated */
@@ -614,7 +617,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon;
         let intensity = new PopupMenu.PopupSubMenuMenuItem(
-            _("Selected intensity mode")
+            `${_("Intensity")}:`
         );
 
         /* disable closing menu on item activated */
@@ -804,8 +807,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
                 if (this.syncBoxInProblem[id] !== undefined &&
                     this.syncBoxInProblem[id]) {
                         Main.notify(
-                            _("Hue Lights - ") + this.syncBox.syncboxes[id]["name"],
-                            _("Connection to Philips Hue sync box restored")
+                            "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
+                            _("Connection to Philips Hue sync box restored.")
                         );
 
                         this.rebuildMenuStart();
@@ -833,7 +836,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     }
 
                 Main.notify(
-                    _("Hue Lights - ") + this.syncBox.syncboxes[id]["name"],
+                    "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
                     _("Please check the connection to Philips Hue sync box.")
                 );
 

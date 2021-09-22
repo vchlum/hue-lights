@@ -39,7 +39,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Config = imports.misc.config;
 
-const Gettext = imports.gettext;
+const Gettext = imports.gettext.domain('hue-lights');
 const _ = Gettext.gettext;
 
 var HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
