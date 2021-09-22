@@ -1517,7 +1517,7 @@ var Prefs = class HuePrefs {
         let dialogSynBoxPress = new Gtk.Dialog(
             {
                 modal: true,
-                title: _("Press HDMI sync box button")
+                title: _("Hold HDMI sync box button")
             }
         );
 

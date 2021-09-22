@@ -3847,7 +3847,7 @@ var PhueMenu = GObject.registerClass({
             if (this._isStreaming[bridgeid]["groupid"] !== groupid) {
                 Main.notify(
                     "Hue Lights - " + _("key shortcut") + ": " + this._syncSelectionKeyShortcut,
-                    _("Disable previous entertainment stream.")
+                    _("Disable previous entertainment area.")
                 );
 
                 Utils.logDebug(`Entertainment group ${this._isStreaming[bridgeid]["groupid"]} is already streaming.`);
@@ -3911,7 +3911,7 @@ var PhueMenu = GObject.registerClass({
 
             Main.notify(
                 "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                _("Please, remove Philips hue bridge and connect it again.")
+                _("Please remove Philips Hue bridge and connect it again.")
             );
 
             Utils.logDebug("Client key not available");
@@ -5121,7 +5121,7 @@ var PhueMenu = GObject.registerClass({
 
         let groupSelector = new ModalSelector.ModalSelector({
             options: groupsForSelection,
-            label: _("Select an entertainment group:")
+            label: _("Select an entertainment area:")
         });
         groupSelector.show();
         groupSelector.newPosition();

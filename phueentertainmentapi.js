@@ -53,7 +53,7 @@ const LightRectangle = {
 }
 
 /**
- * PhueEntertainment class. Provides Entertainment api to Philips hue bridge
+ * PhueEntertainment class. Provides Entertainment api to Philips Hue bridge
  * 
  * @class PhueMenu
  * @constructor

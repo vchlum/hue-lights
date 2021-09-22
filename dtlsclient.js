@@ -273,7 +273,7 @@ var DTLSClient =  GObject.registerClass({
     }
 
     /**
-     * Connect to Philips hue bridge via DTLS using UDP
+     * Connect to Philips Hue bridge via DTLS using UDP
      * 
      * @method connectBridge
      */
