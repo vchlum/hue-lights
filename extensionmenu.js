@@ -58,7 +58,8 @@ const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 
 const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
+var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 const StreamState = {
     STOPPED: 0,
@@ -1237,6 +1238,8 @@ var PhueMenu = GObject.registerClass({
         item = new PopupMenu.PopupSubMenuMenuItem(
             data["config"]["name"]
         );
+
+        this._mainLabel[bridgeid] = item.label;
 
         if (this._compactMenu) {
             item.menu.connect(
@@ -3167,7 +3170,7 @@ var PhueMenu = GObject.registerClass({
 
                 serviceLabel = _("Display") + ` ${i + 1} (${displayGeometry[2]}x${displayGeometry[3]})`;
             } else {
-                serviceLabel = Utils.entertainmentModeText[service];
+                serviceLabel = _(Utils.entertainmentModeText[service]);
             }
 
             let serviceItem = new PopupMenu.PopupMenuItem(
@@ -3265,7 +3268,7 @@ var PhueMenu = GObject.registerClass({
 
 
         /**
-         * Refresh menu item
+         * Refresh desplays item
          */
         let refreshMenuItem = new PopupMenu.PopupMenuItem(
             _("Refresh displays")
@@ -4108,6 +4111,29 @@ var PhueMenu = GObject.registerClass({
     }
 
     /**
+     * Refresh bridge name in menu.
+     * 
+     * @method _refreshSyncBoxMainLabel
+     * @private
+     * @param {String} syncbox id
+     */
+     _refreshBridgeMainLabel(bridgeid) {
+
+        let value;
+
+        if (this._mainLabel[bridgeid] === undefined) {
+            return;
+        }
+
+        value = this.hue.bridges[bridgeid]["name"];
+        if (! this.hue.instances[bridgeid].isConnected()) {
+            value = value + " - " + _("disconnected");
+        }
+
+        this._mainLabel[bridgeid].text = value;
+    }
+
+    /**
      * If change happened, the controls in menu are refreshed.
      * 
      * @method refreshMenu
@@ -4412,7 +4438,7 @@ var PhueMenu = GObject.registerClass({
                         additionlLabel = ` ${monitorN + 1} (${w}x${h})`;
                     }
 
-                    object.text = _("Sync") + ` ${Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]}${additionlLabel}`;
+                    object.text = _("Sync") + " " + _(Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]) + " " + additionlLabel;
 
                     break;
 
@@ -4465,7 +4491,7 @@ var PhueMenu = GObject.registerClass({
 
                 case "entertainment-default-selection-label":
 
-                    object.text = _("Set shortcut for") + ` ${Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]}`;
+                    object.text = _("Set shortcut for") + " " + _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
 
                     if (this._syncSelectionDefault !== {}) {
                         bridgeid = this._syncSelectionDefault["bridgeid"];
@@ -4477,8 +4503,9 @@ var PhueMenu = GObject.registerClass({
 
                         let bridgeName = this.bridesData[bridgeid]["config"]["name"];
                         let groupName = this.bridesData[bridgeid]["groups"][groupid]["name"]
-                        object.text = Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION];
-                        object.text = object.text + ` ${_("shortcut")}: ${bridgeName}-${groupName}`;
+                        object.text = _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
+                        object.text = object.text + " " + _("shortcut");
+                        object.text = object.text + `: ${bridgeName}-${groupName}`;
                         object.text = object.text + ` (${this._syncSelectionKeyShortcut})`;
                     }
 
@@ -4536,6 +4563,8 @@ var PhueMenu = GObject.registerClass({
                             ) {
 
                             this.rebuildMenuStart();
+                        } else {
+                            this._refreshBridgeMainLabel(bridgeid);
                         }
                 }
                 this.bridgeInProblem[bridgeid] = false;
@@ -4618,6 +4647,7 @@ var PhueMenu = GObject.registerClass({
                 this.bridgeInProblem[bridgeid] = true;
 
                 this._checkHueLightsIsStreaming(bridgeid);
+                this._refreshBridgeMainLabel(bridgeid);
             }
         );
         this._appendSignal(signal, this.hue.instances[bridgeid], true);
@@ -5087,7 +5117,7 @@ var PhueMenu = GObject.registerClass({
                 } else {
                     Main.notify(
                         "Hue Lights - " +_("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
-                        _("Set the shortcut for sync") + " " + Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]
+                        _("Set the shortcut for sync") + " " + _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION])
                     );
                 }
             }

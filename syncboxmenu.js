@@ -49,7 +49,8 @@ const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 
 const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
+var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 var syncModes = {
     "game": _("Game"),
@@ -140,7 +141,10 @@ var PhueSyncBoxMenu = GObject.registerClass({
         }
 
         this.syncBox.setConnectionTimeout(this._connectionTimeoutSB);
+
+        let tmpVisible = this.visible;
         this.setPositionInPanel();
+        this.visible = tmpVisible;
 
         return menuNeedsRebuild;
     }
@@ -297,6 +301,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
             data["device"]["name"]
         );
 
+        this._mainLabel[id] = submenu.label;
+
         let icon = null;
         if (this._iconPack !== PhuePanelMenu.PhueIconPack.NONE) {
             icon = this._getIconByPath(Me.dir.get_path() + `/media/syncbox.svg`);
@@ -332,7 +338,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
     _createMenuHDMI(id, data) {
 
         let hdmi = new PopupMenu.PopupSubMenuMenuItem(
-            _("Selected HDMI input")
+            _("Select an HDMI input:")
         );
 
         /* disable closing menu on item activated */
@@ -461,7 +467,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon;
         let mode = new PopupMenu.PopupSubMenuMenuItem(
-            _("Selected sync mode")
+            _("Select a sync mode:")
         );
 
         /* disable closing menu on item activated */
@@ -484,7 +490,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         for (let m in syncModes) {
 
             let item = new PopupMenu.PopupMenuItem(
-                syncModes[m]
+                _(syncModes[m])
             )
 
             item.x_align = Clutter.ActorAlign.FILL;
@@ -561,7 +567,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         let syncBoxPath = `${this._rndID()}`;
 
         let item = new PopupMenu.PopupMenuItem(
-            `${_("Brightness")}:`
+            _("Brightness") + ":"
         );
 
         item.set_x_align(Clutter.ActorAlign.FILL);
@@ -617,7 +623,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon;
         let intensity = new PopupMenu.PopupSubMenuMenuItem(
-            `${_("Intensity")}:`
+            _("Intensity") + ":"
         );
 
         /* disable closing menu on item activated */
@@ -635,7 +641,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         for (let i in syncIntensity) {
 
             let item = new PopupMenu.PopupMenuItem(
-                syncIntensity[i]
+                _(syncIntensity[i])
             )
 
             item.x_align = Clutter.ActorAlign.FILL;
@@ -684,7 +690,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
     _createMenuEntertainment(id, data) {
 
         let entertainment = new PopupMenu.PopupSubMenuMenuItem(
-            _("Selected Entertainment Area")
+            _("Select an entertainment area:")
         );
 
         /* disable closing menu on item activated */
@@ -812,6 +818,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
                         );
 
                         this.rebuildMenuStart();
+                        this._refreshSyncBoxMainLabel(id);
                 }
                 this.syncBoxInProblem[id] = false;
 
@@ -841,9 +848,34 @@ var PhueSyncBoxMenu = GObject.registerClass({
                 );
 
                 this.syncBoxInProblem[id] = true;
+
+                this._refreshSyncBoxMainLabel(id);
             }
         );
         this._appendSignal(signal, this.syncBox.instances[id], true);
+    }
+
+    /**
+     * Refresh sync box name in menu.
+     * 
+     * @method _refreshSyncBoxMainLabel
+     * @private
+     * @param {String} syncbox id
+     */
+    _refreshSyncBoxMainLabel(id) {
+
+        let value;
+
+        if (this._mainLabel[id] === undefined) {
+            return;
+        }
+
+        value = this.syncBox.syncboxes[id]["name"];
+        if (! this.syncBox.instances[id].isConnected()) {
+            value = value + " - " + _("disconnected");
+        }
+
+        this._mainLabel[id].text = value;
     }
 
     /**
@@ -869,6 +901,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
             type = this.refreshMenuObjects[syncBoxPath]["type"];
 
             if (Object.keys(this.syncBoxesData[id]).length === 0) {
+
                 continue;
             }
 
@@ -912,8 +945,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     value = this.syncBoxesData[id]["execution"]["hdmiSource"];
                     value = this.syncBoxesData[id]["hdmi"][value]["lastSyncMode"];
 
-                    if (syncModes[value] !== undefined) {
-                        object.label.text = syncModes[value]
+                    if (_(syncModes[value]) !== undefined) {
+                        object.label.text = _(syncModes[value])
                     }
 
                     if (this.refreshMenuObjects[syncBoxPath]["icon"] !== null) {
@@ -961,8 +994,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     value = this.syncBoxesData[id]["execution"]["hdmiSource"];
                     value = this.syncBoxesData[id]["hdmi"][value]["lastSyncMode"];
                     value =  this.syncBoxesData[id]["execution"][value]["intensity"]
-                    if (syncIntensity[value] !== undefined) {
-                        object.label.text = `${_("Intensity")}: ${syncIntensity[value]}`
+                    if (_(syncIntensity[value]) !== undefined) {
+                        object.label.text = _("Intensity") + ": " + _(syncIntensity[value])
                     }
 
                     if (this.refreshMenuObjects[syncBoxPath]["icon"] !== null) {
@@ -1065,14 +1098,14 @@ var PhueSyncBoxMenu = GObject.registerClass({
         for (let id in this.syncBoxesData) {
             if (!this.syncBox.instances[id].isConnected()){
 
-                Utils.logDebug(`Sync box ${id} is not connected.`);
+                Utils.logDebug(`HDMI sync box ${id} is not connected.`);
                 continue;
             }
 
             if (this.syncBoxesData[id] === undefined ||
                 Object.keys(this.syncBoxesData[id]).length === 0) {
 
-                Utils.logDebug(`Sync box ${id} provides no data.`);
+                Utils.logDebug(`HDMI sync box ${id} provides no data.`);
                 continue;
             }
 

@@ -39,10 +39,8 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Config = imports.misc.config;
 
-const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
-
 var HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
+var HUELIGHTS_SETTINGS_FORCE_ENGLISH = "force-english";
 var HUELIGHTS_SETTINGS_BRIDGES = "bridges";
 var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
@@ -63,6 +61,10 @@ var HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
 var HUELIGHTS_SETTINGS_SYNCBOXES = "syncboxes";
 var HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
+
+const Gettext = imports.gettext.domain('hue-lights');
+var forceEnglish = ExtensionUtils.getSettings(HUELIGHTS_SETTINGS_SCHEMA).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/

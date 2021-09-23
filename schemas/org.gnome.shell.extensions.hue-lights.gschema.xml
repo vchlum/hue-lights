@@ -14,6 +14,10 @@
 
     <!-- See also: https://developer.gnome.org/glib/stable/gvariant-format-strings.html -->
 
+    <key name="force-english" type="b">
+      <default>false</default>
+      <summary>Force english language</summary>
+    </key>
     <key name="bridges" type="a{sa{ss}}">
       <default>{}</default>
       <summary>All bridges</summary>

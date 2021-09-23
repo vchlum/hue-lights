@@ -43,7 +43,8 @@ const Hue = Me.imports.phue;
 const HueSB = Me.imports.phuesyncbox;
 
 const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
+var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 var hue;
 var hueSB;
@@ -242,7 +243,7 @@ var Prefs = class HuePrefs {
         pageBridges.border_width = 10;
         notebook.append_page(
             pageBridges,
-            new Gtk.Label({label: _("Philips Hue Bridges")})
+            new Gtk.Label({label: _("Philips Hue bridges")})
         );
 
         let pageGeneral = this._buildGeneralWidget();
@@ -263,7 +264,7 @@ var Prefs = class HuePrefs {
         pageSyncBox.border_width = 10;
         notebook.append_page(
             pageSyncBox,
-            new Gtk.Label({label: _("HDMI Sync Boxes")})
+            new Gtk.Label({label: _("Philips Hue HDMI sync boxes")})
         );
 
         let pageAdvanced = this._buildAdvancedWidget();
@@ -397,7 +398,7 @@ var Prefs = class HuePrefs {
             if (this._hue.bridges[bridge]["default"] !== undefined &&
                 this._hue.bridges[bridge]["default"] === bridge) {
 
-                let unDefaultWidget = new Gtk.Button({label: _("Unprefer")});
+                let unDefaultWidget = new Gtk.Button({label: _("Disprefer")});
                 unDefaultWidget.connect(
                     "clicked",
                     this._widgetEventHandler.bind(
@@ -484,7 +485,7 @@ var Prefs = class HuePrefs {
          * Position in panel
          */
         labelWidget = new Gtk.Label(
-            {label: _("Indicator position in panel:")}
+            {label: _("Position of the menu icon in panel:")}
         );
         generalWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -629,7 +630,7 @@ var Prefs = class HuePrefs {
          * Use compact menu
          */
          labelWidget = new Gtk.Label(
-            {label: _("Use by default:")}
+            {label: _("Default use:")}
         );
         generalWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -887,6 +888,41 @@ var Prefs = class HuePrefs {
         } else {
             generalWidget.attach(new Gtk.HSeparator(), 1, top, 2, 1);
         }
+
+        top++;
+
+        /**
+         * Force English language
+         */
+        labelWidget = new Gtk.Label(
+            {label: _("Force English language (requires relogin):")}
+        );
+        generalWidget.attach(labelWidget, 1, top, 1, 1);
+
+        let forceEnglishWidget = new Gtk.Switch(
+            {
+                active: forceEnglish,
+                hexpand: false,
+                vexpand: false,
+                halign:Gtk.Align.CENTER,
+                valign:Gtk.Align.CENTER
+            }
+        );
+        forceEnglishWidget.connect(
+            "notify::active",
+            this._widgetEventHandler.bind(
+                this,
+                {"event": "force-english", "object": forceEnglishWidget}
+            )
+        )
+        generalWidget.attach_next_to(
+            forceEnglishWidget,
+            labelWidget,
+            Gtk.PositionType.RIGHT,
+            1,
+            1
+        );
+
         top++;
 
         return generalWidget;
@@ -936,7 +972,7 @@ var Prefs = class HuePrefs {
              * autostart entertainment area
              */
             labelWidget = new Gtk.Label({
-                label: _("Autostart on Gnome login:")
+                label: _("Autostart on GNOME login:")
             });
             entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -990,7 +1026,7 @@ var Prefs = class HuePrefs {
              * default entertainment mode
              */
             labelWidget = new Gtk.Label({
-            label: _("Default mode:")
+            label: _("Default entertainment mode:")
             });
             entertainmentWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -999,7 +1035,7 @@ var Prefs = class HuePrefs {
             for (let mode in Utils.entertainmentModeText) {
                 entertainmentModesWidget.append(
                     mode.toString(),
-                    Utils.entertainmentModeText[mode]
+                    _(Utils.entertainmentModeText[mode])
                 );
             }
 
@@ -1247,7 +1283,7 @@ var Prefs = class HuePrefs {
         }
 
         addWidget = new Gtk.Button(
-            {label: _("Add Philips Hue Sync Box IP")}
+            {label: _("Add Philips Hue HDMI sync box IP")}
         );
         addWidget.connect(
             "clicked",
@@ -1289,7 +1325,7 @@ var Prefs = class HuePrefs {
          */
 
         labelWidget = new Gtk.Label(
-            {label: _("Bridge connection timeout (seconds):")}
+            {label: _("Philips Hue Bridge connection timeout (seconds):")}
         );
         advancedWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -1327,7 +1363,7 @@ var Prefs = class HuePrefs {
          */
 
         labelWidget = new Gtk.Label(
-            {label: _("Sync box connection timeout (seconds):")}
+            {label: _("Philips Hue HDMI sync box connection timeout (seconds):")}
         );
         advancedWidget.attach(labelWidget, 1, top, 1, 1);
 
@@ -1420,7 +1456,7 @@ var Prefs = class HuePrefs {
         );
 
         let aboutTextLabel = new Gtk.Label({
-            label: `${Me.metadata.name}, ${_("version")}: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
+            label: `${Me.metadata.name}, ` + _("version") + `: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
         });
 
         if (Utils.isGnome40()) {
@@ -1937,6 +1973,15 @@ var Prefs = class HuePrefs {
                 this._entertainment[data["bridgeid"]]["bri"] = value;
                 this.writeEntertainmentSettings();
                 break;
+
+            case "force-english":
+
+                this._settings.set_boolean(
+                    Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH,
+                    data["object"].get_active()
+                );
+                break;
+
             case undefined:
             default:
                 Utils.logDebug(`Unknown prefs event`);

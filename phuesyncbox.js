@@ -138,7 +138,7 @@ const GObject = imports.gi.GObject;
 
         if (this.instances[id].checkError()) {
 
-            Utils.logDebug(`Sync Box ${id} check failed.`);
+            Utils.logDebug(`Sync box ${id} check failed.`);
             return;
         }
 

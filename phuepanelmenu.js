@@ -45,7 +45,8 @@ const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
 
 const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
+var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 const PhueMenuPosition = {
     CENTER: 0,
@@ -55,7 +56,7 @@ const PhueMenuPosition = {
 
 const IconSize = 20;
 
-const PhueIconPack = {
+var PhueIconPack = {
     NONE: 0,
     BRIGHT: 1,
     DARK: 2
@@ -89,6 +90,7 @@ var PhuePanelMenu = GObject.registerClass({
         this._rebuildingMenu = false;
         this.refreshMenuObjects = {};
         this._indicatorPositionBackUp = -1;
+        this._mainLabel = {};
 
         let icon = new St.Icon({
             gicon : Gio.icon_new_for_string(params.iconFile),
@@ -563,6 +565,7 @@ var PhuePanelMenu = GObject.registerClass({
     rebuildMenuStart() {
         this._rebuildingMenu = true;
         this._rebuildingMenuRes = {};
+        this._mainLabel = {};
 
         this.disconnectSignals(false);
 

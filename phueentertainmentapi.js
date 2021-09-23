@@ -45,7 +45,8 @@ const PhueScreenshot = Me.imports.phuescreenshot;
 const Utils = Me.imports.utils;
 
 const Gettext = imports.gettext.domain('hue-lights');
-const _ = Gettext.gettext;
+var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 const LightRectangle = {
     WIDTH: 0.3,
@@ -727,7 +728,7 @@ var PhueEntertainment =  GObject.registerClass({
 
         if (screenRectangle === undefined && !this.checkSyncSuitableResolution()) {
             Main.notify(
-                "Hue Lights - " + _("Sync screen"),
+                "Hue Lights - " + _("Screen synchronization"),
                 _("Your screen is not a solid rectangle.")
             );
             this.closeBridge();
