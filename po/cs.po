@@ -1,0 +1,317 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-09-23 19:07+0200\n"
+"PO-Revision-Date: 2021-09-23 12:59+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
+
+msgid "Finish"
+msgstr "Dokončit"
+
+msgid "Switch to"
+msgstr "Přepnout na"
+
+msgid "All Lights"
+msgstr "Všechna světla"
+
+msgid "All Rooms & Zones"
+msgstr "Všechny místnosti a zóny"
+
+msgid "Color & Temperature"
+msgstr "Barva a teplota"
+
+msgid "No group selected"
+msgstr "Skupina není vybrána"
+
+msgid "No light selected"
+msgstr "Světlo není vybráno"
+
+msgid "Scenes"
+msgstr "Scény"
+
+msgid "Display"
+msgstr "Obrazovka"
+
+msgid "Refresh displays"
+msgstr "Obnovit obrazovky"
+
+msgid "Entertainment areas"
+msgstr "Zábavní oblasti"
+
+msgid "Intensity"
+msgstr "Intenzita"
+
+msgid "Brightness"
+msgstr "Jas"
+
+msgid "Entertainment mode"
+msgstr "Zábavní režim"
+
+msgid "key shortcut"
+msgstr "klávesová zkratka"
+
+msgid "Please check the connection to Philips Hue bridge."
+msgstr "Zkontrolujte připojení k mostu Philips Hue."
+
+msgid "Disable previous entertainment area."
+msgstr "Zastavte předchozí zábavní oblast."
+
+msgid "Please remove Philips Hue bridge and connect it again."
+msgstr "Odeberte prosím Philips Hue most a znovu jej přidejte."
+
+msgid "is syncing"
+msgstr "se synchronizuje"
+
+msgid "Sync"
+msgstr "Synchronizovat"
+
+msgid "Set shortcut for"
+msgstr "Nastavit zkratku pro"
+
+msgid "shortcut"
+msgstr "zkratka"
+
+msgid "Connection to Philips Hue bridge restored."
+msgstr "Připoojení k mostu Philips Hue obnoveno."
+
+msgid "Another app is already using the entertainment areas."
+msgstr "Zábavní oblasti již používá jiná aplikace."
+
+msgid "Switch to standard menu"
+msgstr "Přepnout na standardní nabídku"
+
+msgid "Switch to compact menu"
+msgstr "Přepnout na kompaktní nabídku"
+
+msgid "Set the shortcut for sync"
+msgstr "Nastavte zkratku pro synchronizaci"
+
+msgid "Select an entertainment area:"
+msgstr "Vyberte zábavní oblast:"
+
+msgid "No bridge connected."
+msgstr "Žádný most není připojen."
+
+msgid "Select a bridge:"
+msgstr "Vyberte most:"
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Screen synchronization"
+msgstr "Synchronizace plochy"
+
+msgid "Your screen is not a solid rectangle."
+msgstr "Vaše plocha netvoří plný obdélník."
+
+msgid "Refresh menu"
+msgstr "Obnovit nabídku"
+
+msgid "Settings"
+msgstr "Nastavení"
+
+msgid "Philips Hue bridges"
+msgstr "Philips Hue mosty"
+
+msgid "General settings"
+msgstr "Obecné nastavení"
+
+msgid "Philips Hue HDMI sync boxes"
+msgstr "Philips Hue HDMI sync boxy"
+
+msgid "Advanced settings"
+msgstr "Pokročilé nastavení"
+
+msgid "unknown name"
+msgstr "neznámé jméno"
+
+msgid "Connected"
+msgstr "Připojeno"
+
+msgid "Unreachable"
+msgstr "Nedostupné"
+
+msgid "Connect"
+msgstr "Připojit"
+
+msgid "Remove"
+msgstr "Odebrat"
+
+msgid "Disprefer"
+msgstr "Ne-preferovat"
+
+msgid "Prefer"
+msgstr "Preferovat"
+
+msgid "Add Philips Hue bridge IP"
+msgstr "Přidat Philips Hue most podle IP"
+
+msgid "Discover Philips Hue bridges"
+msgstr "Detekovat Philips Hue mosty"
+
+msgid "Position of the menu icon in panel:"
+msgstr "Pozice ikony nabídky v liště:"
+
+msgid "center"
+msgstr "střed"
+
+msgid "right"
+msgstr "vpravo"
+
+msgid "left"
+msgstr "vlevo"
+
+msgid "Icon pack:"
+msgstr "Sada ikon:"
+
+msgid "none"
+msgstr "žádné"
+
+msgid "bright"
+msgstr "světlé"
+
+msgid "dark"
+msgstr "tmavé"
+
+msgid "Show zones first:"
+msgstr "Zobrazit zóny první:"
+
+msgid "Show scenes:"
+msgstr "Zobrazit scény:"
+
+msgid "Compact menu settings"
+msgstr "Nastavení kompaktní nabídky"
+
+msgid "Default use:"
+msgstr "Výchozí použití:"
+
+msgid "Notification lights:"
+msgstr "Oznámení světlem:"
+
+msgid "Select lights"
+msgstr "Výběr světel"
+
+msgid "Autostart on GNOME login:"
+msgstr "Spustit při spuštění GNOME:"
+
+msgid "Default entertainment mode:"
+msgstr "Výchozí zábavní režim:"
+
+msgid "Default intensity:"
+msgstr "Výchozí intenzita:"
+
+msgid "Default brightness:"
+msgstr "Výchozí jas:"
+
+msgid "Nothing here yet. Connect your bridge."
+msgstr "Nic zde není, připojte most."
+
+msgid "Add Philips Hue HDMI sync box IP"
+msgstr "Přidat Philips Hue HDMI sync box podle IP"
+
+msgid "Philips Hue Bridge connection timeout (seconds):"
+msgstr "Vypršení spojení na Philips Hue most (sekundy):"
+
+msgid "Philips Hue HDMI sync box connection timeout (seconds):"
+msgstr "Vypršení spojení na Philips Hue HDMI sync box (sekundy):"
+
+msgid "Log debug messages:"
+msgstr "Logovat  ladící zprávy:"
+
+msgid "version"
+msgstr "verze"
+
+msgid ""
+"This application makes use of fast changing light effects conditions alone, "
+"or in combination with certain content on the screen it may trigger "
+"previously undetected epileptic symptoms or seizures in persons who have no "
+"history of prior seizures or epilepsy."
+msgstr ""
+"Tato aplikace používá rychle se měnící světelné efekty a to buď samostatně "
+"nebo v kombinaci s obsahem obrazovky. Může tak spustit dříve neobjevené "
+"symptomy epilepsie nebo může vyvolat záchvaty u osob, které již epilepsii "
+"zažili."
+
+msgid "Bridge not found"
+msgstr "Most nenalezen"
+
+msgid "Press the button on the bridge and try again."
+msgstr "Stiskněte tlačítko na mostu a zkuste to znovu."
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Hold HDMI sync box button"
+msgstr "Držte tlačítko na HDMI sync boxu"
+
+msgid ""
+"While this dialog is shown, hold the button on HDMI sync box\n"
+"until the led blinks green (~3 seconds) and release."
+msgstr ""
+"Zatímco je zobrazeno toto okno, držte tlačítko na HDMI sync boxu\n"
+"dokud neblikne zeleně (~3 sekundy), pak jej uvolněte."
+
+msgid "Enter new IP address"
+msgstr "Vložte novou IP adresu"
+
+msgid "Game"
+msgstr "Hra"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Music"
+msgstr "Hudba"
+
+msgid "Subtle"
+msgstr "Jemná"
+
+msgid "Moderate"
+msgstr "Mírná"
+
+msgid "High"
+msgstr "Vysoká"
+
+msgid "Intense"
+msgstr "Intenzivní"
+
+msgid "Device unplugged."
+msgstr "Zařízení odpojeno."
+
+msgid "Select an HDMI input:"
+msgstr "Vyberte HDMI vstup:"
+
+msgid "Select a sync mode:"
+msgstr "Vyberte režim synchronizace:"
+
+msgid "Connection to Philips Hue sync box restored."
+msgstr "Připojení na Philips Hue HDMI sync box obnoveno."
+
+msgid "Please check the connection to Philips Hue sync box."
+msgstr "Zkontroluje prosím připojení na Philips Hue HDMI sync box."
+
+msgid "Screen"
+msgstr "Plocha"
+
+msgid "Selection"
+msgstr "Výběr"
+
+msgid "Track cursor"
+msgstr "Sledování kurzoru"
+
+msgid "Random"
+msgstr "Náhoda"
+
+msgid "Force English language (requires relogin):"
+msgstr "Vynutit anglický jazyk (vyžaduje znovu přihlášení):"
+
+msgid "disconnected"
+msgstr "odpojeno"
