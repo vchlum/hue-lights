@@ -115,8 +115,7 @@ var PhueSyncBox =  GObject.registerClass({
         this._syncBoxUrl = `${this._baseUrl}/api/v1`;
 
         this._syncBoxSession = Soup.Session.new();
-        this._syncBoxSession.set_property(Soup.SESSION_USER_AGENT, "syncbox-session");
-        this._syncBoxSession.set_property(Soup.SESSION_TIMEOUT, 5);
+        this._syncBoxSession.timeout = 5;
 
         let tlsDatabase =  new TlsDatabase(
             {anchors: Me.dir.get_path() + "/crypto/hsb_cacert.pem"}
@@ -146,7 +145,7 @@ var PhueSyncBox =  GObject.registerClass({
      */
     setConnectionTimeout(sec) {
 
-        this._syncBoxSession.set_property(Soup.SESSION_TIMEOUT, sec);
+        this._syncBoxSession.timeout = sec;
     }
 
     /**

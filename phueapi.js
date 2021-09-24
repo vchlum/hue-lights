@@ -52,15 +52,12 @@ function discoverBridges() {
 
     let bridges = [];
     let session = Soup.Session.new();
-    session.set_property(Soup.SESSION_USER_AGENT, "hue-discovery");
-    session.set_property(Soup.SESSION_TIMEOUT, 3);
+    session.timeout = 3;
 
     let message = Soup.Message.new('GET', "https://discovery.meethue.com/");
     let statusCode = session.send_message(message);
 
     if (statusCode === Soup.Status.OK) {
-        session.set_property(Soup.SESSION_TIMEOUT, 1);
-
         let discovered = JSON.parse(message.response_body.data);
 
         for (let i in discovered) {
@@ -167,8 +164,7 @@ var PhueBridge =  GObject.registerClass({
         this._eventStreamUrl = `https://${this._ip}/eventstream/clip/v2`;
 
         this._bridgeSession = Soup.Session.new();
-        this._bridgeSession.set_property(Soup.SESSION_USER_AGENT, "hue-session");
-        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, 1);
+        this._bridgeSession.timeout = 3;
 
         this._eventStreamMsg = null;
         this._eventStreamSession = null;
@@ -195,7 +191,7 @@ var PhueBridge =  GObject.registerClass({
      */
     setConnectionTimeout(sec) {
 
-        this._bridgeSession.set_property(Soup.SESSION_TIMEOUT, sec);
+        this._bridgeSession.timeout = sec;
     }
 
     /**
@@ -1043,14 +1039,11 @@ var PhueBridge =  GObject.registerClass({
 
         if (this._eventStreamSession === null) {
             this._eventStreamSession = Soup.Session.new();
-            this._eventStreamSession.set_property(Soup.SESSION_USER_AGENT, "hue-eventstream-session");
-            this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
             this._eventStreamSession.ssl_strict = false;
         }
 
+        this._eventStreamSession.timeout = 0;
         this._eventStreamEnabled = true;
-
-        this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 0);
 
         this._requestEventStream();
     }
@@ -1078,7 +1071,7 @@ var PhueBridge =  GObject.registerClass({
         this._eventStreamEnabled = false;
 
         if (this._eventStreamMsg !== null) {
-            this._eventStreamSession.set_property(Soup.SESSION_TIMEOUT, 1);
+            this._eventStreamSession.timeout = 1;
             this._eventStreamSession.cancel_message(this._eventStreamMsg, Soup.Status.CANCELLED);
         }
 

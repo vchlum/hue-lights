@@ -4633,11 +4633,16 @@ var PhueMenu = GObject.registerClass({
 
                 this._checkRebuildReady(bridgeid, this._rebuildMenu.bind(this));
 
+                if (this.hue.bridges[bridgeid]["username"] === undefined) {
+                    /* ignore - bridge not paired (yet) */
+                    return;
+                }
+
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
                     /* already noticed */
                     return;
-                    }
+                }
 
                 Main.notify(
                     "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
