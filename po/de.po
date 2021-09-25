@@ -1,0 +1,320 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-09-23 20:10+0200\n"
+"PO-Revision-Date: 2021-09-24 22:35+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: de\n"
+
+msgid "Finish"
+msgstr "Beenden"
+
+msgid "Switch to"
+msgstr "Philips Hue Bridge wechseln zu"
+
+msgid "All Lights"
+msgstr "Alle Leuchten"
+
+msgid "All Rooms & Zones"
+msgstr "Alle Räume & Zonen"
+
+msgid "Color & Temperature"
+msgstr "Farbe & Farbtemperatur"
+
+msgid "No group selected"
+msgstr "Keine Gruppe ausgewählt"
+
+msgid "No light selected"
+msgstr "Keine Leuchte ausgewählt"
+
+msgid "Scenes"
+msgstr "Szenen"
+
+msgid "Display"
+msgstr "Bildschirm"
+
+msgid "Refresh displays"
+msgstr "Bildschirme neu laden"
+
+msgid "Entertainment areas"
+msgstr "Entertainmentbereiche"
+
+msgid "Intensity"
+msgstr "Intensität"
+
+msgid "Brightness"
+msgstr "Helligkeit"
+
+msgid "Entertainment mode"
+msgstr "Entertainmentmodus"
+
+msgid "key shortcut"
+msgstr "Tastenkombination"
+
+msgid "Please check the connection to Philips Hue bridge."
+msgstr "Bitte Verbindung zur Philips Hue Bridge überprüfen."
+
+msgid "Disable previous entertainment area."
+msgstr "Vorherigen Entertainmentbereich deaktivieren."
+
+msgid "Please remove Philips Hue bridge and connect it again."
+msgstr "Bitte Philips Hue Bridge entfernen und neu verbinden."
+
+msgid "is syncing"
+msgstr "synchronisiert"
+
+msgid "Sync"
+msgstr "Synchronisation"
+
+msgid "Set shortcut for"
+msgstr "Tastenkombination wählen"
+
+msgid "shortcut"
+msgstr "Tastenkombination"
+
+msgid "Connection to Philips Hue bridge restored."
+msgstr "Verbindung zur Phillips Hue Bridge wiederhergestellt."
+
+msgid "Another app is already using the entertainment areas."
+msgstr "Eine andere Anwendung benutzt bereits die Entertainmentbereiche."
+
+msgid "Switch to standard menu"
+msgstr "Zu Standartmenü wechseln"
+
+msgid "Switch to compact menu"
+msgstr "Zu Kompaktmenü wechseln"
+
+msgid "Set the shortcut for sync"
+msgstr "Tastenkombination für Bildschirmsynchronisation auswählen"
+
+msgid "Select an entertainment area:"
+msgstr "Entertainmentbereich auswählen:"
+
+msgid "No bridge connected."
+msgstr "Keine Bridge verbunden."
+
+msgid "Select a bridge:"
+msgstr "Bridge auswählen:"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Screen synchronization"
+msgstr "Bildschirmsynchronisation"
+
+msgid "Your screen is not a solid rectangle."
+msgstr "Der Umriss aller Bildschirme ist nicht rechteckig."
+
+msgid "Refresh menu"
+msgstr "Menü neu laden"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Philips Hue bridges"
+msgstr "Philips Hue Bridges"
+
+msgid "General settings"
+msgstr "Allgemeine Einstellungen"
+
+msgid "Philips Hue HDMI sync boxes"
+msgstr "Philips Hue HDMI Sync Boxen"
+
+msgid "Advanced settings"
+msgstr "Erweiterte Einstellungen"
+
+msgid "unknown name"
+msgstr "Name unbekannt"
+
+msgid "Connected"
+msgstr "Verbunden"
+
+msgid "Unreachable"
+msgstr "Nicht erreichbar"
+
+msgid "Connect"
+msgstr "Verbinden"
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Disprefer"
+msgstr "Nicht bevorzugen"
+
+msgid "Prefer"
+msgstr "Bevorzugen"
+
+msgid "Add Philips Hue bridge IP"
+msgstr "Philips Hue Bridge hinzufügen"
+
+msgid "Discover Philips Hue bridges"
+msgstr "Philips Hue Bridges finden"
+
+msgid "Position of the menu icon in panel:"
+msgstr "Postion des Menüsymbols im Panel:"
+
+msgid "center"
+msgstr "mittig"
+
+msgid "right"
+msgstr "rechts"
+
+msgid "left"
+msgstr "links"
+
+msgid "Icon pack:"
+msgstr "Symbole:"
+
+msgid "none"
+msgstr "keine"
+
+msgid "bright"
+msgstr "hell"
+
+msgid "dark"
+msgstr "dunkel"
+
+msgid "Show zones first:"
+msgstr "Zonen zuerst anzeigen:"
+
+msgid "Show scenes:"
+msgstr "Szenen anzeigen:"
+
+msgid "Compact menu settings"
+msgstr "Kompaktmenüeinstellungen"
+
+msgid "Default use:"
+msgstr "Standartverwendung:"
+
+msgid "Notification lights:"
+msgstr "Benachrichtigungsleuchten:"
+
+msgid "Select lights"
+msgstr "Leuchten auswählen"
+
+msgid "Autostart on GNOME login:"
+msgstr "Beim Login automatisch starten:"
+
+msgid "Default entertainment mode:"
+msgstr "Standartentertainmentmodus:"
+
+msgid "Default intensity:"
+msgstr "Standartintensität:"
+
+msgid "Default brightness:"
+msgstr "Standarthelligkeit:"
+
+msgid "Nothing here yet. Connect your bridge."
+msgstr "Noch keine Bridges verbunden."
+
+msgid "Add Philips Hue HDMI sync box IP"
+msgstr "Philips Hue HDMI Sync IP Adresse hinzufügen"
+
+msgid "Philips Hue Bridge connection timeout (seconds):"
+msgstr ""
+"Philips Hue HDMI Bridge Verbindungszeitüberschreitungsgrenzwert in Sekunden"
+
+msgid "Philips Hue HDMI sync box connection timeout (seconds):"
+msgstr ""
+"Philips Hue HDMI Sync Box Verbindungszeitüberschreitungsgrenzwert in "
+"Sekunden:"
+
+msgid "Log debug messages:"
+msgstr "Debugging Nachrichten mitschreiben:"
+
+msgid "version"
+msgstr "Version"
+
+msgid ""
+"This application makes use of fast changing light effects conditions alone, "
+"or in combination with certain content on the screen it may trigger "
+"previously undetected epileptic symptoms or seizures in persons who have no "
+"history of prior seizures or epilepsy."
+msgstr ""
+"Diese Anwendung nutzt sich schnell verändernde Lichteffekte. Diese können "
+"allein oder in zusammen mit bestimmten Bildschirminhalten epileptische "
+"Symptome oder Anfälle auslösen, auch bei Personen die bisher keine "
+"epileptischen Anfälle hatten."
+
+msgid "Bridge not found"
+msgstr "Bridge nicht gefunden"
+
+msgid "Press the button on the bridge and try again."
+msgstr "Knopf auf der Bridge drücken und erneut versuchen."
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Hold HDMI sync box button"
+msgstr "Knopf auf der HDMI Sync Box drücken"
+
+msgid ""
+"While this dialog is shown, hold the button on HDMI sync box\n"
+"until the led blinks green (~3 seconds) and release."
+msgstr ""
+"Während dieser Dialog angezeigt wird, den Knopf auf der\n"
+"HDMI Sync Box ca. 3 Sekunden drücken, bis die LED grün blinkt."
+
+msgid "Enter new IP address"
+msgstr "Neue IP Adresse eingeben"
+
+msgid "Game"
+msgstr "Spiel"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Music"
+msgstr "Musik"
+
+msgid "Subtle"
+msgstr "Schwach"
+
+msgid "Moderate"
+msgstr "Moderat"
+
+msgid "High"
+msgstr "Stark"
+
+msgid "Intense"
+msgstr "Intensiv"
+
+msgid "Device unplugged."
+msgstr "Gerät nicht eingesteckt."
+
+msgid "Select an HDMI input:"
+msgstr "HDMI Eingang auswählen:"
+
+msgid "Select a sync mode:"
+msgstr "Synchronisationsmodus auswählen:"
+
+msgid "Connection to Philips Hue sync box restored."
+msgstr "Verbindung zur Philips Hue Sync Box wiederhergestellt."
+
+msgid "Please check the connection to Philips Hue sync box."
+msgstr "Bitte überprüfen Sie die Verbindung zur Philips Hue Sync Box."
+
+msgid "Screen"
+msgstr "Bildschirm"
+
+msgid "Selection"
+msgstr "Auswahl"
+
+msgid "Track cursor"
+msgstr "Mauszeiger verfolgen"
+
+msgid "Random"
+msgstr "Zufällig"
+
+msgid "Force English language (requires relogin):"
+msgstr "Englische Sprache erzwingen (erst nach dem nächsten Einloggen aktiv):"
+
+msgid "disconnected"
+msgstr "nicht verbunden"
