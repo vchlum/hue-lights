@@ -43,8 +43,8 @@ const Hue = Me.imports.phue;
 const HueSB = Me.imports.phuesyncbox;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+var _ = Gettext.gettext;
+var forceEnglish = false;
 
 var hue;
 var hueSB;
@@ -60,6 +60,11 @@ var hueSB;
 var Prefs = class HuePrefs {
 
     constructor(hue, hueSB) {
+
+        forceEnglish = ExtensionUtils.getSettings(
+            Utils.HUELIGHTS_SETTINGS_SCHEMA
+        ).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+        _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
         this._refreshPrefs = false;
         this._defaultPage = 0;

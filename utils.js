@@ -63,7 +63,9 @@ var HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(HUELIGHTS_SETTINGS_SCHEMA).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+var forceEnglish = ExtensionUtils.getSettings(
+    HUELIGHTS_SETTINGS_SCHEMA
+).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
 const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 /**

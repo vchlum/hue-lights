@@ -45,7 +45,9 @@ const PhueScreenshot = Me.imports.phuescreenshot;
 const Utils = Me.imports.utils;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+var forceEnglish = ExtensionUtils.getSettings(
+    Utils.HUELIGHTS_SETTINGS_SCHEMA
+).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
 const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 const LightRectangle = {
@@ -91,7 +93,12 @@ var PhueEntertainment =  GObject.registerClass({
 
         this._signals = {};
 
-        this.dtls = new DTLSClient.DTLSClient({ip: this._ip, port: 2100, pskidentity: this._username, psk: this._clientkey});
+        this.dtls = new DTLSClient.DTLSClient({
+            ip: this._ip,
+            port: 2100,
+            pskidentity: this._username,
+            psk: this._clientkey
+        });
         signal = this.dtls.connect("connected", () => {
             this.emit("connected");
         });

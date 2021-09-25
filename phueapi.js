@@ -311,7 +311,9 @@ var PhueBridge =  GObject.registerClass({
             this._apiVersionMajor = parseInt(apiVersion[0]);
             this._apiVersionMinor = parseInt(apiVersion[1]);
 
-            if (this._apiVersionMajor >= 2 || (this._apiVersionMajor === 1 && this._apiVersionMinor >= 46)) {
+            if (this._apiVersionMajor >= 2 ||
+                (this._apiVersionMajor === 1 && this._apiVersionMinor >= 46)) {
+
                 this.enableEventStream();
             }
         }

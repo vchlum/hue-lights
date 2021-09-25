@@ -49,7 +49,9 @@ const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+var forceEnglish = ExtensionUtils.getSettings(
+    Utils.HUELIGHTS_SETTINGS_SCHEMA
+).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
 const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
 var syncModes = {
