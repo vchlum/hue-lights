@@ -1,3 +1,8 @@
+## Version 15
+ * add Philips Hue Sync Box support
+ * fix gradient light strip support
+ * add german translation
+ * add czech translation
 ## Version 14
  * asynchronously rebuild menu
  * save selected group and light
