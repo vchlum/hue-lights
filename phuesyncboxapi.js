@@ -43,6 +43,20 @@ const Utils = Me.imports.utils;
 const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 
+/**
+ * Philips Hue HDMI Sync Box API supports only HTTPS requests [1].
+ * That is the reason I added the TLS certificate [2] to this extension
+ * as Philips company recommends.
+ * After initialization and pairing with the Philips Hue HDMI Sync Box,
+ * the certificate is used as suggested by Philips company [1].
+ * 
+ * Note: You need a Philips Hue developer account to access the referenced links.
+ * 
+ * [1] https://developers.meethue.com/develop/hue-entertainment/hue-hdmi-sync-box-api/
+ * [2] https://developers.meethue.com/wp-content/uploads/2020/01/hsb_cacert.pem_.txt
+ */
+const HsbCert = Me.dir.get_path() + "/crypto/hsb_cacert.pem"
+
 const PhueSyncBoxMsgRequestType = {
     NO_RESPONSE_NEED: 0,
     REGISTRATION: 1,
@@ -118,7 +132,7 @@ var PhueSyncBox =  GObject.registerClass({
         this._syncBoxSession.timeout = 5;
 
         let tlsDatabase =  new TlsDatabase(
-            {anchors: Me.dir.get_path() + "/crypto/hsb_cacert.pem"}
+            { anchors: HsbCert }
         );
         this._syncBoxSession.tls_database  = tlsDatabase;
         this._syncBoxSession.ssl_strict = true;
