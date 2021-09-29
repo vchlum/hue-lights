@@ -33,6 +33,8 @@
  * THE SOFTWARE.
  */
 
+imports.gi.versions.Soup = "2.4";
+
 const Soup = imports.gi.Soup;
 const Json = imports.gi.Json;
 const GLib = imports.gi.GLib;
@@ -49,6 +51,10 @@ const Utils = Me.imports.utils;
   * @return {Object} dictionary with bridges in local network
   */
 function discoverBridges() {
+
+    if (Soup.MAJOR_VERSION >= 3) {
+        return discoverBridges3();
+    }
 
     let bridges = [];
     let session = Soup.Session.new();
@@ -69,6 +75,59 @@ function discoverBridges() {
                 bridges.push(discovered[i]);
             }
         }
+    }
+
+    return bridges;
+}
+
+/**
+  * Check all bridges in the local network using libsoup3.
+  * 
+  * @method discoverBridges
+  * @return {Object} dictionary with bridges in local network
+  */
+function discoverBridges3() {
+    let bridges = [];
+    let session = Soup.Session.new();
+    session.timeout = 3;
+
+    let msg = Soup.Message.new('GET', "https://discovery.meethue.com/");
+
+    try {
+        let data = session.send_and_read(msg, null).get_data();
+
+        if (msg.status_code !== Soup.Status.OK) {
+            return [];
+        }
+
+        let discovered = JSON.parse(data);
+
+        for (let i in discovered) {
+            msg = Soup.Message.new('GET', `http://${discovered[i]["internalipaddress"]}/api/config`);
+
+            let bridge = {};
+            try {
+                data = session.send_and_read(msg, null).get_data();
+
+                if (msg.status_code !== Soup.Status.OK) {
+                    continue;
+                }
+
+                bridge = JSON.parse(data);
+            } catch(e) {
+                bridge = {};
+                Utils.logDebug(`Failed to discover bridge ${discovered[i]["internalipaddress"]}: ${e}`);
+                continue;
+            }
+
+            if (bridge["mac"] !== undefined) {
+                bridges.push(discovered[i]);
+            }
+        }
+
+    } catch(e) {
+        Utils.logDebug(`Failed to discover bridges: ${e}`);
+        return [];
     }
 
     return bridges;
@@ -138,6 +197,7 @@ var PhueBridge =  GObject.registerClass({
 }, class PhueBridge extends GObject.Object {
 
     _init(props={}) {
+
         super._init(props);
         this._bridgeConnected = false;
         this._userName = "";
@@ -320,6 +380,59 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
+     * Process url request to the bridge with libsoup3.
+     * 
+     * @method _requestJson3
+     * @private
+     * @param {String} method to be used like POST, PUT, GET
+     * @param {Boolean} url to be requested
+     * @param {Object} input data in case of supported method
+     * @return {Object} JSON with response
+     */
+    _requestJson3(method, url, requestHueType, data) {
+
+        let outputData;
+
+        Utils.logDebug(`Bridge ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
+
+        let msg = PhueMessage.new(method, url);
+
+        msg.requestHueType = requestHueType;
+
+        if (data !== null) {
+            msg.set_request_body_from_bytes(
+                "application/json",
+                new GLib.Bytes(JSON.stringify(data))
+            );
+        }
+
+        if (this._asyncRequest) {
+            this._data = [];
+            Utils.logDebug('libsoup3 not implemented yet');
+            return [];
+        }
+
+        try {
+            outputData = this._bridgeSession.send_and_read(msg, null).get_data();
+
+            if (msg.status_code !== Soup.Status.OK) {
+                Utils.logDebug(`Bridge sync-respond to ${url} ended with status: ${msg.status_code}`);
+                this._bridgeConnected = false;
+                return [];
+            }
+
+            this._data = JSON.parse(outputData);
+            this._bridgeConnected = true;
+        } catch(e) {
+            Utils.logDebug(`Bridge sync-respond to ${url} failed: ${e}`);
+            this._bridgeConnected = false;
+            return [];
+        }
+
+        return this._data;
+    }
+
+    /**
      * Process url request to the bridge.
      * 
      * @method _requestJson
@@ -330,6 +443,10 @@ var PhueBridge =  GObject.registerClass({
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
+
+        if (Soup.MAJOR_VERSION >= 3) {
+            return this._requestJson3(method, url, requestHueType, data);
+        }
 
         Utils.logDebug(`Bridge ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
 
@@ -472,7 +589,6 @@ var PhueBridge =  GObject.registerClass({
         }
 
         return this._data;
-
     }
 
     /**

@@ -33,6 +33,8 @@
  * THE SOFTWARE.
  */
 
+imports.gi.versions.Soup = "2.4";
+
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Soup = imports.gi.Soup;
@@ -205,6 +207,63 @@ var PhueSyncBox =  GObject.registerClass({
     }
 
     /**
+     * Process url request to the sync box with libsoup3.
+     * 
+     * @method _requestJson3
+     * @private
+     * @param {String} method to be used like POST, PUT, GET
+     * @param {Boolean} url to be requested
+     * @param {Object} input data in case of supported method
+     * @return {Object} JSON with response
+     */
+    _requestJson3(method, url, requestHueType, data) {
+
+        let outputData;
+
+        Utils.logDebug(`Sync Box ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
+
+        let msg = PhueSyncBoxMessage.new(method, url);
+
+        msg.requestHueType = requestHueType;
+
+        if (this._accessToken !== "") {
+            msg.request_headers.append("Authorization", `Bearer ${this._accessToken}`);
+        }
+
+        if (data !== null) {
+            msg.set_request_body_from_bytes(
+                "application/json",
+                new GLib.Bytes(JSON.stringify(data))
+            );
+        }
+
+        if (this._asyncRequest) {
+            this._data = [];
+            Utils.logDebug('libsoup3 not implemented yet');
+            return [];
+        }
+
+        try {
+            outputData = this._syncBoxSession.send_and_read(msg, null).get_data();
+
+            if (msg.status_code !== Soup.Status.OK) {
+                Utils.logDebug(`Sync Box sync-respond to ${url} ended with status: ${msg.status_code}`);
+                this._syncBoxConnected = false;
+                return [];
+            }
+
+            this._data = JSON.parse(outputData);
+            this._syncBoxConnected = true;
+        } catch(e) {
+            Utils.logDebug(`Sync Box sync-respond to ${url} failed: ${e}`);
+            this._syncBoxConnected = false;
+            return [];
+        }
+
+        return this._data;
+    }
+
+    /**
      * Process url request to the sync box.
      * 
      * @method _requestJson
@@ -215,6 +274,10 @@ var PhueSyncBox =  GObject.registerClass({
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
+
+        if (Soup.MAJOR_VERSION >= 3) {
+            return this._requestJson3(method, url, requestHueType, data);
+        }
 
         Utils.logDebug(`HDMI sync box ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
 
