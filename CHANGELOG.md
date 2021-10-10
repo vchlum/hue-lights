@@ -1,3 +1,6 @@
+## Version 16
+ * support for associating devices with networks
+ * libsoup 3 fix
 ## Version 15
  * add Philips Hue Sync Box support
  * fix gradient light strip support
