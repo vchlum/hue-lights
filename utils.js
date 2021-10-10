@@ -61,12 +61,16 @@ var HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
 var HUELIGHTS_SETTINGS_SYNCBOXES = "syncboxes";
 var HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
 var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
+var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION = "associated-connection";
+var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE = "a{sa{sas}}";
 
 const Gettext = imports.gettext.domain('hue-lights');
 var forceEnglish = ExtensionUtils.getSettings(
     HUELIGHTS_SETTINGS_SCHEMA
 ).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
 const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+
+const allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/

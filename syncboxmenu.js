@@ -91,6 +91,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         let signal;
         this.syncBoxInProblem = {};
         this.syncBoxesData = {};
+        this._client = undefined;
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         signal = this._settings.connect("changed", () => {
@@ -104,8 +105,6 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         this.readSettings();
 
-        this.rebuildMenuStart();
-
         signal = this.menu.connect("open-state-changed", () => {
             if (this.menu.isOpen) {
                 for (let i in this.syncBox.instances) {
@@ -116,7 +115,31 @@ var PhueSyncBoxMenu = GObject.registerClass({
         });
         this._appendSignal(signal, this.menu, false);
 
-        this.visible = false;
+        /* if the desktop is starting up, wait until starting is finished */
+        this._startingUpSignal = undefined;
+        if (Main.layoutManager._startingUp) {
+            this._startingUpSignal = Main.layoutManager.connect(
+                "startup-complete",
+                () => {
+                    Main.layoutManager.disconnect(this._startingUpSignal);
+                    this._startingUpSignal = undefined;
+
+                    this._client = Main.panel.statusArea.aggregateMenu._network._client;
+                    this._client.connect('notify::active-connections', () => {
+                        this.rebuildMenuStart();
+                    });
+
+                    this.rebuildMenuStart();
+                }
+            );
+        } else {
+            this._client = Main.panel.statusArea.aggregateMenu._network._client;
+            this._client.connect('notify::active-connections', () => {
+                this.rebuildMenuStart();
+            });
+
+            this.rebuildMenuStart();
+        }
     }
 
     /**
@@ -144,6 +167,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         this.syncBox.setConnectionTimeout(this._connectionTimeoutSB);
 
+        /* setPositionInPanel will set visible to true, lets make backup */
         let tmpVisible = this.visible;
         this.setPositionInPanel();
         this.visible = tmpVisible;
@@ -814,10 +838,13 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
                 if (this.syncBoxInProblem[id] !== undefined &&
                     this.syncBoxInProblem[id]) {
-                        Main.notify(
-                            "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
-                            _("Connection to Philips Hue sync box restored.")
-                        );
+                        if (this.deviceShouldBeAvailable[id] !== undefined &&
+                            this.deviceShouldBeAvailable[id]) {
+                                Main.notify(
+                                    "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
+                                    _("Connection to Philips Hue sync box restored.")
+                                );
+                            }
 
                         this.rebuildMenuStart();
                         this._refreshSyncBoxMainLabel(id);
@@ -844,10 +871,14 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     return;
                     }
 
-                Main.notify(
-                    "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
-                    _("Please check the connection to Philips Hue sync box.")
-                );
+                if (this.deviceShouldBeAvailable[id] !== undefined &&
+                    this.deviceShouldBeAvailable[id]) {
+
+                    Main.notify(
+                        "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
+                        _("Please check the connection to Philips Hue sync box.")
+                    );
+                }
 
                 this.syncBoxInProblem[id] = true;
 
@@ -1039,6 +1070,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         Utils.logDebug("Rebuilding sync box menu started.");
 
+        this.checkAvailability(this.syncBox.syncboxes, false);
+
         let settingsItems = this._createDefaultSettingsItems(
             this.rebuildMenuStart.bind(this)
         );
@@ -1086,16 +1119,15 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let instanceCounter = 0;
 
+        this.checkAvailability(this.syncBox.syncboxes, false);
+
         if (Object.keys(this.syncBox.syncboxes).length === 0) {
-            this.visible = false;
             Utils.logDebug("No sync box present.");
             return;
 
         }
 
         Utils.logDebug("Rebuilding sync box menu.");
-
-        this.visible = true;
 
         for (let id in this.syncBoxesData) {
             if (!this.syncBox.instances[id].isConnected()){
@@ -1108,6 +1140,14 @@ var PhueSyncBoxMenu = GObject.registerClass({
                 Object.keys(this.syncBoxesData[id]).length === 0) {
 
                 Utils.logDebug(`HDMI sync box ${id} provides no data.`);
+                continue;
+            }
+
+            if (this._associatedConnection[id] !== undefined &&
+                this._associatedConnection[id]["connections"].length > 0 &&
+                ! this.deviceShouldBeAvailable[id]) {
+
+                Utils.logDebug(`Sync box ${id} is available but it prefers another network.`);
                 continue;
             }
 
@@ -1135,6 +1175,9 @@ var PhueSyncBoxMenu = GObject.registerClass({
             for (let settingsItem of settingsItems) {
                 this.menu.addMenuItem(settingsItem);
             }
+        } else {
+            /* if any device is available, show the icon */
+            this.visible = true;
         }
 
         this.refreshMenu();

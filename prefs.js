@@ -41,6 +41,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 const Hue = Me.imports.phue;
 const HueSB = Me.imports.phuesyncbox;
+const NM = imports.gi.NM;
 
 const Gettext = imports.gettext.domain('hue-lights');
 var _ = Gettext.gettext;
@@ -148,6 +149,7 @@ var Prefs = class HuePrefs {
         this._entertainment = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT).deep_unpack();
         this._hueSB.syncboxes = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_SYNCBOXES).deep_unpack();
         this._connectionTimeoutSB = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB);
+        this._associatedConnection = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION).deep_unpack();
     }
 
     /**
@@ -202,6 +204,21 @@ var Prefs = class HuePrefs {
             new GLib.Variant(
                 Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE,
                 this._entertainment
+            )
+        );
+    }
+
+    /**
+     * Wite setting for associated connections
+     *
+     * @method writeAssociatedConnections
+     */
+    writeAssociatedConnections() {
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE,
+                this._associatedConnection
             )
         );
     }
@@ -431,6 +448,15 @@ var Prefs = class HuePrefs {
                 1
             );
 
+            let connectionsWidget = this._getConnectionWidget(bridge, "bridge");
+            bridgesWidget.attach_next_to(
+                connectionsWidget,
+                tmpWidged,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
             top++;
         }
 
@@ -444,7 +470,7 @@ var Prefs = class HuePrefs {
                 {"event": "add-ip", "object": ipWidget}
             )
         );
-        bridgesWidget.attach(addWidget, 1, top, 5, 1);
+        bridgesWidget.attach(addWidget, 1, top, 6, 1);
 
         top++;
 
@@ -458,7 +484,7 @@ var Prefs = class HuePrefs {
                 {"event": "discovery-bridges"}
             )
         );
-        bridgesWidget.attach(discoveryWidget, 1, top, 5, 1);
+        bridgesWidget.attach(discoveryWidget, 1, top, 6, 1);
 
         top++;
 
@@ -1284,6 +1310,15 @@ var Prefs = class HuePrefs {
                 1
             );
 
+            let connectionsWidget = this._getConnectionWidget(sb, "syncbox");
+            syncBoxesWidget.attach_next_to(
+                connectionsWidget,
+                removeWidget,
+                Gtk.PositionType.RIGHT,
+                1,
+                1
+            );
+
             top++;
         }
 
@@ -1297,7 +1332,7 @@ var Prefs = class HuePrefs {
                 {"event": "add-syncbox-ip", "object": null}
             )
         );
-        syncBoxesWidget.attach(addWidget, 1, top, 4, 1);
+        syncBoxesWidget.attach(addWidget, 1, top, 5, 1);
 
         top++;
 
@@ -1649,6 +1684,11 @@ var Prefs = class HuePrefs {
                     delete(this._hue.instances[bridgeid]);
                 }
 
+                if (this._associatedConnection[bridgeid] !== undefined) {
+                    delete(this._associatedConnection[bridgeid]);
+                    this.writeAssociatedConnections();
+                }
+
                 this._refreshPrefs = true;
                 this._defaultPage = 0;
                 this.writeSettings();
@@ -1800,6 +1840,11 @@ var Prefs = class HuePrefs {
                 if (this._hueSB.instances[sb] !== undefined) {
                     this._hueSB.instances[sb].deleteRegistration();
                     delete(this._hueSB.instances[sb]);
+                }
+
+                if (this._associatedConnection[sb] !== undefined) {
+                    delete(this._associatedConnection[sb]);
+                    this.writeAssociatedConnections();
                 }
 
                 this._refreshPrefs = true;
@@ -1987,10 +2032,177 @@ var Prefs = class HuePrefs {
                 );
                 break;
 
+            case "connection-toggled":
+
+                let device = data["device"];
+                let connection = data["connection-id"];
+                if (this._associatedConnection[device] === undefined) {
+                    this._associatedConnection[device] = {};
+                    this._associatedConnection[device]["connections"] = [];
+                    this._associatedConnection[device]["type"] = [data["device-type"]];
+                }
+
+                if (data["object"].active) {
+                    if (! this._associatedConnection[device]["connections"].includes(connection)) {
+                        this._associatedConnection[device]["connections"].push(connection);
+                    }
+                } else {
+                    if (this._associatedConnection[device]["connections"].includes(connection)) {
+                        let index = this._associatedConnection[device]["connections"].indexOf(connection);
+                        index = this._associatedConnection[device]["connections"].splice(index, 1);
+                    }
+                }
+
+                this.writeAssociatedConnections();
+                break;
+
             case undefined:
             default:
                 Utils.logDebug(`Unknown prefs event`);
           }
+    }
+
+    /**
+     * Gets all known connections
+     * 
+     * @method getConnections
+     * @returns {Object} array of conections
+     */
+    getConnections() {
+
+        let c = [];
+
+        let client = NM.Client.new(null);
+
+        let connections = client.get_connections();
+        for (let connection of connections) {
+            if (! Utils.allowedConnectionTypes.includes(connection.get_connection_type())) {
+                continue;
+            }
+
+            c.push(connection.get_id());
+        }
+
+        return c;
+    }
+
+    /**
+     * Creates widget with button that provides selection of associated networks
+     * 
+     * @param {String} id of the device
+     * @param {String} deviceType like "bridge"...
+     * @returns {Object} widget with button providing connection selection
+     */
+    _getConnectionWidget(id, deviceType) {
+
+        let connections = this.getConnections();
+
+        let connectionsMenuButton = new Gtk.MenuButton({label: _("Associated networks")});
+
+        let connectionsMenu;
+        let connectionsListBox; /* used for Gnome 40*/
+        let connectionsWindow; /* used for Gnome 40*/
+        if (Utils.isGnome40()) {
+            connectionsMenu = new Gtk.Popover();
+            connectionsMenuButton.set_popover(connectionsMenu);
+            connectionsWindow = new Gtk.ScrolledWindow();
+            connectionsWindow.min_content_width = 300;
+            connectionsWindow.min_content_height = 200;
+            connectionsListBox = new Gtk.Box(
+                {
+                    orientation: Gtk.Orientation.VERTICAL
+                }
+            );
+            connectionsWindow.set_child(connectionsListBox);
+        } else {
+            connectionsMenu = new Gtk.Menu();
+            connectionsMenuButton.set_popup(connectionsMenu);
+        }
+
+        for (let c in connections) {
+            if (Utils.isGnome40()) {
+                let connectionBox = new Gtk.Box(
+                    {
+                        orientation: Gtk.Orientation.HORIZONTAL
+                    }
+                );
+                connectionBox.append(new Gtk.Label(
+                    {
+                        label: connections[c],
+                        hexpand: true,
+                        halign:Gtk.Align.START,
+                    }
+                ));
+
+                connectionsListBox.append(connectionBox);
+                let isActive = false;
+
+                if (this._associatedConnection[id] !== undefined &&
+                    this._associatedConnection[id]["connections"] !== undefined) {
+
+                    if (this._associatedConnection[id]["connections"].includes(connections[c])) {
+                        isActive = true;
+                    }
+                }
+
+                let connectionSwitch = new Gtk.Switch(
+                    {
+                        active: isActive
+                    }
+                );
+
+                connectionSwitch.connect(
+                    "notify::active",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {
+                            "event": "connection-toggled",
+                            "device": id,
+                            "device-type": deviceType,
+                            "connection-id": connections[c],
+                            "object": connectionSwitch
+                        }
+                    )
+                )
+                connectionBox.append(connectionSwitch);
+
+            } else {
+                /* Gnome 3.x */
+
+                let connectionMenuItem = new Gtk.CheckMenuItem({label: connections[c]});
+
+                if (this._associatedConnection[id] !== undefined &&
+                    this._associatedConnection[id]["connections"] !== undefined) {
+
+                    if (this._associatedConnection[id]["connections"].includes(connections[c])) {
+                        connectionMenuItem.active = true;
+                    }
+                }
+
+                connectionMenuItem.connect(
+                    "toggled",
+                    this._widgetEventHandler.bind(
+                        this,
+                        {
+                            "event": "connection-toggled",
+                            "device": id,
+                            "device-type": deviceType,
+                            "connection-id": connections[c],
+                            "object": connectionMenuItem
+                        }
+                    )
+                )
+                connectionsMenu.append(connectionMenuItem);
+            }
+        }
+
+        if (Utils.isGnome40()) {
+            connectionsMenu.set_child(connectionsWindow);
+        } else {
+            connectionsMenu.show_all();
+        }
+
+        return connectionsMenuButton;
     }
 }
 

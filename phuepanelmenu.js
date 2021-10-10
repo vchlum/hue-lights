@@ -43,6 +43,7 @@ const St = imports.gi.St;
 const Gio = imports.gi.Gio;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
+const GLib = imports.gi.GLib;
 
 const Gettext = imports.gettext.domain('hue-lights');
 var forceEnglish = ExtensionUtils.getSettings(
@@ -93,6 +94,7 @@ var PhuePanelMenu = GObject.registerClass({
         this.refreshMenuObjects = {};
         this._indicatorPositionBackUp = -1;
         this._mainLabel = {};
+        this.deviceShouldBeAvailable = {};
 
         let icon = new St.Icon({
             gicon : Gio.icon_new_for_string(params.iconFile),
@@ -449,6 +451,19 @@ var PhuePanelMenu = GObject.registerClass({
             Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB
         );
 
+        /**
+         * this._associatedConnection needs rebuild
+         */
+        tmpVal = JSON.stringify(this._associatedConnection);
+
+        this._associatedConnection = this._settings.get_value(
+            Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION
+        ).deep_unpack();
+
+        if (tmpVal !== JSON.stringify(this._associatedConnection)) {
+            menuNeedsRebuild = true;
+        }
+
         return menuNeedsRebuild;
     }
 
@@ -626,4 +641,109 @@ var PhuePanelMenu = GObject.registerClass({
         }
     }
 
+    /**
+     * Gets current connections that are active
+     * 
+     * @method checkActiveConnections
+     * @returns {Object} array of active conections
+     */
+    checkActiveConnections() {
+
+        let id = [];
+
+        if (this._client === undefined) {
+            return id;
+        }
+
+        if (! this._client.networking_enabled) {
+            return id;
+        }
+
+        let activeConnections = this._client.get_active_connections();
+
+        for (let connection of activeConnections) {
+            if (! Utils.allowedConnectionTypes.includes(connection.get_connection_type())) {
+                continue;
+            }
+
+            id.push(connection.get_id());
+        }
+
+        return id;
+    }
+
+    /**
+     * Checks and sets the visibility of panel menu.
+     * 
+     * @method checkAvailability
+     * @param {Object} dictianary with devices (like bridges or sync boxes)
+     * @param {Boolean} whether to show icon without devices
+     * @returns {Object} array of active conections
+     */
+    checkAvailability(devices, showWithoutDevices) {
+
+        let visibility = false;
+
+        if (Object.keys(devices).length === 0) {
+            if (showWithoutDevices) {
+                visibility = true;
+            } else {
+                visibility = false;
+            }
+
+            this.visible = visibility;
+
+            return;
+        }
+
+        let connections = this.checkActiveConnections();
+
+        /* if no connection is available but some device is known already, hide everyting */
+        if (connections.length === 0 &&
+            Object.keys(this._associatedConnection).length > 0) {
+
+            this.visible = false;
+            for (let id in devices) {
+                this.deviceShouldBeAvailable[id] = false;
+            }
+
+            return;
+        }
+
+        for (let id in devices) {
+
+            this.deviceShouldBeAvailable[id] = false;
+
+            /* if no associated connection, always true */
+            if (Object.keys(this._associatedConnection).length === 0) {
+                this.deviceShouldBeAvailable[id] = true;
+                continue;
+            }
+
+            /* if device is not associated with any network, show */
+            if (this._associatedConnection[id] === undefined ||
+                this._associatedConnection[id]["connections"].length === 0) {
+
+                this.deviceShouldBeAvailable[id] = true;
+            }
+
+            /* if  I use known connection, show */
+            if (this._associatedConnection[id] !== undefined) {
+                for (let known of this._associatedConnection[id]["connections"]) {
+                    if (connections.includes(known)) {
+                        this.deviceShouldBeAvailable[id] = true;
+                    }
+                }
+            }
+        }
+
+        /* if any device should be connected, show icon */
+        for (let id in this.deviceShouldBeAvailable) {
+            if (this.deviceShouldBeAvailable[id]) {
+                visibility = true;
+            }
+        }
+
+        this.visible = visibility;
+    }
 });

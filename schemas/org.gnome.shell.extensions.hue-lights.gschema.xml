@@ -74,5 +74,9 @@
       <default>8</default>
       <summary>Sync box connection timeout</summary>
     </key>
+    <key name="associated-connection" type="a{sa{sas}}">
+      <default>{}</default>
+      <summary>Associated connection</summary>
+    </key>
   </schema>
 </schemalist>

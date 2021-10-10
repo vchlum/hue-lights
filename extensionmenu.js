@@ -106,6 +106,7 @@ var PhueMenu = GObject.registerClass({
         this._rebuildingMenuFirstTime = true;
         this.bridesData = {};
         this.colorPicker = {};
+        this._client = undefined;
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         signal = this._settings.connect("changed", () => {
@@ -118,8 +119,6 @@ var PhueMenu = GObject.registerClass({
         this.hue = new Hue.Phue(true);
 
         this.readSettings();
-
-        this.rebuildMenuStart();
 
         signal = this.menu.connect("open-state-changed", () => {
             if (this.menu.isOpen) {
@@ -141,10 +140,25 @@ var PhueMenu = GObject.registerClass({
             this._startingUpSignal = Main.layoutManager.connect(
                 "startup-complete",
                 () => {
+                    Main.layoutManager.disconnect(this._startingUpSignal);
+                    this._startingUpSignal = undefined;
+
+                    this._client = Main.panel.statusArea.aggregateMenu._network._client;
+                    this._client.connect('notify::active-connections', () => {
+                        this.rebuildMenuStart();
+                    });
+
+                    this.rebuildMenuStart();
                     this._setScreenChangeDetection();
                 }
             );
         } else {
+            this._client = Main.panel.statusArea.aggregateMenu._network._client;
+            this._client.connect('notify::active-connections', () => {
+                this.rebuildMenuStart();
+            });
+
+            this.rebuildMenuStart();
             this._setScreenChangeDetection();
         }
     }
@@ -159,11 +173,6 @@ var PhueMenu = GObject.registerClass({
     _setScreenChangeDetection() {
 
         let signal;
-
-        if (this._startingUpSignal !== undefined) {
-            Main.layoutManager.disconnect(this._startingUpSignal);
-            this._startingUpSignal = undefined;
-        }
 
         signal = Main.layoutManager.connect(
             "monitors-changed",
@@ -198,7 +207,10 @@ var PhueMenu = GObject.registerClass({
             menuNeedsRebuild = true;
         }
 
+        let tmpVisible = this.visible;
         this.setPositionInPanel();
+        this.visible = tmpVisible;
+
         this.hue.setConnectionTimeout(this._connectionTimeout);
 
         return menuNeedsRebuild;
@@ -207,7 +219,7 @@ var PhueMenu = GObject.registerClass({
     /**
      * Wite setting for current selection in menu
      *
-     * @method writeEntertainmentSettings
+     * @method writeMenuSelectedSettings
      */
     writeMenuSelectedSettings() {
 
@@ -4555,10 +4567,15 @@ var PhueMenu = GObject.registerClass({
 
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
-                        Main.notify(
-                            "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                            _("Connection to Philips Hue bridge restored.")
-                        );
+
+                        if (this.deviceShouldBeAvailable[bridgeid] !== undefined &&
+                            this.deviceShouldBeAvailable[bridgeid]) {
+
+                            Main.notify(
+                                "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
+                                _("Connection to Philips Hue bridge restored.")
+                            );
+                        }
 
                         if ((! this._bridgesInMenuShowed.includes(bridgeid)) &&
                             (! this._bridgesInMenuShowed.includes(this._defaultBridgeInMenu))
@@ -4646,10 +4663,14 @@ var PhueMenu = GObject.registerClass({
                     return;
                 }
 
-                Main.notify(
-                    "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                    _("Please check the connection to Philips Hue bridge.")
-                );
+                if (this.deviceShouldBeAvailable[bridgeid] !== undefined &&
+                    this.deviceShouldBeAvailable[bridgeid]) {
+
+                    Main.notify(
+                        "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
+                        _("Please check the connection to Philips Hue bridge.")
+                    );
+                }
 
                 this.bridgeInProblem[bridgeid] = true;
 
@@ -4998,6 +5019,8 @@ var PhueMenu = GObject.registerClass({
 
         Utils.logDebug("Rebuilding bridge menu started.");
 
+        this.checkAvailability(this.hue.bridges, true);
+
         this.disableStreams();
 
         for (let bridgeid in this.colorPicker){
@@ -5058,6 +5081,8 @@ var PhueMenu = GObject.registerClass({
         this._bridgesInMenuShowed = [];
         this._lastOpenedMenu = {"last": null, "opening": null};
 
+        this.checkAvailability(this.hue.bridges, true);
+
         Utils.logDebug("Rebuilding bridge menu.");
 
         this._bridgesInMenu = this.getBridgesInMenu(this._bridgesInMenu);
@@ -5074,6 +5099,14 @@ var PhueMenu = GObject.registerClass({
                 Object.keys(this.bridesData[bridgeid]).length === 0) {
 
                 Utils.logDebug(`Bridge ${bridgeid} provides no data.`);
+                continue;
+            }
+
+            if (this._associatedConnection[bridgeid] !== undefined &&
+                this._associatedConnection[bridgeid]["connections"].length > 0 &&
+                ! this.deviceShouldBeAvailable[bridgeid]) {
+
+                Utils.logDebug(`Bridge ${bridgeid} is available but it prefers another network.`);
                 continue;
             }
 
@@ -5107,6 +5140,9 @@ var PhueMenu = GObject.registerClass({
             for (let settingsItem of this._createSettingItems(true)) {
                 this.menu.addMenuItem(settingsItem);
             }
+        } else {
+            /* if any device is available, show the icon */
+            this.visible = true;
         }
 
         Main.wm.removeKeybinding("sync-selection");
