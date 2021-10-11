@@ -5304,16 +5304,21 @@ var PhueMenu = GObject.registerClass({
 
             cmd = {"transitiontime": 0};
 
-            cmd["on"] = lightState["on"];
+            /* if the light is off then only turn off otherwise it would blink */
+            if (lightState["on"]) {
+                cmd["on"] = lightState["on"];
 
-            cmd["bri"] = lightState["bri"];
+                cmd["bri"] = lightState["bri"];
 
-            if (lightState["colormode"] == "ct") {
-                cmd["ct"] = lightState["ct"];
-            }
+                if (lightState["colormode"] == "ct") {
+                    cmd["ct"] = lightState["ct"];
+                }
 
-            if (lightState["colormode"] == "xy") {
-                cmd["xy"] = lightState["xy"];
+                if (lightState["colormode"] == "xy") {
+                    cmd["xy"] = lightState["xy"];
+                }
+            } else {
+                cmd["on"] = false;
             }
 
             this.oldNotifylight[reqBridgeid][i] = cmd;
