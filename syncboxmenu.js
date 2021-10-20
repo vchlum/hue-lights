@@ -838,16 +838,9 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
                 if (this.syncBoxInProblem[id] !== undefined &&
                     this.syncBoxInProblem[id]) {
-                        if (this.deviceShouldBeAvailable[id] !== undefined &&
-                            this.deviceShouldBeAvailable[id]) {
-                                Main.notify(
-                                    "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
-                                    _("Connection to Philips Hue sync box restored.")
-                                );
-                            }
 
-                        this.rebuildMenuStart();
-                        this._refreshSyncBoxMainLabel(id);
+                    this.rebuildMenuStart();
+                    this._refreshSyncBoxMainLabel(id);
                 }
                 this.syncBoxInProblem[id] = false;
 
@@ -869,15 +862,6 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     this.syncBoxInProblem[id]) {
                     /* already noticed */
                     return;
-                    }
-
-                if (this.deviceShouldBeAvailable[id] !== undefined &&
-                    this.deviceShouldBeAvailable[id]) {
-
-                    Main.notify(
-                        "Hue Lights - " + this.syncBox.syncboxes[id]["name"],
-                        _("Please check the connection to Philips Hue sync box.")
-                    );
                 }
 
                 this.syncBoxInProblem[id] = true;

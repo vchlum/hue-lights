@@ -4568,15 +4568,6 @@ var PhueMenu = GObject.registerClass({
                 if (this.bridgeInProblem[bridgeid] !== undefined &&
                     this.bridgeInProblem[bridgeid]) {
 
-                        if (this.deviceShouldBeAvailable[bridgeid] !== undefined &&
-                            this.deviceShouldBeAvailable[bridgeid]) {
-
-                            Main.notify(
-                                "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                                _("Connection to Philips Hue bridge restored.")
-                            );
-                        }
-
                         if ((! this._bridgesInMenuShowed.includes(bridgeid)) &&
                             (! this._bridgesInMenuShowed.includes(this._defaultBridgeInMenu))
                             ) {
@@ -4661,15 +4652,6 @@ var PhueMenu = GObject.registerClass({
                     this.bridgeInProblem[bridgeid]) {
                     /* already noticed */
                     return;
-                }
-
-                if (this.deviceShouldBeAvailable[bridgeid] !== undefined &&
-                    this.deviceShouldBeAvailable[bridgeid]) {
-
-                    Main.notify(
-                        "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                        _("Please check the connection to Philips Hue bridge.")
-                    );
                 }
 
                 this.bridgeInProblem[bridgeid] = true;
