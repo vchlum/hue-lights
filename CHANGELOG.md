@@ -1,3 +1,5 @@
+## Version 17
+ * remove loss/recovery notification
 ## Version 16
  * support for associating devices with networks
  * libsoup 3 fix
