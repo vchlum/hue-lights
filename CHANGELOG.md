@@ -1,3 +1,5 @@
+## Version 18
+ * increase version number
 ## Version 17
  * remove loss/recovery notification
 ## Version 16
