@@ -2097,6 +2097,19 @@ var Prefs = class HuePrefs {
 
         let connections = this.getConnections();
 
+        /* add unknown but saved connections */
+        for (let d in this._associatedConnection) {
+            if (this._associatedConnection[d]["connections"] === undefined) {
+                continue;
+            }
+
+            for (let c in this._associatedConnection[d]["connections"]) {
+                if (!connections.includes(this._associatedConnection[d]["connections"][c])) {
+                    connections.push(this._associatedConnection[d]["connections"][c]);
+                }
+            }
+        }
+
         let connectionsMenuButton = new Gtk.MenuButton({label: _("Associated networks")});
 
         let connectionsMenu;
