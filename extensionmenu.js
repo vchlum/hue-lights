@@ -2092,6 +2092,14 @@ var PhueMenu = GObject.registerClass({
 
         if (hasXY || hasCT) {
             this._compactMenuBridges[bridgeid]["control"]["object"].visible = true;
+
+            let croupidCondition = (groupid === null || groupid === "0" || groupid === 0) ? null: groupid;
+            if (croupidCondition !== null || lightid !== null) {
+                let data = this.bridesData[bridgeid];
+                let controlName = croupidCondition === null ? data["lights"][lightid]["name"] : data["groups"][groupid]["name"];
+                controlName += ` ${_("Color & Temperature").toLowerCase()}`
+                this._compactMenuBridges[bridgeid]["control"]["object"].label.text = controlName;
+            }
         }
 
         let colorPickerBox = new ColorPicker.ColorPickerBox({
@@ -2320,6 +2328,11 @@ var PhueMenu = GObject.registerClass({
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = _("All Lights");
 
+            if (groupid !== "0" && groupid !== 0 && lightid === null) {
+                let lightsName = `${data["groups"][groupid]["name"]} ${_("All Lights").toLowerCase()}`;
+                this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = lightsName;
+            }
+
             defaultValue = data["groups"][groupid]["state"]["all_on"];
             let groupSwitch = this._createLightSwitch(bridgeid, null, groupid, defaultValue, 2);
             this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
@@ -2525,6 +2538,11 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["scenes"]["object"].menu.removeAll();
 
             this._compactMenuBridges[bridgeid]["scenes"]["object"].visible = true;
+
+            if (groupid !== null && groupid !== "0" && groupid !== 0) {
+                let scenesName = `${data["groups"][groupid]["name"]} ${_("Scenes").toLowerCase()}`;
+                this._compactMenuBridges[bridgeid]["scenes"]["object"].label.text = scenesName;
+            }
 
             let scenesItems = this._createMenuLights(
                 bridgeid,
