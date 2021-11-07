@@ -1661,6 +1661,11 @@ var PhueMenu = GObject.registerClass({
                     Me.dir.get_path() + `/media/HueIcons/bulbGroup.svg`
                 );
             }
+
+            if (groupid !== "0") {
+                let lightsName = `${_("All Lights")} - ${data["groups"][groupid]["name"]}`;
+                light.label.text = lightsName;
+            }
         }
 
         if (lightIcon !== null) {
@@ -2093,11 +2098,10 @@ var PhueMenu = GObject.registerClass({
         if (hasXY || hasCT) {
             this._compactMenuBridges[bridgeid]["control"]["object"].visible = true;
 
-            let croupidCondition = (groupid === null || groupid === "0" || groupid === 0) ? null: groupid;
-            if (croupidCondition !== null || lightid !== null) {
+            if (groupid !== "0") {
                 let data = this.bridesData[bridgeid];
-                let controlName = croupidCondition === null ? data["lights"][lightid]["name"] : data["groups"][groupid]["name"];
-                controlName += ` ${_("Color & Temperature").toLowerCase()}`
+                let controlName = groupid === null ? data["lights"][lightid]["name"] : data["groups"][groupid]["name"];
+                controlName = `${_("Color & Temperature")} - ` + controlName;
                 this._compactMenuBridges[bridgeid]["control"]["object"].label.text = controlName;
             }
         }
@@ -2328,8 +2332,10 @@ var PhueMenu = GObject.registerClass({
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = _("All Lights");
 
-            if (groupid !== "0" && groupid !== 0 && lightid === null) {
-                let lightsName = `${data["groups"][groupid]["name"]} ${_("All Lights").toLowerCase()}`;
+            if (this._menuSelected[bridgeid]["groupid"] !== undefined &&
+                this._menuSelected[bridgeid]["groupid"] !== 0) {
+
+                let lightsName = `${_("All Lights")} - ${data["groups"][this._menuSelected[bridgeid]["groupid"]]["name"]}`;
                 this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = lightsName;
             }
 
@@ -2540,7 +2546,7 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["scenes"]["object"].visible = true;
 
             if (groupid !== null && groupid !== "0" && groupid !== 0) {
-                let scenesName = `${data["groups"][groupid]["name"]} ${_("Scenes").toLowerCase()}`;
+                let scenesName = `${_("Scenes")} - ${data["groups"][groupid]["name"]}`;
                 this._compactMenuBridges[bridgeid]["scenes"]["object"].label.text = scenesName;
             }
 
