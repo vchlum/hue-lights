@@ -1663,8 +1663,7 @@ var PhueMenu = GObject.registerClass({
             }
 
             if (groupid !== "0") {
-                let lightsName = `${_("All Lights")} - ${data["groups"][groupid]["name"]}`;
-                light.label.text = lightsName;
+                light.label.text = data["groups"][groupid]["name"];
             }
         }
 
@@ -2101,7 +2100,6 @@ var PhueMenu = GObject.registerClass({
             if (groupid !== "0") {
                 let data = this.bridesData[bridgeid];
                 let controlName = groupid === null ? data["lights"][lightid]["name"] : data["groups"][groupid]["name"];
-                controlName = `${_("Color & Temperature")} - ` + controlName;
                 this._compactMenuBridges[bridgeid]["control"]["object"].label.text = controlName;
             }
         }
@@ -2335,7 +2333,7 @@ var PhueMenu = GObject.registerClass({
             if (this._menuSelected[bridgeid]["groupid"] !== undefined &&
                 this._menuSelected[bridgeid]["groupid"] !== 0) {
 
-                let lightsName = `${_("All Lights")} - ${data["groups"][this._menuSelected[bridgeid]["groupid"]]["name"]}`;
+                let lightsName = data["groups"][this._menuSelected[bridgeid]["groupid"]]["name"];
                 this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = lightsName;
             }
 
@@ -2373,7 +2371,7 @@ var PhueMenu = GObject.registerClass({
             }
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
-                this._createUnselectLightButton(bridgeid, this._menuSelected[bridgeid]["groupid"]),
+                this._createUnselectLightButton(bridgeid, this._menuSelected[bridgeid]["groupid"].toString()),
                 this._compactMenuBridges[bridgeid]["lights"]["object"].get_children().length - 1
             );
 
@@ -2546,7 +2544,7 @@ var PhueMenu = GObject.registerClass({
             this._compactMenuBridges[bridgeid]["scenes"]["object"].visible = true;
 
             if (groupid !== null && groupid !== "0" && groupid !== 0) {
-                let scenesName = `${_("Scenes")} - ${data["groups"][groupid]["name"]}`;
+                let scenesName = data["groups"][groupid]["name"];
                 this._compactMenuBridges[bridgeid]["scenes"]["object"].label.text = scenesName;
             }
 
