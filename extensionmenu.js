@@ -3615,15 +3615,15 @@ var PhueMenu = GObject.registerClass({
             this._createCompactMenuLights(bridgeid, data)
         );
 
+        items = items.concat(
+            this._createCompactMenuControl(bridgeid, data)
+        );
+
         if (this._showScenes) {
             items = items.concat(
                 this._createCompactMenuScenes(bridgeid, data)
             );
         }
-
-        items = items.concat(
-            this._createCompactMenuControl(bridgeid, data)
-        );
 
         this._selectCompactMenu(bridgeid);
 
