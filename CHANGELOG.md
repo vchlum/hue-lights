@@ -1,3 +1,7 @@
+## Version 19
+ * add support for scaling display
+ * move scene to the end of menu
+ * change label for scenes and colors
 ## Version 18
  * increase version number
 ## Version 17
