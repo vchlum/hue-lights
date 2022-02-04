@@ -1,3 +1,5 @@
+## Version 20
+ * fix lights synchronization
 ## Version 19
  * add support for scaling display
  * move scene to the end of menu
