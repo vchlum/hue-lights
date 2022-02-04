@@ -87,7 +87,7 @@ var PhueScreenshot =  GObject.registerClass({
                     reject();
                 });
             } catch(e) {
-                logError(e);
+                log(e);
             }
         });
     }

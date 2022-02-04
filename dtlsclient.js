@@ -292,7 +292,7 @@ var DTLSClient =  GObject.registerClass({
         this._clientSocket.connect_async(address, null, (o, res) =>  {
             this._connection = this._clientSocket.connect_finish(res);
             if (!this._connection) {
-                logError("hue not connected via dtls");
+                Utils.logDebug("hue not connected via dtls");
                 return;
             }
 
@@ -396,6 +396,11 @@ var DTLSClient =  GObject.registerClass({
             } catch (e) {
                 fillSize = 0;
 
+                if (e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.PENDING)) {
+                    Utils.logDebug(`DTLS client is already reading, skipping.`);
+                    return;
+                }
+
                 Utils.logDebug(`DTLS client failed to finish reading: ${e}`);
             }
 
@@ -407,9 +412,11 @@ var DTLSClient =  GObject.registerClass({
                     msg.push(this._dataInputStream.read_byte(null));
                 }
 
-                let packet = this._readPacket(msg);
+                while(msg.length !== 0) {
+                    let packet = this._readPacket(msg);
 
-                this._handleResponse(packet);
+                    this._handleResponse(packet);
+                }
 
                 return;
             }
@@ -823,6 +830,11 @@ var DTLSClient =  GObject.registerClass({
                 packet = Object.assign({}, packet, this._readHandshakePacket(handshakeBody, packet["hType"]));
                 break;
 
+            case contentType.CHANGE_CIPHER_SPEC:
+                /* read 0x01 */
+                if (arrayToUint(this.popNextN(msg, 1)) !== 0x01)
+                    Utils.logDebug("Invalid ChangeCipherSpec DTLS message.");
+
             default:
                 break;
         }
@@ -1052,7 +1064,7 @@ var DTLSClient =  GObject.registerClass({
 
             encryptedMsg = encrypted.cipherText.concat(encrypted.authenticationTag);
         } catch (e) {
-                logError("hue encryption error: " + e);
+                Utils.logDebug("hue encryption error: " + e);
         }
 
         encryptedMsg = epochAndSeq.concat(encryptedMsg);
