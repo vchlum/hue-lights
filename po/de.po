@@ -86,7 +86,7 @@ msgid "Another app is already using the entertainment areas."
 msgstr "Eine andere Anwendung benutzt bereits die Entertainmentbereiche."
 
 msgid "Switch to standard menu"
-msgstr "Zu Standartmenü wechseln"
+msgstr "Zu Standardmenü wechseln"
 
 msgid "Switch to compact menu"
 msgstr "Zu Kompaktmenü wechseln"
@@ -158,7 +158,7 @@ msgid "Discover Philips Hue bridges"
 msgstr "Philips Hue Bridges finden"
 
 msgid "Position of the menu icon in panel:"
-msgstr "Postion des Menüsymbols im Panel:"
+msgstr "Position des Menüsymbols im Panel:"
 
 msgid "center"
 msgstr "mittig"
@@ -191,7 +191,7 @@ msgid "Compact menu settings"
 msgstr "Kompaktmenüeinstellungen"
 
 msgid "Default use:"
-msgstr "Standartverwendung:"
+msgstr "Standardverwendung:"
 
 msgid "Notification lights:"
 msgstr "Benachrichtigungsleuchten:"
@@ -203,19 +203,19 @@ msgid "Autostart on GNOME login:"
 msgstr "Beim Login automatisch starten:"
 
 msgid "Default entertainment mode:"
-msgstr "Standartentertainmentmodus:"
+msgstr "Standardentertainmentmodus:"
 
 msgid "Default intensity:"
-msgstr "Standartintensität:"
+msgstr "Standardintensität:"
 
 msgid "Default brightness:"
-msgstr "Standarthelligkeit:"
+msgstr "Standardhelligkeit:"
 
 msgid "Nothing here yet. Connect your bridge."
 msgstr "Noch keine Bridges verbunden."
 
 msgid "Add Philips Hue HDMI sync box IP"
-msgstr "Philips Hue HDMI Sync IP Adresse hinzufügen"
+msgstr "Philips Hue HDMI Sync IP-Adresse hinzufügen"
 
 msgid "Philips Hue Bridge connection timeout (seconds):"
 msgstr ""
@@ -227,7 +227,7 @@ msgstr ""
 "Sekunden:"
 
 msgid "Log debug messages:"
-msgstr "Debugging Nachrichten mitschreiben:"
+msgstr "Debugging-Nachrichten mitschreiben:"
 
 msgid "version"
 msgstr "Version"
@@ -239,7 +239,7 @@ msgid ""
 "history of prior seizures or epilepsy."
 msgstr ""
 "Diese Anwendung nutzt sich schnell verändernde Lichteffekte. Diese können "
-"allein oder in zusammen mit bestimmten Bildschirminhalten epileptische "
+"alleine oder in Kombination mit bestimmten Bildschirminhalten epileptische "
 "Symptome oder Anfälle auslösen, auch bei Personen die bisher keine "
 "epileptischen Anfälle hatten."
 
@@ -263,7 +263,7 @@ msgstr ""
 "HDMI Sync Box ca. 3 Sekunden drücken, bis die LED grün blinkt."
 
 msgid "Enter new IP address"
-msgstr "Neue IP Adresse eingeben"
+msgstr "Neue IP-Adresse eingeben"
 
 msgid "Game"
 msgstr "Spiel"
@@ -290,7 +290,7 @@ msgid "Device unplugged."
 msgstr "Gerät nicht eingesteckt."
 
 msgid "Select an HDMI input:"
-msgstr "HDMI Eingang auswählen:"
+msgstr "HDMI-Eingang auswählen:"
 
 msgid "Select a sync mode:"
 msgstr "Synchronisationsmodus auswählen:"
@@ -314,10 +314,10 @@ msgid "Random"
 msgstr "Zufällig"
 
 msgid "Force English language (requires relogin):"
-msgstr "Englische Sprache erzwingen (erst nach dem nächsten Einloggen aktiv):"
+msgstr "Englische Sprache erzwingen (wird erst nach dem nächsten Einloggen aktiv):"
 
 msgid "disconnected"
 msgstr "nicht verbunden"
 
 msgid "Associated networks"
-msgstr "Zugehörige netzwerke"
+msgstr "Zugehörige Netzwerke"
