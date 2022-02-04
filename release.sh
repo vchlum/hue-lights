@@ -17,4 +17,4 @@ for i in "${languages[@]}"; do
 done
 
 glib-compile-schemas schemas/
-zip -r hue-lights@chlumskyvaclav.gmail.com.zip . --exclude=po/\* --exclude=.git/\* --exclude=\*.sh --exclude=schemas/\*.xml --exclude=screenshot.png --exclude=*.zip
+zip -r hue-lights@chlumskyvaclav.gmail.com.zip . --exclude=po/\* --exclude=.git/\* --exclude=\*.sh --exclude=schemas/\*.xml --exclude=screenshot.png --exclude=*.zip --exclude=FUNDING.yml
