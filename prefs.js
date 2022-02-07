@@ -5,14 +5,14 @@
  * JavaScript Gnome extension for Philips Hue lights and bridges.
  *
  * @author Václav Chlumský
- * @copyright Copyright 2021, Václav Chlumský.
+ * @copyright Copyright 2022, Václav Chlumský.
  */
 
  /**
  * @license
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Václav Chlumský
+ * Copyright (c) 2022 Václav Chlumský
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -1496,7 +1496,7 @@ var Prefs = class HuePrefs {
         );
 
         let aboutTextLabel = new Gtk.Label({
-            label: `${Me.metadata.name}, ` + _("version") + `: ${Me.metadata.version}, Copyright (c) 2021 Václav Chlumský`
+            label: `${Me.metadata.name}, ` + _("version") + `: ${Me.metadata.version}, Copyright (c) 2022 Václav Chlumský`
         });
 
         if (Utils.isGnome40()) {
