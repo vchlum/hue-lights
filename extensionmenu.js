@@ -5410,7 +5410,7 @@ var PhueMenu = GObject.registerClass({
      * @method runNotify
      */
     runNotify() {
-        Utils.logDebug("Notification happend in the system.");
+        Utils.logDebug("A notification has occurred in the system.");
 
         for (let bridgeid in this.hue.instances) {
             if (!this.hue.instances[bridgeid].isConnected()) {

@@ -116,7 +116,7 @@ function discoverBridges3() {
                 bridge = JSON.parse(data);
             } catch(e) {
                 bridge = {};
-                Utils.logDebug(`Failed to discover bridge ${discovered[i]["internalipaddress"]}: ${e}`);
+                Utils.logError(`Failed to discover bridge ${discovered[i]["internalipaddress"]}: ${e}`);
                 continue;
             }
 
@@ -126,7 +126,7 @@ function discoverBridges3() {
         }
 
     } catch(e) {
-        Utils.logDebug(`Failed to discover bridges: ${e}`);
+        Utils.logError(`Failed to discover bridges: ${e}`);
         return [];
     }
 
@@ -424,7 +424,7 @@ var PhueBridge =  GObject.registerClass({
             this._data = JSON.parse(outputData);
             this._bridgeConnected = true;
         } catch(e) {
-            Utils.logDebug(`Bridge sync-respond to ${url} failed: ${e}`);
+            Utils.logError(`Bridge sync-respond to ${url} failed: ${e}`);
             this._bridgeConnected = false;
             return [];
         }
@@ -476,7 +476,7 @@ var PhueBridge =  GObject.registerClass({
 
                             this.checkApiVersion();
                         } catch {
-                            Utils.logDebug(`Bridge ${method} async-respond, failed to parse JSON`);
+                            Utils.logError(`Bridge ${method} async-respond, failed to parse JSON`);
                             this._data = [];
                         }
 
@@ -583,7 +583,7 @@ var PhueBridge =  GObject.registerClass({
                 this._bridgeConnected = true;
                 this._data = JSON.parse(msg.response_body.data);
             } catch {
-                Utils.logDebug(`Bridge ${method} sync-respond, failed to parse JSON`);
+                Utils.logError(`Bridge ${method} sync-respond, failed to parse JSON`);
                 return [];
             }
         }
@@ -673,7 +673,7 @@ var PhueBridge =  GObject.registerClass({
             hostname = ByteArray.toString(output[1]).trim();
         } catch(e) {
             hostname = "unknown-host";
-            Utils.logDebug(`Failed to get hostanme: ${e}`);
+            Utils.logError(`Failed to get hostanme: ${e}`);
         }
 
         /* device name can be up to 19 chars */
@@ -1122,7 +1122,7 @@ var PhueBridge =  GObject.registerClass({
 
                     this.emit("event-stream-data");
                 } catch {
-                    Utils.logDebug(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
+                    Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
                     this._eventStreamData = [];
                 }
 

@@ -292,7 +292,7 @@ var DTLSClient =  GObject.registerClass({
         this._clientSocket.connect_async(address, null, (o, res) =>  {
             this._connection = this._clientSocket.connect_finish(res);
             if (!this._connection) {
-                Utils.logDebug("hue not connected via dtls");
+                Utils.logError("DTLS connection to bridge not established.");
                 return;
             }
 
@@ -401,7 +401,7 @@ var DTLSClient =  GObject.registerClass({
                     return;
                 }
 
-                Utils.logDebug(`DTLS client failed to finish reading: ${e}`);
+                Utils.logError(`DTLS client failed to finish reading: ${e}`);
             }
 
             if (fillSize > 0) {
@@ -808,7 +808,7 @@ var DTLSClient =  GObject.registerClass({
         let bodyLength = arrayToUint(this.popNextN(msg, 2));
 
         if (this._encrypted) {
-            Utils.logDebug("decrypt messages not supported: " + JSON.stringify(packet));
+            Utils.logDebug("Decrypt messages not supported: " + JSON.stringify(packet));
             this._logDecryptionData("server", packet, msg);
             return packet;
         }
@@ -833,7 +833,7 @@ var DTLSClient =  GObject.registerClass({
             case contentType.CHANGE_CIPHER_SPEC:
                 /* read 0x01 */
                 if (arrayToUint(this.popNextN(msg, 1)) !== 0x01)
-                    Utils.logDebug("Invalid ChangeCipherSpec DTLS message.");
+                    Utils.logError("Invalid ChangeCipherSpec DTLS message.");
 
             default:
                 break;
@@ -1064,7 +1064,7 @@ var DTLSClient =  GObject.registerClass({
 
             encryptedMsg = encrypted.cipherText.concat(encrypted.authenticationTag);
         } catch (e) {
-                Utils.logDebug("hue encryption error: " + e);
+                Utils.logError("hue encryption error: " + e);
         }
 
         encryptedMsg = epochAndSeq.concat(encryptedMsg);

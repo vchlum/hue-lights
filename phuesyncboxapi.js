@@ -255,7 +255,7 @@ var PhueSyncBox =  GObject.registerClass({
             this._data = JSON.parse(outputData);
             this._syncBoxConnected = true;
         } catch(e) {
-            Utils.logDebug(`Sync Box sync-respond to ${url} failed: ${e}`);
+            Utils.logError(`Sync Box sync-respond to ${url} failed: ${e}`);
             this._syncBoxConnected = false;
             return [];
         }
@@ -309,7 +309,7 @@ var PhueSyncBox =  GObject.registerClass({
                             this._syncBoxConnected = true;
                             this._data = JSON.parse(mess.response_body.data);
                         } catch {
-                            Utils.logDebug(`HDMI sync box ${method} async-respond, failed to parse JSON`);
+                            Utils.logError(`HDMI sync box ${method} async-respond, failed to parse JSON`);
                             this._data = [];
                         }
 
@@ -371,7 +371,7 @@ var PhueSyncBox =  GObject.registerClass({
                 this._syncBoxConnected = true;
                 return JSON.parse(msg.response_body.data);
             } catch {
-                Utils.logDebug(`HDMI sync box ${method} sync-respond, failed to parse JSON`);
+                Utils.logError(`HDMI sync box ${method} sync-respond, failed to parse JSON`);
                 return [];
             }
         }
@@ -473,7 +473,7 @@ var PhueSyncBox =  GObject.registerClass({
             hostname = ByteArray.toString(output[1]).trim();
         } catch(e) {
             hostname = "unknown-host";
-            Utils.logDebug(`Failed to get hostanme: ${e}`);
+            Utils.logError(`Failed to get hostanme: ${e}`);
         }
 
         /* device name can be up to 19 chars */

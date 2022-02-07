@@ -117,7 +117,7 @@ class _Phue {
 
         if (this.instances[bridgeid].checkError()) {
 
-            Utils.logDebug(`Bridge ${bridgeid} check failed.`);
+            Utils.logError(`Bridge ${bridgeid} check failed.`);
             return;
         }
 

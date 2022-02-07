@@ -241,7 +241,8 @@ var PhuePanelMenu = GObject.registerClass({
             iconEffect = this._getIconBriConEffect(this._iconPack);
             icon.add_effect(iconEffect);
 
-        } catch(err) {
+        } catch(e) {
+            logError(e, `Failed to get gnome icon: ${iconName}`);
             return null;
         }
 
@@ -275,7 +276,8 @@ var PhuePanelMenu = GObject.registerClass({
             let iconEffect = this._getIconBriConEffect(this._iconPack);
             icon.add_effect(iconEffect);
 
-        } catch(err) {
+        } catch(e) {
+            logError(e, `Failed to get icon: ${iconPath}`);
             return null;
         }
 

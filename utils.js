@@ -305,8 +305,18 @@ var debug = false;
  */
 function logDebug(msg) {
     if (debug) {
-        log(`Hue Lights (debug): ${msg}`)
+        log(`Hue Lights [debug]: ${msg}`)
     }
+}
+
+/**
+ * Logs error message
+ *
+ * @method logError
+ * @param {String} meassage to print
+ */
+ function logError(msg) {
+    log(`Hue Lights [error]: ${msg}`)
 }
 
 /**

@@ -87,7 +87,7 @@ var PhueScreenshot =  GObject.registerClass({
                     reject();
                 });
             } catch(e) {
-                log(e);
+                logError(e, "Failed to get pixel from screenshot.");
             }
         });
     }
