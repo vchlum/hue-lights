@@ -1,3 +1,6 @@
+## Version 21
+ * Gnome 42 support
+ * improved logging
 ## Version 20
  * fix lights synchronization
 ## Version 19
