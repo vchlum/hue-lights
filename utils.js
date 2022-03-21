@@ -70,7 +70,7 @@ var forceEnglish = ExtensionUtils.getSettings(
 ).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
 const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
-const allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
+var allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/
@@ -289,7 +289,7 @@ var debug = false;
  * @method isGnome40
  * @return {Boolean} true if Gnome 40
  */
- function isGnome40() {
+function isGnome40() {
     if (parseInt(Config.PACKAGE_VERSION) >= 40) {
         return true;
     }
