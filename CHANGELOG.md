@@ -1,3 +1,5 @@
+## Version 22
+ * fix ES6 standard (Gnome 42 required)
 ## Version 21
  * Gnome 42 support
  * improved logging
