@@ -617,7 +617,7 @@ var PhuePanelMenu = GObject.registerClass({
     }
 
     /**
-     * Checks whether there are data form all bridges to build the menu.
+     * Checks whether there are data from all bridges to build the menu.
      * If all data are here, run rebuild menu.
      * 
      * @method _checkRebuildReady
