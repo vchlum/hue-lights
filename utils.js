@@ -64,6 +64,9 @@ var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
 var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION = "associated-connection";
 var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE = "a{sa{sas}}";
 
+const [major] = Config.PACKAGE_VERSION.split(".");
+var shellVersion = Number.parseInt(major);
+
 const Gettext = imports.gettext.domain('hue-lights');
 var forceEnglish = ExtensionUtils.getSettings(
     HUELIGHTS_SETTINGS_SCHEMA
@@ -290,7 +293,7 @@ var debug = false;
  * @return {Boolean} true if Gnome 40
  */
 function isGnome40() {
-    if (parseInt(Config.PACKAGE_VERSION) >= 40) {
+    if (shellVersion >= 40) {
         return true;
     }
 

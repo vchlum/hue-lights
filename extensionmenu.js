@@ -57,6 +57,12 @@ const GLib = imports.gi.GLib;
 const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 
+/**
+ * GNOME <= 42 uses AggregateMenu
+ * GNOME >= 43 uses QuickSettings
+ */
+let SystemNetwork = Utils.shellVersion < 43 ? Main.panel.statusArea.aggregateMenu._network : Main.panel.statusArea.quickSettings._network;
+
 const Gettext = imports.gettext.domain('hue-lights');
 var forceEnglish = ExtensionUtils.getSettings(
     Utils.HUELIGHTS_SETTINGS_SCHEMA
@@ -106,7 +112,7 @@ var PhueMenu = GObject.registerClass({
         this._rebuildingMenuFirstTime = true;
         this.bridesData = {};
         this.colorPicker = {};
-        this._client = undefined;
+        this._networkClient = undefined;
 
         this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
         signal = this._settings.connect("changed", () => {
@@ -143,8 +149,8 @@ var PhueMenu = GObject.registerClass({
                     Main.layoutManager.disconnect(this._startingUpSignal);
                     this._startingUpSignal = undefined;
 
-                    this._client = Main.panel.statusArea.aggregateMenu._network._client;
-                    this._client.connect('notify::active-connections', () => {
+                    this._networkClient = SystemNetwork._client;
+                    this._networkClient.connect('notify::active-connections', () => {
                         this.rebuildMenuStart();
                     });
 
@@ -155,8 +161,8 @@ var PhueMenu = GObject.registerClass({
                 }
             );
         } else {
-            this._client = Main.panel.statusArea.aggregateMenu._network._client;
-            this._client.connect('notify::active-connections', () => {
+            this._networkClient = SystemNetwork._client;
+            this._networkClient.connect('notify::active-connections', () => {
                 this.rebuildMenuStart();
             });
 

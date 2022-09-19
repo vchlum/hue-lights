@@ -33,7 +33,7 @@
  * THE SOFTWARE.
  */
 
-imports.gi.versions.Soup = "2.4";
+imports.gi.versions.Soup = '2.4';
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();

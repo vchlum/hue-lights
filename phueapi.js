@@ -33,7 +33,7 @@
  * THE SOFTWARE.
  */
 
-imports.gi.versions.Soup = "2.4";
+imports.gi.versions.Soup = '2.4';
 
 const Soup = imports.gi.Soup;
 const Json = imports.gi.Json;
