@@ -380,13 +380,117 @@ var PhueBridge =  GObject.registerClass({
     }
 
     /**
+     * Parse and emit result of bridge response.
+     *
+     * @method _responseJsonParse
+     * @private
+     * @param {String} method to be used like POST, PUT, GET
+     * @param {String} requested url
+     * @param {Object} request hue type
+     * @param {String} JSON response
+     */
+     _responseJsonParse(method, url, requestHueType, data) {
+        try {
+
+            Utils.logDebug(`Bridge ${method} async-responded OK to url: ${url}`);
+
+            try {
+                this._bridgeConnected = true;
+                this._data = JSON.parse(data);
+
+                this.checkApiVersion();
+            } catch {
+                Utils.logError(`Bridge ${method} async-respond, failed to parse JSON`);
+                this._data = [];
+            }
+
+            switch (requestHueType) {
+
+                case PhueRequestype.CHANGE_OCCURRED:
+                    this._bridgeData = this._data;
+                    this.emit("change-occurred");
+                    break;
+
+                case PhueRequestype.ALL_DATA:
+                    this._bridgeData = this._data;
+                    if (this._groupZeroData) {
+                        this._bridgeData["groups"][0] = this._groupZeroData;
+                    }
+                    this.emit("all-data");
+                    break;
+
+                case PhueRequestype.LIGHTS_DATA:
+                    this._lightsData = this._data;
+                    this.emit("lights-data");
+                    break;
+
+                case PhueRequestype.GROUPS_DATA:
+                    this._groupsData = this._data;
+                    this.emit("groups-data");
+                    break;
+
+                case PhueRequestype.GROUPZERO_DATA:
+                    this._groupZeroData = this._data;
+                    this.emit("group-zero-data");
+                    break;
+
+                case PhueRequestype.CONFIG_DATA:
+                    this._configData = this._data;
+                    this.emit("config-data");
+                    break;
+
+                case PhueRequestype.SCHEDULES_DATA:
+                    this._schedulesData = this._data;
+                    this.emit("schedules-data");
+                    break;
+
+                case PhueRequestype.SCENES_DATA:
+                    this._scenesData = this._data;
+                    this.emit("scenes-data");
+                    break;
+
+                case PhueRequestype.RULES_DATA:
+                    this._rulesData = this._data;
+                    this.emit("rules-data");
+                    break;
+
+                case PhueRequestype.SENSORS_DATA:
+                    this._sensorsData = this._data;
+                    this.emit("sensors-data");
+                    break;
+
+                case PhueRequestype.RESOURCE_LINKS_DATA:
+                    this._resourcelinksData = this._data;
+                    this.emit("resource-links-data");
+                    break;
+
+                case PhueRequestype.ENABLE_STREAM:
+                    this.emit("stream-enabled");
+                    break;
+
+                case PhueRequestype.NO_RESPONSE_NEED:
+                    /* no signal emitted, request does not need response */
+                    break;
+
+                default:
+            }
+
+            return
+
+        } catch {
+            this._connectionProblem(requestHueType);
+        }
+    }
+
+    /**
      * Process url request to the bridge with libsoup3.
      * 
      * @method _requestJson3
      * @private
      * @param {String} method to be used like POST, PUT, GET
-     * @param {Boolean} url to be requested
-     * @param {Object} input data in case of supported method
+     * @param {String} url to be requested
+     * @param {Object} request hue type
+     * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
     _requestJson3(method, url, requestHueType, data) {
@@ -408,7 +512,20 @@ var PhueBridge =  GObject.registerClass({
 
         if (this._asyncRequest) {
             this._data = [];
-            Utils.logDebug('libsoup3 not implemented yet');
+            this._bridgeSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
+                if (msg.get_status() === Soup.Status.OK) {
+                    try {
+                        const bytes = this._bridgeSession.send_and_read_finish(res);
+                        let responseData = ByteArray.toString(bytes.get_data());
+                        this._responseJsonParse(method, url, requestHueType, responseData);
+                    } catch {
+                        this._connectionProblem(requestHueType);
+                    }
+                } else {
+                    this._connectionProblem(requestHueType);
+                }
+            });
+
             return [];
         }
 
@@ -438,8 +555,9 @@ var PhueBridge =  GObject.registerClass({
      * @method _requestJson
      * @private
      * @param {String} method to be used like POST, PUT, GET
-     * @param {Boolean} url to be requested
-     * @param {Object} input data in case of supported method
+     * @param {String} url to be requested
+     * @param {Object} request hue type
+     * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
@@ -466,108 +584,9 @@ var PhueBridge =  GObject.registerClass({
 
             this._bridgeSession.queue_message(msg, (sess, mess) => {
                 if (mess.status_code === Soup.Status.OK) {
-                    try {
-
-                        Utils.logDebug(`Bridge ${method} async-responded OK to url: ${url}`);
-
-                        try {
-                            this._bridgeConnected = true;
-                            this._data = JSON.parse(mess.response_body.data);
-
-                            this.checkApiVersion();
-                        } catch {
-                            Utils.logError(`Bridge ${method} async-respond, failed to parse JSON`);
-                            this._data = [];
-                        }
-
-                        switch (mess.requestHueType) {
-
-                            case PhueRequestype.CHANGE_OCCURRED:
-                                this._bridgeData = this._data;
-                                this.emit("change-occurred");
-                                break;
-
-                            case PhueRequestype.ALL_DATA:
-                                this._bridgeData = this._data;
-                                if (this._groupZeroData) {
-                                    this._bridgeData["groups"][0] = this._groupZeroData;
-                                }
-                                this.emit("all-data");
-                                break;
-
-                            case PhueRequestype.LIGHTS_DATA:
-                                this._lightsData = this._data;
-                                this.emit("lights-data");
-                                break;
-
-                            case PhueRequestype.GROUPS_DATA:
-                                this._groupsData = this._data;
-                                this.emit("groups-data");
-                                break;
-
-                            case PhueRequestype.GROUPZERO_DATA:
-                                this._groupZeroData = this._data;
-                                this.emit("group-zero-data");
-                                break;
-
-                            case PhueRequestype.CONFIG_DATA:
-                                this._configData = this._data;
-                                this.emit("config-data");
-                                break;
-
-                            case PhueRequestype.SCHEDULES_DATA:
-                                this._schedulesData = this._data;
-                                this.emit("schedules-data");
-                                break;
-
-                            case PhueRequestype.SCENES_DATA:
-                                this._scenesData = this._data;
-                                this.emit("scenes-data");
-                                break;
-
-                            case PhueRequestype.RULES_DATA:
-                                this._rulesData = this._data;
-                                this.emit("rules-data");
-                                break;
-
-                            case PhueRequestype.SENSORS_DATA:
-                                this._sensorsData = this._data;
-                                this.emit("sensors-data");
-                                break;
-
-                            case PhueRequestype.RESOURCE_LINKS_DATA:
-                                this._resourcelinksData = this._data;
-                                this.emit("resource-links-data");
-                                break;
-
-                            case PhueRequestype.ENABLE_STREAM:
-                                this.emit("stream-enabled");
-                                break;
-
-                            case PhueRequestype.NO_RESPONSE_NEED:
-                                /* no signal emitted, request does not need response */
-                                break;
-
-                            default:
-                        }
-
-                        return
-
-                    } catch {
-                        this._bridgeConnected = false;
-                        this._data = [];
-                        this.disableEventStream();
-                        if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
-                            this.emit("connection-problem");
-                        }
-                    }
+                    this._responseJsonParse(method, url, requestHueType, mess.response_body.data);
                 } else {
-                    this._bridgeConnected = false;
-                    this._data = [];
-                    this.disableEventStream();
-                    if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
-                        this.emit("connection-problem");
-                    }
+                    this._connectionProblem(requestHueType);
                 }
             });
 
@@ -1217,5 +1236,21 @@ var PhueBridge =  GObject.registerClass({
      */
     isEventStream() {
         return this._eventStreamEnabled;
+    }
+
+    /**
+     * Mark problem with connection and emit the situation.
+     *
+     * @method _connectionProblem
+     * @private
+     * @param {Object} request hue type
+     */
+    _connectionProblem(requestHueType) {
+        this._bridgeConnected = false;
+        this._data = [];
+        this.disableEventStream();
+        if (requestHueType !== PhueRequestype.NO_RESPONSE_NEED) {
+            this.emit("connection-problem");
+        }
     }
 })

@@ -207,13 +207,71 @@ var PhueSyncBox =  GObject.registerClass({
     }
 
     /**
+     * Parse and emit result of syncbox response.
+     *
+     * @method _responseJsonParse
+     * @private
+     * @param {String} method to be used like POST, PUT, GET
+     * @param {String} requested url
+     * @param {Object} request hue type
+     * @param {String} JSON response
+     */
+     _responseJsonParse(method, url, requestHueType, data) {
+        try {
+
+            Utils.logDebug(`HDMI sync box ${method} async-responded OK to url: ${url}`);
+
+            try {
+                this._syncBoxConnected = true;
+                this._data = JSON.parse(data);
+            } catch {
+                Utils.logError(`HDMI sync box ${method} async-respond, failed to parse JSON`);
+                this._data = [];
+            }
+
+            switch (mess.requestHueType) {
+
+                case PhueSyncBoxMsgRequestType.REGISTRATION:
+                    if (this._data["registrationId"] !== undefined) {
+                        Utils.logDebug(`HDMI sync box ${this._ip} registration complete: ${JSON.stringify(this._data)}`);
+                        this._registrationID = this._data["registrationId"];
+                        this._accessToken = this._data["accessToken"];
+                        this.emit("registration-complete");
+                    } else {
+                        Utils.logDebug(`HDMI sync box ${this._ip} registration waits for pressing the button.`);
+                    }
+                    break;
+
+                case PhueSyncBoxMsgRequestType.DEVICE_STATE:
+                    this.emit("device-state");
+                    break;
+
+                case PhueSyncBoxMsgRequestType.CHANGE_OCCURRED:
+                    this.emit("change-occurred");
+                    break;
+
+                case PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED:
+                    /* no signal emitted, request does not need response */
+                    break;
+
+                default:
+            }
+
+            return
+
+        } catch {
+            this._connectionProblem(requestHueType);
+        }
+    }
+    /**
      * Process url request to the sync box with libsoup3.
      * 
      * @method _requestJson3
      * @private
      * @param {String} method to be used like POST, PUT, GET
-     * @param {Boolean} url to be requested
-     * @param {Object} input data in case of supported method
+     * @param {String} url to be requested
+     * @param {Object} request hue type
+     * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
     _requestJson3(method, url, requestHueType, data) {
@@ -239,7 +297,20 @@ var PhueSyncBox =  GObject.registerClass({
 
         if (this._asyncRequest) {
             this._data = [];
-            Utils.logDebug('libsoup3 not implemented yet');
+            this._bridgeSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
+                if (msg.get_status() === Soup.Status.OK) {
+                    try {
+                        const bytes = this._syncBoxSession.send_and_read_finish(res);
+                        let responseData = ByteArray.toString(bytes.get_data());
+                        this._responseJsonParse(method, url, requestHueType, responseData);
+                    } catch {
+                        this._connectionProblem(requestHueType);
+                    }
+                } else {
+                    this._connectionProblem(requestHueType);
+                }
+            });
+
             return [];
         }
 
@@ -269,8 +340,9 @@ var PhueSyncBox =  GObject.registerClass({
      * @method _requestJson
      * @private
      * @param {String} method to be used like POST, PUT, GET
-     * @param {Boolean} url to be requested
-     * @param {Object} input data in case of supported method
+     * @param {String} url to be requested
+     * @param {Object} request hue type
+     * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
@@ -301,61 +373,9 @@ var PhueSyncBox =  GObject.registerClass({
 
             this._syncBoxSession.queue_message(msg, (sess, mess) => {
                 if (mess.status_code === Soup.Status.OK) {
-                    try {
-
-                        Utils.logDebug(`HDMI sync box ${method} async-responded OK to url: ${url}`);
-
-                        try {
-                            this._syncBoxConnected = true;
-                            this._data = JSON.parse(mess.response_body.data);
-                        } catch {
-                            Utils.logError(`HDMI sync box ${method} async-respond, failed to parse JSON`);
-                            this._data = [];
-                        }
-
-                        switch (mess.requestHueType) {
-
-                            case PhueSyncBoxMsgRequestType.REGISTRATION:
-                                if (this._data["registrationId"] !== undefined) {
-                                    Utils.logDebug(`HDMI sync box ${this._ip} registration complete: ${JSON.stringify(this._data)}`);
-                                    this._registrationID = this._data["registrationId"];
-                                    this._accessToken = this._data["accessToken"];
-                                    this.emit("registration-complete");
-                                } else {
-                                    Utils.logDebug(`HDMI sync box ${this._ip} registration waits for pressing the button.`);
-                                }
-                                break;
-
-                            case PhueSyncBoxMsgRequestType.DEVICE_STATE:
-                                this.emit("device-state");
-                                break;
-
-                            case PhueSyncBoxMsgRequestType.CHANGE_OCCURRED:
-                                this.emit("change-occurred");
-                                break;
-
-                            case PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED:
-                                /* no signal emitted, request does not need response */
-                                break;
-
-                            default:
-                        }
-
-                        return
-
-                    } catch {
-                        this._syncBoxConnected = false;
-                        this._data = [];
-                        if (requestHueType !== PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED) {
-                            this.emit("connection-problem");
-                        }
-                    }
+                    this._responseJsonParse(method, url, requestHueType, mess.response_body.data);
                 } else {
-                    this._syncBoxConnected = false;
-                    this._data = [];
-                    if (requestHueType !== PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED) {
-                        this.emit("connection-problem");
-                    }
+                    this._connectionProblem(requestHueType);
                 }
             });
 
@@ -614,5 +634,20 @@ var PhueSyncBox =  GObject.registerClass({
         }
 
         return false;
+    }
+
+    /**
+     * Mark problem with connection and emit the situation.
+     *
+     * @method _connectionProblem
+     * @private
+     * @param {Object} request hue type
+     */
+    _connectionProblem(requestHueType) {
+        this._syncBoxConnected = false;
+        this._data = [];
+        if (requestHueType !== PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED) {
+            this.emit("connection-problem");
+        }
     }
 });
