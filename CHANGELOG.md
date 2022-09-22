@@ -1,3 +1,5 @@
+## Version 23
+ * Gnome 43 and libsoup3 support
 ## Version 22
  * fix ES6 standard (Gnome 42 required)
 ## Version 21
