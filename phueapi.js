@@ -33,8 +33,6 @@
  * THE SOFTWARE.
  */
 
-imports.gi.versions.Soup = '2.4';
-
 const Soup = imports.gi.Soup;
 const Json = imports.gi.Json;
 const GLib = imports.gi.GLib;
@@ -43,6 +41,7 @@ const GObject = imports.gi.GObject;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
+const Gio = imports.gi.Gio;
 
 /**
   * Check all bridges in the local network.
@@ -151,6 +150,17 @@ var PhueRequestype = {
     EVENT: 14
 };
 
+const TlsDatabaseBridge = GObject.registerClass({
+    Implements: [Gio.TlsFileDatabase],
+    Properties: {
+        'anchors': GObject.ParamSpec.override('anchors', Gio.TlsFileDatabase),
+    },
+}, class TlsDatabaseBridge extends Gio.TlsDatabase {
+
+    vfunc_verify_chain(chain, purpose, identity, interaction, flags, cancellable) {
+        return 0;
+    }
+});
 
 var PhueMessage = class PhueMessage extends Soup.Message {
 
@@ -1133,29 +1143,73 @@ var PhueBridge =  GObject.registerClass({
 
         this._eventStreamMsg = msg;
 
-        this._eventStreamSession.queue_message(msg, (sess, mess) => {
-            if (mess.status_code === Soup.Status.OK) {
-                this._eventStreamMsg = null;
-                try {
-                    this._eventStreamData = JSON.parse(mess.response_body.data);
+        if (Soup.MAJOR_VERSION >= 3) {
+            this._eventStreamSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
+                switch (msg.get_status()) {
+                    case Soup.Status.NONE:
+                        Utils.logDebug(`Event stream ${this._eventStreamUrl} message none`);
+                        break;
+                    case Soup.Status.OK:
+                        const bytes = this._eventStreamSession.send_and_read_finish(res);
+                        let responseData = ByteArray.toString(bytes.get_data());
 
-                    this.emit("event-stream-data");
-                } catch {
-                    Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
-                    this._eventStreamData = [];
+                        this._eventStreamMsg = null;
+                        try {
+                            this._eventStreamData = JSON.parse(responseData);
+
+                            this.emit("event-stream-data");
+                        } catch {
+                            Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
+                            this._eventStreamData = [];
+                        }
+
+                        this._requestEventStream();
+                        break;
+
+                    case Soup.Status.CANCELLED:
+                        /* event stream already disabled - this is what left from the msg, do nothing*/
+                        Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
+                        return;
+                        break;
+
+                    default:
+                        this._eventStreamMsg = null;
+                        Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${msg.get_status()}: ${msg.get_reason_phrase()}`);
+                        this._eventStreamData = [];
+                        break;
                 }
+            });
+        } else {
+            this._eventStreamSession.queue_message(msg, (sess, mess) => {
+                switch(mess.status_code) {
+                    case Soup.Status.OK:
+                        this._eventStreamMsg = null;
+                        try {
+                            this._eventStreamData = JSON.parse(mess.response_body.data);
 
-                this._requestEventStream();
-            } else if (mess.status_code === Soup.Status.CANCELLED) {
-                /* event stream already disabled - this is what left from the msg, do nothing*/
-                Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
-                return;
-            } else {
-                this._eventStreamMsg = null;
-                Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${mess.status_code}`);
-                this._eventStreamData = [];
-            }
-        })
+                            this.emit("event-stream-data");
+                        } catch {
+                            Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
+                            this._eventStreamData = [];
+                        }
+
+                        this._requestEventStream();
+                        break;
+
+                    case Soup.Status.CANCELLED:
+                        /* event stream already disabled - this is what left from the msg, do nothing*/
+                        Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
+                        return;
+                        break;
+
+                    default:
+                        this._eventStreamMsg = null;
+                        Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${mess.status_code}`);
+                        this._eventStreamData = [];
+                        break;
+                }
+            })
+        }
     }
 
     /**
@@ -1176,7 +1230,13 @@ var PhueBridge =  GObject.registerClass({
 
         if (this._eventStreamSession === null) {
             this._eventStreamSession = Soup.Session.new();
-            this._eventStreamSession.ssl_strict = false;
+
+            if (Soup.MAJOR_VERSION >= 3) {
+                let tlsDatabase =  new TlsDatabaseBridge();
+                this._eventStreamSession.tls_database  = tlsDatabase;
+            } else {
+                this._eventStreamSession.ssl_strict = false;
+            }
         }
 
         this._eventStreamSession.timeout = 0;
@@ -1209,7 +1269,9 @@ var PhueBridge =  GObject.registerClass({
 
         if (this._eventStreamMsg !== null) {
             this._eventStreamSession.timeout = 1;
-            this._eventStreamSession.cancel_message(this._eventStreamMsg, Soup.Status.CANCELLED);
+            if (Soup.MAJOR_VERSION < 3) {
+                this._eventStreamSession.cancel_message(this._eventStreamMsg, Soup.Status.CANCELLED);
+            }
         }
 
         this._eventStreamSession.abort();

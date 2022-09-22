@@ -33,8 +33,6 @@
  * THE SOFTWARE.
  */
 
-imports.gi.versions.Soup = '2.4';
-
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Soup = imports.gi.Soup;
@@ -78,12 +76,12 @@ var PhueSyncBoxMessage = class PhueSyncBoxMessage extends Soup.Message {
     }
 };
 
-const TlsDatabase = GObject.registerClass({
+const TlsDatabaseSyncBox = GObject.registerClass({
     Implements: [Gio.TlsFileDatabase],
     Properties: {
         'anchors': GObject.ParamSpec.override('anchors', Gio.TlsFileDatabase),
     },
-}, class TlsDatabase extends Gio.TlsDatabase {
+}, class TlsDatabaseSyncBox extends Gio.TlsDatabase {
 
     vfunc_verify_chain(chain, purpose, identity, interaction, flags, cancellable) {
         return 0;
@@ -133,7 +131,7 @@ var PhueSyncBox =  GObject.registerClass({
         this._syncBoxSession = Soup.Session.new();
         this._syncBoxSession.timeout = 5;
 
-        let tlsDatabase =  new TlsDatabase(
+        let tlsDatabase =  new TlsDatabaseSyncBox(
             { anchors: HsbCert }
         );
         this._syncBoxSession.tls_database  = tlsDatabase;
@@ -229,7 +227,7 @@ var PhueSyncBox =  GObject.registerClass({
                 this._data = [];
             }
 
-            switch (mess.requestHueType) {
+            switch (requestHueType) {
 
                 case PhueSyncBoxMsgRequestType.REGISTRATION:
                     if (this._data["registrationId"] !== undefined) {
@@ -297,7 +295,7 @@ var PhueSyncBox =  GObject.registerClass({
 
         if (this._asyncRequest) {
             this._data = [];
-            this._bridgeSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
+            this._syncBoxSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
                 if (msg.get_status() === Soup.Status.OK) {
                     try {
                         const bytes = this._syncBoxSession.send_and_read_finish(res);
