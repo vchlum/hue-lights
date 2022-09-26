@@ -675,15 +675,15 @@ var PhuePanelMenu = GObject.registerClass({
 
         let id = [];
 
-        if (this._client === undefined) {
+        if (this._networkClient === undefined) {
             return id;
         }
 
-        if (! this._client.networking_enabled) {
+        if (! this._networkClient.networking_enabled) {
             return id;
         }
 
-        let activeConnections = this._client.get_active_connections();
+        let activeConnections = this._networkClient.get_active_connections();
 
         for (let connection of activeConnections) {
             if (! Utils.allowedConnectionTypes.includes(connection.get_connection_type())) {
