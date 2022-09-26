@@ -1,3 +1,5 @@
+## Version 24
+ * Fix associated connections
 ## Version 23
  * Gnome 43 and libsoup3 support
 ## Version 22
