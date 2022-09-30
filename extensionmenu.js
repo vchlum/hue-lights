@@ -3789,7 +3789,7 @@ var PhueMenu = GObject.registerClass({
         let gradient = -1;
         let counter = 0;
         let streamingLights = [];
-        let gradientLightStrips = ["LCX001", "LCX002", "LCX003"];
+        let gradientLightStrips = ["LCX001", "LCX002", "LCX003", "LCX004", "LCX005"];
 
         this._isStreaming[bridgeid]["entertainment"].setGID(this._isStreaming[bridgeid]["gid"]);
 
