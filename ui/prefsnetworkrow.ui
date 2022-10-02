@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="hue-lights">
+    <template class="NetworkBoxRow" parent="GtkListBoxRow">
+        <property name="halign">fill</property>
+        <property name="hexpand">True</property>
+        <property name="can_focus">False</property>
+        <property name="child">
+            <object class="GtkBox">
+                <property name="can-focus">False</property>
+                <property name="halign">fill</property>
+                <property name="hexpand">True</property>
+                <child>
+                    <object class="GtkLabel" id="networkLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">start</property>
+                        <property name="label"></property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkSwitch" id="networkSwitch">
+                        <property name="halign">end</property>
+                        <signal name="notify::active" handler="_networkNotifyActive" swapped="no"/>
+                    </object>
+                </child>
+            </object>
+        </property>
+    </template>
+</interface>

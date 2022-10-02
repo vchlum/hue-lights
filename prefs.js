@@ -36,6 +36,7 @@
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 const Gdk = imports.gi.Gdk;
+const GObject = imports.gi.GObject;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
@@ -2219,6 +2220,1344 @@ var Prefs = class HuePrefs {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Gets all known connections
+ * 
+ * @method getConnections
+ * @returns {Object} array of conections
+ */
+function getConnections() {
+
+    let c = [];
+
+    let client = NM.Client.new(null);
+
+    let connections = client.get_connections();
+    for (let connection of connections) {
+        if (! Utils.allowedConnectionTypes.includes(connection.get_connection_type())) {
+            continue;
+        }
+
+        c.push(connection.get_id());
+    }
+
+    return c;
+}
+
+const AddBridgeDialog = GObject.registerClass({
+    GTypeName: 'AddBridgeDialog',
+    Template: Me.dir.get_child('ui/prefsbridgeadd.ui').get_uri(),
+    Signals: {
+        "ip-address-ok": {},
+    },
+    InternalChildren: [      
+        'ipAddress',
+    ],
+}, class AddBridgeDialog extends Gtk.Dialog {
+    _init(parentWindow) {
+        super._init();
+
+        this.set_transient_for(parentWindow);
+    }
+
+    _onOkClicked(button) {
+        this.ip = this._ipAddress.text;
+        this.emit("ip-address-ok");
+        this.destroy();
+    }
+});
+
+const NotFoundBridgeDialog = GObject.registerClass({
+    GTypeName: 'NotFoundBridgeDialog',
+    Template: Me.dir.get_child('ui/prefsbridgenotfound.ui').get_uri(),
+}, class NotFoundBridgeDialog extends Gtk.Dialog {
+    _init(parentWindow) {
+        super._init();
+
+        this.set_transient_for(parentWindow);
+    }
+
+    _onOkClicked(button) {
+        this.destroy();
+    }
+});
+
+const AddSyncboxDialog = GObject.registerClass({
+    GTypeName: 'AddSyncboxDialog',
+    Template: Me.dir.get_child('ui/prefssyncboxadd.ui').get_uri(),
+    Signals: {
+        "ip-address-ok": {},
+    },
+    InternalChildren: [      
+        'ipAddress',
+    ],
+}, class AddSyncboxDialog extends Gtk.Dialog {
+    _init(parentWindow) {
+        super._init();
+
+        this.set_transient_for(parentWindow);
+    }
+
+    _onOkClicked(button) {
+        this.ip = this._ipAddress.text;
+        this.emit("ip-address-ok");
+        this.destroy();
+    }
+});
+
+const RegisterSyncboxDialog = GObject.registerClass({
+    GTypeName: 'RegisterSyncboxDialog',
+    Template: Me.dir.get_child('ui/prefssyncboxregister.ui').get_uri(),
+}, class RegisterSyncboxDialog extends Gtk.Dialog {
+    _init(parentWindow) {
+        super._init();
+
+        this.set_transient_for(parentWindow);
+    }
+
+    _onCancelClicked(button) {
+        this.destroy();
+    }
+});
+
+const NetworkBoxRow = GObject.registerClass({
+    GTypeName: 'NetworkBoxRow',
+    Template: Me.dir.get_child('ui/prefsnetworkrow.ui').get_uri(),
+    InternalChildren: [      
+        'networkLabel',
+        'networkSwitch',
+    ],
+    Signals: {
+        "connection-switched": {},
+    },
+}, class NetworkBoxRow extends Gtk.ListBoxRow {
+    _init(label) {
+        super._init();
+        this.label = label;
+        this._networkLabel.label = this.label;
+        this.active = false;
+    }
+
+    _networkNotifyActive(networkSwitch) {
+        this.active = networkSwitch.active;
+        this.emit("connection-switched");
+    }
+
+    setValue(value) {
+        this._networkSwitch.active = value;
+    }
+});
+
+const NotificationLightBoxRow = GObject.registerClass({
+    GTypeName: 'NotificationLightBoxRow',
+    Template: Me.dir.get_child('ui/prefsnotificationlightsrow.ui').get_uri(),
+    InternalChildren: [
+        'lightLabel',
+        'brightnessAdjustment',
+        'lightColorButton',
+        'lightSwitch',
+    ],
+    Signals: {
+        "turned-on": {},
+        "turned-off": {},
+    },
+}, class NotificationLightBoxRow extends Gtk.ListBoxRow {
+    _init(notifyLightId, label) {
+        super._init();
+        this.notifyLightId = notifyLightId;
+        this.label = label;
+        this._lightLabel.label = this.label;
+        this.active = false;
+        this._initationInProgress = true;
+        this.valueToExport = {};
+    }
+
+    _brightnessScaleValueChanged(scale) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        this._lightSwitch.active = true;
+        this.setExportReady();
+        this.emit("turned-on");
+    }
+
+    _brightnessButtonColorSet(button) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        this._lightSwitch.active = true;
+        this.setExportReady();
+        this.emit("turned-on");
+    }
+
+    _lightNotifyActive(lightSwitch) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        if (lightSwitch.active) {
+            this.setExportReady();
+            this.emit("turned-on");
+        } else {
+            this.emit("turned-off");
+        }
+    }
+
+    setExportReady() {
+        let color = this._lightColorButton.rgba;
+        this.valueToExport["r"] = Math.round(color.red * 255);
+        this.valueToExport["g"] = Math.round(color.green * 255);
+        this.valueToExport["b"] = Math.round(color.blue * 255);
+
+        this.valueToExport["bri"] = Math.round(this._brightnessAdjustment.value);
+    }
+
+    setValues(notifyValues) {
+        if (Object.keys(notifyValues).length > 0) {
+            this._lightSwitch.active = true;
+        } else {
+            this._lightSwitch.active = false;
+        }
+
+        if (notifyValues["bri"] !== undefined) {
+            this._brightnessAdjustment.value = notifyValues["bri"];
+        } else {
+            this._brightnessAdjustment.value = 255;
+        }
+
+        let color = new Gdk.RGBA();
+        color.red = 1.0;
+        color.green = 1.0;
+        color.blue = 1.0;
+        color.alpha = 1.0;
+
+        if (notifyValues["r"] !== undefined &&
+            notifyValues["g"] !== undefined &&
+            notifyValues["b"] !== undefined) {
+
+            color.red = notifyValues["r"] / 255;
+            color.green = notifyValues["g"] / 255;
+            color.blue = notifyValues["b"] / 255;
+        }
+
+
+        this._lightColorButton.rgba = color;
+
+        this._initationInProgress = false;
+    }
+});
+
+const BridgeTab = GObject.registerClass({
+    GTypeName: 'BridgeTab',
+    Template: Me.dir.get_child('ui/prefsbridgetab.ui').get_uri(),
+    InternalChildren: [
+        'ipAddress',
+        'statusLabel',
+        'connectButton',
+        'defaultCheckButton',
+        'autostartComboBox',
+        'defaultEntertainmentComboBox',
+        'intensityAdjustment',
+        'brightnessAdjustment',
+        'noticationLightsListBox',
+        'associatedNetworksListBox',
+    ],
+    Signals: {
+        "ip-address-connect": {},
+        "notification-light-turned-on": {},
+        "notification-light-turned-off": {},
+        "connection-switched-row": {},
+        "default-toggled": {},
+        "autostart-changed": {},
+        "default-entertainment-changed": {},
+        "default-intensity-entertainment-changed": {},
+        "default-brightness-entertainment-changed": {},
+        "remove-bridge": {},
+    },
+}, class BridgeTab extends Gtk.ScrolledWindow {
+    _init(bridgeId, data) {
+        super._init();
+        this._bridge = data;
+        this.bridgeId = bridgeId;
+        this._knownAssociatedNetworks = [];
+        this._addedNotificationLights = [];
+        this._initationInProgress = true;
+        
+        if (this._bridge["ip"] !== undefined) {
+            this._ipAddress.set_text(this._bridge["ip"]);
+        }
+
+        this.updateDefault(data);
+
+        for (let mode in Utils.entertainmentModeText) {
+            this._defaultEntertainmentComboBox.append(
+                mode.toString(),
+                _(Utils.entertainmentModeText[mode])
+            );
+        }
+    }
+
+    updateBridge(instance, data, asyncData) {
+        if (instance.isConnected()) {
+            this._statusLabel.label = _("Connected");
+            this._connectButton.label = _("Remove");
+        } else {
+            this._statusLabel.label = _("Unreachable");
+            this._connectButton.label = _("Connect");
+        }
+    }
+
+    updateEntertainmentAreasConnection(data, entertainment) {
+        this._autostartComboBox.remove_all();
+
+        this._autostartComboBox.append("-1", _("none"));
+
+        for (let groupid in data) {
+            if (data[groupid]["type"] !== "Entertainment") {
+                continue;
+            }
+
+            this._autostartComboBox.append(
+                groupid,
+                data[groupid]["name"]
+            );
+        }
+
+        if (entertainment[this.bridgeId] !== undefined &&
+            entertainment[this.bridgeId]["autostart"] !== undefined) {
+
+            this._autostartComboBox.set_active_id(
+                entertainment[this.bridgeId]["autostart"].toString()
+            );
+        }  else {
+            this._autostartComboBox.set_active_id("-1");
+        }
+
+        if (entertainment[this.bridgeId] !== undefined &&
+            entertainment[this.bridgeId]["mode"] !== undefined) {
+
+            this._defaultEntertainmentComboBox.set_active_id(
+                entertainment[this.bridgeId]["mode"].toString()
+            );
+        } else {
+            this._defaultEntertainmentComboBox.set_active_id(Utils.entertainmentMode.SYNC.toString());
+        }
+
+        if (entertainment[this.bridgeId] !== undefined &&
+            entertainment[this.bridgeId]["intensity"] !== undefined) {
+            this._intensityAdjustment.value = 255 - entertainment[this.bridgeId]["intensity"] + 40;
+        } else {
+            this._intensityAdjustment.value = 150
+        }
+
+        if (entertainment[this.bridgeId] !== undefined &&
+            entertainment[this.bridgeId]["bri"] !== undefined) {
+            this._brightnessAdjustment.value = entertainment[this.bridgeId ]["bri"];
+        } else {
+            this._brightnessAdjustment.value = 255;
+        }
+
+    }
+
+    updateAssociatedConnection(data) {
+        let connections = getConnections();
+
+        /* add unknown but saved connections */
+        for (let d in data) {
+            if (data[d]["connections"] === undefined) {
+                continue;
+            }
+
+            for (let c in data[d]["connections"]) {
+                if (!connections.includes(data[d]["connections"][c])) {
+                    connections.push(data[d]["connections"][c]);
+                }
+            }
+        }
+
+        for (let c in connections) {
+            let isActive = false;
+
+            if (data[this.bridgeId] !== undefined &&
+                data[this.bridgeId]["connections"] !== undefined) {
+
+                if (data[this.bridgeId]["connections"].includes(connections[c])) {
+                    isActive = true;
+                }
+            }
+
+            let row = new NetworkBoxRow(connections[c]);
+            let signal = row.connect(
+                "connection-switched",
+                () => {
+                    this.connectionSwitchedRow = row;
+                    this.emit("connection-switched-row");
+                }
+            );
+            row.setValue(isActive);
+            this._associatedNetworksListBox.append(row);
+        }
+    }
+
+    updateNotifyLights(data, asyncData, notifyLights) {
+        if (asyncData["groups"] === undefined) {
+            return;
+        }
+
+        for (let groupId in asyncData["groups"]) {
+            if (asyncData["groups"][groupId]["type"] !== "Room") {
+                continue;
+            }
+
+            for (let l in asyncData["groups"][groupId]["lights"]) {
+                let lightId = parseInt(asyncData["groups"][groupId]["lights"][l]);
+
+                let notifyLightId = `${this.bridgeId}::${lightId}`;
+
+                let lightName = asyncData["lights"][lightId]["name"];
+                let groupName = asyncData["groups"][groupId]["name"];
+
+                if (this._addedNotificationLights.includes(notifyLightId)) {
+                    continue;
+                }
+
+                this._addedNotificationLights.push(notifyLightId);
+
+                let row = new NotificationLightBoxRow(notifyLightId, `${groupName} - ${lightName}`);
+                let signal = row.connect(
+                    "turned-on",
+                    () => {
+                        this.notifyLightRow = row;
+                        this.emit("notification-light-turned-on");
+                    }
+                );
+
+                signal = row.connect(
+                    "turned-off",
+                    () => {
+                        this.notifyLightRow = row;
+                        this.emit("notification-light-turned-off");
+                    }
+                );
+
+                let notifyvalues = {};
+                if (notifyLights !== undefined && notifyLights[notifyLightId] !== undefined) {
+                    notifyvalues = notifyLights[notifyLightId];
+                }
+                row.setValues(notifyvalues)
+
+                this._noticationLightsListBox.append(row);
+            }
+        }
+    }
+
+    updateDefault(data) {
+        if (data["default"] !== undefined && data["default"] === this.bridgeId) {
+            this.isDefault = true;
+        } else {
+            this.isDefault = false;
+        }
+
+        this._defaultCheckButton.active = this.isDefault;
+    }
+
+    _onConnectOrRemoveBridgeClicked(button) {
+        switch (button.label) {
+            case _("Connect"):
+                this.ip = this._ipAddress.text;
+                this.emit("ip-address-connect");
+                break;
+            case _("Remove"):
+                this.emit("remove-bridge");
+                break;
+
+        }
+    }
+
+    _defaultToggled(checkButton) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        this.isDefault = checkButton.active;
+        this.emit("default-toggled");
+    }
+
+    _autostartComboBoxChanged(comboBox) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        if (comboBox.get_active_id() === null) {
+            return;
+        }
+
+        this.autostart = parseInt(comboBox.get_active_id());
+        this.emit("autostart-changed");
+    }
+
+    _defaultEntertainmentComboBoxChanged(comboBox) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        if (comboBox.get_active_id() === null) {
+            return;
+        }
+
+        this.defaultEntertainment = parseInt(comboBox.get_active_id());
+        this.emit("default-entertainment-changed");
+    }
+
+    _intensityScaleValueChanged(scale) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        this.defaultIntensityEntertainment = Math.round(this._intensityAdjustment.value);
+        this.emit("default-intensity-entertainment-changed");
+    }
+
+    _brightnessScaleValueChanged(scale) {
+        if (this._initationInProgress) {
+            return;
+        }
+
+        this.defaultBrightnessEntertainment = Math.round(this._brightnessAdjustment.value);
+        this.emit("default-brightness-entertainment-changed");
+    }
+
+    _onRemoveBridgeClicked(button) {
+        this.emit("remove-bridge");
+    }
+
+    setInitializationFinished() {
+        this._initationInProgress = false;
+    }
+});
+
+const SyncboxTab = GObject.registerClass({
+    GTypeName: 'SyncboxTab',
+    Template: Me.dir.get_child('ui/prefssyncboxtab.ui').get_uri(),
+    InternalChildren: [
+        'ipAddress',
+        'statusLabel',
+        'connectButton',
+        'associatedNetworksListBox',
+    ],
+    Signals: {
+        "ip-address-connect": {},
+        "remove-syncbox": {},
+        "connection-switched-row": {},
+        "default-toggled": {},
+    },
+}, class SyncboxTab extends Gtk.ScrolledWindow {
+    _init(syncboxId, data) {
+        super._init();
+        this._syncbox = data;
+        this.syncboxId = syncboxId;
+        this._knownAssociatedNetworks = [];
+        
+        if (this._syncbox["ip"] !== undefined) {
+            this._ipAddress.set_text(this._syncbox["ip"]);
+        }
+    }
+
+    updateSyncbox(instance, data, asyncData) {
+        if (instance.isConnected()) {
+            this._statusLabel.label = _("Connected");
+            this._connectButton.label = _("Remove");
+        } else {
+            this._statusLabel.label = _("Unreachable");
+            this._connectButton.label = _("Connect");
+        }
+    }
+
+    updateAssociatedConnection(data) {
+        let connections = getConnections();
+
+        /* add unknown but saved connections */
+        for (let d in data) {
+            if (data[d]["connections"] === undefined) {
+                continue;
+            }
+
+            for (let c in data[d]["connections"]) {
+                if (!connections.includes(data[d]["connections"][c])) {
+                    connections.push(data[d]["connections"][c]);
+                }
+            }
+        }
+
+        for (let c in connections) {
+            let isActive = false;
+
+            if (data[this.syncboxId] !== undefined &&
+                data[this.syncboxId]["connections"] !== undefined) {
+
+                if (data[this.syncboxId]["connections"].includes(connections[c])) {
+                    isActive = true;
+                }
+            }
+
+            let row = new NetworkBoxRow(connections[c]);
+            let signal = row.connect(
+                "connection-switched",
+                () => {
+                    this.connectionSwitchedRow = row;
+                    this.emit("connection-switched-row");
+                }
+            );
+            row.setValue(isActive);
+            this._associatedNetworksListBox.append(row);
+        }
+    }
+
+    _onConnectOrRemoveSyncboxClicked(button) {
+        switch (button.label) {
+            case _("Connect"):
+                this.ip = this._ipAddress.text;
+                this.emit("ip-address-connect");
+                break;
+            case _("Remove"):
+                this.emit("remove-syncbox");
+                break;
+
+        }
+    };
+
+    _onRemoveSyncboxClicked(button) {
+        this.emit("remove-syncbox");
+    };
+});
+
+const PrefsWidget = GObject.registerClass({
+    GTypeName: 'PrefsWidget',
+    Template: Me.dir.get_child('ui/prefs.ui').get_uri(),
+    InternalChildren: [
+        'bridgesNotebook',
+        'syncboxesNotebook',
+        'positionInPanelComboBox',
+        'iconPackComboBox',
+        'zonesFirstSwitch',
+        'showScenesSwitch',
+        'compactMenuSwitch',
+        'forceEnglishSwitch',
+        'connectionTimeoutBridgeComboBox',
+        'connectionTimeoutSyncboxComboBox',
+        'debugSwitch',
+        'aboutVersion',
+    ],
+}, class PrefsWidget extends Gtk.Box {
+
+    _init(hue, hueSB) {
+        super._init();
+        this._hue = hue;
+        this._hueSB = hueSB;
+
+        this._defaultToggledInProgress = false;
+        this._registerSyncboxDialog = null;
+
+        this._bridgesTabs = {};
+        this._syncboxesTabs = {};
+
+        this._settings = ExtensionUtils.getSettings(Utils.HUELIGHTS_SETTINGS_SCHEMA);
+        this._settings.connect("changed", () => {
+            /* TODO
+            if (this._refreshPrefs) {
+                this.getPrefsWidget();
+                this._refreshPrefs = false;
+            }
+            */
+        });
+
+
+        this.readSettings();
+
+        this._connectSyncboxRegistration();
+
+        this._hue.enableAsyncMode();
+        this._hueSB.enableAsyncMode();
+
+        this._hue.checkBridges();
+        this._hueSB.checkSyncBoxes();
+
+        this._updateBridgesTabs();
+        this._updateSyncboxTabs();
+        this._updateGeneral();
+        this._updateAdvanced();
+
+        this._aboutVersion.label = `${Me.metadata.name}, ` + _("version") + `: ${Me.metadata.version}, Copyright (c) 2022 Václav Chlumský`;
+    }
+
+    /**
+     * Reads settings into class variables.
+     *
+     * @method readSettings
+     */
+     readSettings() {
+
+        this._hue.bridges = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_BRIDGES).deep_unpack();
+        this._indicatorPosition = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_INDICATOR);
+        this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
+        this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
+        this._forceEnglish = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+        this._compactMenu = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_COMPACTMENU);
+        this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
+        Utils.debug = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_DEBUG);
+        this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
+        this._iconPack = this._settings.get_enum(Utils.HUELIGHTS_SETTINGS_ICONPACK);
+        this._entertainment = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT).deep_unpack();
+        this._hueSB.syncboxes = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_SYNCBOXES).deep_unpack();
+        this._connectionTimeoutSB = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB);
+        this._associatedConnection = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION).deep_unpack();
+    }
+    
+    writeBridgesSettings() {
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_BRIDGES,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_BRIDGES_TYPE,
+                this._hue.bridges
+            )
+        );
+    }
+
+    writeSyncboxSettings() {
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_SYNCBOXES,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_SYNCBOXES_TYPE,
+                this._hueSB.syncboxes
+            )
+        );
+    }
+
+    /**
+     * Wite setting for entertainment area
+     *
+     * @method writeEntertainmentSettings
+     */
+    writeEntertainmentSettings() {
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE,
+                this._entertainment
+            )
+        );
+    }
+
+    /**
+     * Wite setting for associated connections
+     *
+     * @method writeAssociatedConnections
+     */
+    writeAssociatedConnections() {
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE,
+                this._associatedConnection
+            )
+        );
+    }
+
+    /**
+     * Wite setting for lights used for notification
+     *
+     * @method writeNotifyLightsSettings
+     */
+    writeNotifyLightsSettings() {
+
+        this._settings.set_value(
+            Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS,
+            new GLib.Variant(
+                Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE,
+                this._notifyLights
+            )
+        );
+    }
+
+    _onDiscoverBridgeClicked(button) {
+        this._hue.checkBridges();
+        this.writeBridgesSettings();
+        this._updateBridgesTabs();
+    }
+
+    _onAddBridgeClicked(button) {
+        let addBridgeDialog = new AddBridgeDialog(this.get_ancestor(Gtk.Window));
+
+        let signal = addBridgeDialog.connect(
+            "ip-address-ok",
+            () => {
+                this._hue.disableAsyncMode();
+                let bridgeAdded = this._hue.addBridgeManual(addBridgeDialog.ip);
+                this._hue.enableAsyncMode();
+
+                if (bridgeAdded === false) {
+                    new NotFoundBridgeDialog(this.get_ancestor(Gtk.Window)).show()
+                } else {
+                    this._hue.checkBridges(false);
+                    this.writeBridgesSettings();
+                    this._updateBridgesTabs();
+                }
+            }
+        );
+
+        addBridgeDialog.show();
+    }
+
+    _onAddSyncboxClicked(button) {
+        let addSyncboxDialog = new AddSyncboxDialog(this.get_ancestor(Gtk.Window));
+
+        let signal = addSyncboxDialog.connect(
+            "ip-address-ok",
+            () => {
+                addSyncboxDialog.destroy()
+
+                this._registerSyncboxDialog = new RegisterSyncboxDialog(this.get_ancestor(Gtk.Window));
+                this._registerSyncboxDialog.show();
+
+                this._hueSB.disableAsyncMode();
+                this._hueSB.addSyncBoxManual(addSyncboxDialog.ip);
+            }
+        );
+
+        addSyncboxDialog.show();
+    }
+
+    _connectBridgeInstance(bridgeId) {
+        let signal = this._hue.instances[bridgeId].connect(
+            "all-data",
+            () => {
+                let data = {};
+                if (this._hue.instances[bridgeId].isConnected()) {
+                    data = this._hue.instances[bridgeId].getAsyncData();
+                }
+
+                this._updateBridge(bridgeId, data);
+            }
+        );
+    }
+
+    _connectSyncboxRegistration() {
+        let signal = this._hueSB.connect(
+            "registration-complete",
+            () => {
+                this._hueSB.enableAsyncMode();
+
+                if (this._registerSyncboxDialog !== null) {
+                    this._registerSyncboxDialog.destroy();
+                    this._registerSyncboxDialog = null;
+                }
+
+                this._hueSB.checkSyncBoxes();
+                this._updateSyncboxTabs();
+                this.writeSyncboxSettings();
+            }
+        );
+
+        signal = this._hueSB.connect(
+            "registration-failed",
+            () => {
+                this._hueSB.enableAsyncMode();
+
+                if (this._registerSyncboxDialog !== null) {
+                    this._registerSyncboxDialog.destroy();
+                    this._registerSyncboxDialog = null;
+                }
+            }
+        );
+    }
+
+    _connectSyncboxInstance(syncboxId) {
+        let signal = this._hueSB.instances[syncboxId].connect(
+            "device-state",
+            () => {
+                let data = {};
+                if (this._hueSB.instances[syncboxId].isConnected()) {
+                    data = this._hueSB.instances[syncboxId].getAsyncData();
+                }
+
+                this._updateSyncbox(syncboxId, data);
+            }
+        );
+    }
+
+    deleteDefaultBridge() {
+        for (let bridge in this._hue.bridges) {
+            if (this._hue.bridges[bridge]["default"] !== undefined) {
+                delete(this._hue.bridges[bridge]["default"]);
+            }
+        }
+    }
+
+    updateDefaultBridgeTabs() {
+        for (let bridgeId in this._bridgesTabs) {
+            this._bridgesTabs[bridgeId].updateDefault(
+                this._hue.bridges[bridgeId]
+            );
+        }
+    }
+
+    _updateBridgesTabs() {
+        for (let bridgeId in this._hue.bridges) {
+
+            let name = _("unknown name");
+
+            if (this._hue.bridges[bridgeId]["name"] !== undefined) {
+                name = this._hue.bridges[bridgeId]["name"];
+            }
+
+            if (this._bridgesTabs[bridgeId] !== undefined) {
+                /* recreate bridge */
+                this._bridgesNotebook.detach_tab(
+                    this._bridgesTabs[bridgeId]
+                );
+                delete(this._bridgesTabs[bridgeId]);
+            }
+
+            let bridgeTab = new BridgeTab(bridgeId, this._hue.bridges[bridgeId]);
+
+            let signal = bridgeTab.connect(
+                "ip-address-connect",
+                () => {
+                    if (bridgeTab.ip == undefined) {
+                        return;
+                    }
+
+                    this._hue.disableAsyncMode();
+                    if (this._hue.addBridgeManual(bridgeTab.ip) === false) {
+                        new NotFoundBridgeDialog(this.get_ancestor(Gtk.Window)).show()
+                    }
+                    this._hue.enableAsyncMode();
+
+                    this._hue.checkBridges(false);
+                    this.writeBridgesSettings();
+                    this._updateBridgesTabs();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "connection-switched-row",
+                () => {
+                    let connection = bridgeTab.connectionSwitchedRow.label;
+
+                    if (this._associatedConnection[bridgeTab.bridgeId] === undefined) {
+                        this._associatedConnection[bridgeTab.bridgeId] = {};
+                        this._associatedConnection[bridgeTab.bridgeId]["connections"] = [];
+                        this._associatedConnection[bridgeTab.bridgeId]["type"] = ["bridge"];
+                    }
+
+                    if (bridgeTab.connectionSwitchedRow.active) {
+                        if (! this._associatedConnection[bridgeTab.bridgeId]["connections"].includes(connection)) {
+                            this._associatedConnection[bridgeTab.bridgeId]["connections"].push(connection);
+                        }
+                    } else {
+                        if (this._associatedConnection[bridgeTab.bridgeId]["connections"].includes(connection)) {
+                            let index = this._associatedConnection[bridgeTab.bridgeId]["connections"].indexOf(connection);
+                            index = this._associatedConnection[bridgeTab.bridgeId]["connections"].splice(index, 1);
+                        }
+                    }
+
+                    this.writeAssociatedConnections();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "notification-light-turned-on",
+                () => {
+                    let notifyLightId = bridgeTab.notifyLightRow.notifyLightId;
+                    this._notifyLights[notifyLightId] = bridgeTab.notifyLightRow.valueToExport;
+
+                    this.writeNotifyLightsSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "notification-light-turned-off",
+                () => {
+
+                    let notifyLightId = bridgeTab.notifyLightRow.notifyLightId;
+                    if (this._notifyLights[notifyLightId] !== undefined) {
+                        delete(this._notifyLights[notifyLightId]);
+                    }
+
+                    this.writeNotifyLightsSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "default-toggled",
+                () => {
+                    if (this._defaultToggledInProgress === false) {
+                        this._defaultToggledInProgress = true;
+
+                        this.deleteDefaultBridge();
+
+                        if (bridgeTab.isDefault) {
+                            this._hue.bridges[bridgeTab.bridgeId]["default"] = bridgeTab.bridgeId;
+                        }
+
+                        this.updateDefaultBridgeTabs();
+                        this._defaultToggledInProgress = false;
+
+                        this.writeBridgesSettings();
+                    }
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "autostart-changed",
+                () => {
+                    if (this._entertainment[bridgeTab.bridgeId] === undefined) {
+                        this._entertainment[bridgeTab.bridgeId] = {}
+                    }
+
+                    this._entertainment[bridgeTab.bridgeId]["autostart"] = bridgeTab.autostart;
+                    this.writeEntertainmentSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "default-entertainment-changed",
+                () => {
+                    if (this._entertainment[bridgeTab.bridgeId] === undefined) {
+                        this._entertainment[bridgeTab.bridgeId] = {}
+                    }
+
+                    this._entertainment[bridgeTab.bridgeId]["mode"] = bridgeTab.defaultEntertainment;
+                    this.writeEntertainmentSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "default-intensity-entertainment-changed",
+                () => {
+                    if (this._entertainment[bridgeTab.bridgeId] === undefined) {
+                        this._entertainment[bridgeTab.bridgeId] = {}
+                    }
+
+                    this._entertainment[bridgeTab.bridgeId]["intensity"] = 255 - bridgeTab.defaultIntensityEntertainment + 40;
+                    this.writeEntertainmentSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "default-brightness-entertainment-changed",
+                () => {
+                    if (this._entertainment[bridgeTab.bridgeId] === undefined) {
+                        this._entertainment[bridgeTab.bridgeId] = {}
+                    }
+
+                    this._entertainment[bridgeTab.bridgeId]["bri"] = bridgeTab.defaultBrightnessEntertainment;
+                    this.writeEntertainmentSettings();
+                }
+            );
+
+            signal = bridgeTab.connect(
+                "remove-bridge",
+                () => {
+                    let bridgeIdToDelete = bridgeTab.bridgeId;
+                    this._bridgesNotebook.detach_tab(
+                        this._bridgesTabs[bridgeIdToDelete]
+                    );
+                    delete(this._bridgesTabs[bridgeIdToDelete]);
+                    delete(this._hue.bridges[bridgeIdToDelete]);
+                    delete(this._hue.instances[bridgeIdToDelete]);
+                    this.writeBridgesSettings();
+                }
+            );
+
+            bridgeTab.updateAssociatedConnection(
+                this._associatedConnection
+            );
+
+            this._bridgesTabs[bridgeId] = bridgeTab;
+
+            this._bridgesNotebook.append_page(
+                bridgeTab,
+                new Gtk.Label({ label: name})
+            );
+
+            this._connectBridgeInstance(bridgeId);
+            this._hue.checkBridge(bridgeId);
+        }
+    }
+
+    _updateBridge(bridgeId, data) {
+        this._bridgesTabs[bridgeId].updateBridge(
+            this._hue.instances[bridgeId],
+            this._hue.bridges[bridgeId],
+            data
+        );
+        this._bridgesTabs[bridgeId].updateEntertainmentAreasConnection(
+            data["groups"],
+            this._entertainment
+        );
+
+        this._bridgesTabs[bridgeId].updateNotifyLights(
+            this._hue.bridges[bridgeId],
+            data,
+            this._notifyLights
+        );
+
+        this._bridgesTabs[bridgeId].setInitializationFinished();
+    }
+
+    _updateSyncboxTabs() {
+        for (let syncboxId in this._hueSB.syncboxes) {
+
+            let name = _("unknown name");
+
+            if (this._hueSB.syncboxes[syncboxId]["name"] !== undefined) {
+                name = this._hueSB.syncboxes[syncboxId]["name"];
+            }
+
+            if (this._syncboxesTabs[syncboxId] !== undefined) {
+                continue
+            }
+
+            let syncboxTab = new SyncboxTab(syncboxId, this._hueSB.syncboxes[syncboxId]);
+
+            let signal = syncboxTab.connect(
+                "connection-switched-row",
+                () => {
+                    let connection = syncboxTab.connectionSwitchedRow.label;
+
+                    if (this._associatedConnection[syncboxTab.syncboxId] === undefined) {
+                        this._associatedConnection[syncboxTab.syncboxId] = {};
+                        this._associatedConnection[syncboxTab.syncboxId]["connections"] = [];
+                        this._associatedConnection[syncboxTab.syncboxId]["type"] = ["syncbox"];
+                    }
+
+                    if (syncboxTab.connectionSwitchedRow.active) {
+                        if (! this._associatedConnection[syncboxTab.syncboxId]["connections"].includes(connection)) {
+                            this._associatedConnection[syncboxTab.syncboxId]["connections"].push(connection);
+                        }
+                    } else {
+                        if (this._associatedConnection[syncboxTab.syncboxId]["connections"].includes(connection)) {
+                            let index = this._associatedConnection[syncboxTab.syncboxId]["connections"].indexOf(connection);
+                            index = this._associatedConnection[syncboxTab.syncboxId]["connections"].splice(index, 1);
+                        }
+                    }
+
+                    this.writeAssociatedConnections();
+                }
+            );
+
+            signal = syncboxTab.connect(
+                "ip-address-connect",
+                () => {
+                    if (syncboxTab.ip == undefined) {
+                        return;
+                    }
+
+                    this._registerSyncboxDialog = new RegisterSyncboxDialog(this.get_ancestor(Gtk.Window));
+                    this._registerSyncboxDialog.show();
+    
+                    this._hueSB.disableAsyncMode();
+                    this._hueSB.addSyncBoxManual(syncboxTab.ip);
+                }
+            );
+
+            signal = syncboxTab.connect(
+                "remove-syncbox",
+                () => {
+                    let syncboxIdToDelete = syncboxTab.syncboxId;
+                    this._syncboxesNotebook.detach_tab(
+                        this._syncboxesTabs[syncboxIdToDelete]
+                    );
+                    delete(this._syncboxesTabs[syncboxIdToDelete]);
+                    delete(this._hueSB.syncboxes[syncboxIdToDelete]);
+                    delete(this._hueSB.instances[syncboxIdToDelete]);
+                    this.writeSyncboxSettings();
+                }
+            );
+
+            syncboxTab.updateAssociatedConnection(
+                this._associatedConnection
+            );
+
+            this._syncboxesTabs[syncboxId] = syncboxTab;
+
+            this._syncboxesNotebook.append_page(
+                syncboxTab,
+                new Gtk.Label({ label: name})
+            );
+
+            this._connectSyncboxInstance(syncboxId);
+            this._hueSB.checkSyncBox(syncboxId);
+        }
+    }
+
+    _updateSyncbox(syncboxId, data) {
+        this._syncboxesTabs[syncboxId].updateSyncbox(
+            this._hueSB.instances[syncboxId],
+            this._hueSB.syncboxes[syncboxId],
+            data
+        );
+    }
+
+    _updateGeneral() {
+        this._positionInPanelComboBox.set_active(this._indicatorPosition);
+        this._iconPackComboBox.set_active(this._iconPack);
+        this._zonesFirstSwitch.set_active(this._zonesFirst);
+        this._showScenesSwitch.set_active(this._showScenes);
+        this._compactMenuSwitch.set_active(this._compactMenu);
+        this._forceEnglishSwitch.set_active(this._forceEnglish);
+    }
+
+    _positionInPanelChanged(comboBox) {
+        this._indicatorPosition = comboBox.get_active();
+        this._settings.set_enum(
+            Utils.HUELIGHTS_SETTINGS_INDICATOR,
+            this._indicatorPosition
+        );
+    }
+
+    _iconPackChanged(comboBox) {
+        this._iconPack = comboBox.get_active();
+        this._settings.set_enum(
+            Utils.HUELIGHTS_SETTINGS_ICONPACK,
+            this._iconPack
+        );
+    }
+
+    _zonesFirstNotifyActive(zoneSwitch) {
+        this._zonesFirst = zoneSwitch.get_active();
+        this._settings.set_boolean(
+            Utils.HUELIGHTS_SETTINGS_ZONESFIRST,
+            this._zonesFirst
+        );
+    }
+
+    _showScenesNotifyActive(showScenesSwitch) {
+        this._showScenes = showScenesSwitch.get_active();
+        this._settings.set_boolean(
+            Utils.HUELIGHTS_SETTINGS_SHOWSCENES,
+            this._showScenes
+        );
+    }
+
+    _compactMenuNotifyActive(compactMenuSwitch) {
+        this._compactMenu = compactMenuSwitch.get_active();
+        this._settings.set_boolean(
+            Utils.HUELIGHTS_SETTINGS_COMPACTMENU,
+            this._compactMenu
+        );
+    }
+
+    _forceEnglishNotifyActive(forceEnglishSwitch) {
+        this._forceEnglish = forceEnglishSwitch.get_active();
+        this._settings.set_boolean(
+            Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH,
+            this._forceEnglish
+        );
+    }
+
+    _updateAdvanced() {
+        this._connectionTimeoutBridgeComboBox.set_active(this._connectionTimeout - 1);
+        this._connectionTimeoutSyncboxComboBox.set_active(this._connectionTimeoutSB - 1);
+        this._debugSwitch.set_active(Utils.debug);
+    }
+
+    _connectionTimeoutBridgeChanged(comboBox) {
+        this._connectionTimeout = comboBox.get_active() + 1;
+        this._settings.set_int(
+            Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT,
+            this._connectionTimeout
+        );
+    }
+
+    _connectionTimeoutSyncboxChanged(comboBox) {
+        this._connectionTimeoutSB = comboBox.get_active() + 1;
+        this._settings.set_int(
+            Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB,
+            this._connectionTimeoutSB
+        );
+    }
+
+    _debugNotifyActive(debugSwitch) {
+        Utils.debug = debugSwitch.get_active();
+        this._settings.set_boolean(
+            Utils.HUELIGHTS_SETTINGS_DEBUG,
+            Utils.debug
+        );
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Like `extension.js` this is used for any one-time setup like translations.
  *
@@ -2230,8 +3569,6 @@ function init() {
 
     hue = new Hue.Phue(false);
     hueSB = new HueSB.PhueSyncBox({async: false});
-
-    log(`initializing ${Me.metadata.name} Preferences`);
 }
 
 /**
@@ -2242,6 +3579,8 @@ function init() {
  * @return {Object} returns the prefsWidget
  */
 function buildPrefsWidget() {
+
+    return new PrefsWidget(hue, hueSB);
 
     let huePrefs = new Prefs(hue, hueSB);
 

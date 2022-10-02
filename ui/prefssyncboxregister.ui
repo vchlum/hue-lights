@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="hue-lights">
+    <template class="RegisterSyncboxDialog" parent="GtkDialog">
+        <property name="title" translatable="yes">Enter new IP address</property>
+        <property name="destroy-with-parent">1</property>
+        <property name="modal">1</property>
+        <property name="use-header-bar">1</property>
+        <child internal-child="content_area">
+            <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <property name="margin-top">5</property>
+                <property name="margin-bottom">5</property>
+                <property name="margin-start">5</property>
+                <property name="margin-end">5</property>
+                <property name="spacing">5</property>
+                <child>
+                    <object class="GtkLabel" >
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">While this dialog is shown, hold the button on HDMI sync box\nuntil the led blinks green (~3 seconds) and release.</property>
+                    </object>
+                </child>
+            </object>      
+        </child>
+        <child type="action">
+            <object class="GtkButton" id="cancelButton">
+                <property name="label" translatable="yes">Cancel</property>
+                <signal name="clicked" handler="_onCancelClicked" swapped="no"/>
+            </object>
+        </child>
+        <action-widgets>
+            <action-widget response="GTK_RESPONSE_CANCEL">cancelButton</action-widget>
+        </action-widgets>
+    </template>
+</interface>

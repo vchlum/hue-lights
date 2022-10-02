@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="hue-lights">
+    <object class="GtkAdjustment" id="brightnessAdjustment">
+        <property name="value">1.0</property>
+        <property name="lower">0</property>
+        <property name="upper">255</property>
+        <property name="step_increment">1</property>
+        <property name="page_increment">20</property>
+        <property name="page_size">0</property>
+    </object>
+    <template class="NotificationLightBoxRow" parent="GtkListBoxRow">
+        <property name="halign">fill</property>
+        <property name="hexpand">True</property>
+        <property name="can_focus">False</property>
+        <property name="child">
+            <object class="GtkBox">
+                <property name="can-focus">False</property>
+                <property name="halign">fill</property>
+                <property name="hexpand">True</property>
+                <child>
+                    <object class="GtkLabel" id="lightLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">start</property>
+                        <property name="label"></property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkScale" id="lightBrightnessScale">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hexpand">True</property>
+                        <property name="round_digits">1</property>
+                        <property name="digits">0</property>
+                        <property name="halign">end</property>
+                        <property name="width_request">150</property>
+                        <property name="adjustment">brightnessAdjustment</property>
+                        <signal name="value-changed" handler="_brightnessScaleValueChanged" swapped="no"/>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkColorButton" id="lightColorButton">
+                        <property name="halign">end</property>
+                        <signal name="color-set" handler="_brightnessButtonColorSet" swapped="no"/>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkSwitch" id="lightSwitch">
+                        <property name="halign">end</property>
+                        <property name="vexpand">false</property>
+                        <property name="valign">center</property>
+                        <signal name="notify::active" handler="_lightNotifyActive" swapped="no"/>
+                    </object>
+                </child>
+            </object>
+        </property>
+    </template>
+</interface>

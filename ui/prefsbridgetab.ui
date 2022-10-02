@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="hue-lights">
+    <object class="GtkAdjustment" id="intensityAdjustment">
+        <property name="value">1.0</property>
+        <property name="lower">0</property>
+        <property name="upper">255</property>
+        <property name="step_increment">1</property>
+        <property name="page_increment">20</property>
+        <property name="page_size">0</property>
+    </object>
+    <object class="GtkAdjustment" id="brightnessAdjustment">
+        <property name="value">1.0</property>
+        <property name="lower">0</property>
+        <property name="upper">255</property>
+        <property name="step_increment">1</property>
+        <property name="page_increment">20</property>
+        <property name="page_size">0</property>
+    </object>
+    <template class="BridgeTab" parent="GtkScrolledWindow">
+        <property name="child">
+            <object class="GtkBox">
+                <property name="can_focus">False</property>
+                <property name="halign">fill</property>
+                <property name="vexpand">True</property>
+                <property name="hexpand">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                    <object class="GtkListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">IP:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkEntry" id="ipAddress">
+                                                <property name="halign">end</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel" id="statusLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Unreachable</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkButton" id="connectButton">
+                                                <property name="halign">end</property>
+                                                <property name="label" translatable="yes">Connect</property>
+                                                <signal name="clicked" handler="_onConnectOrRemoveBridgeClicked" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Prefer</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkCheckButton" id="defaultCheckButton">
+                                                <property name="halign">end</property>
+                                                <signal name="toggled" handler="_defaultToggled" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">Entertainment areas</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkListBox" id="entertainmentAreasListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Autostart on GNOME login:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkComboBoxText" id="autostartComboBox">
+                                                <property name="halign">end</property>
+                                                <signal name="changed" handler="_autostartComboBoxChanged" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Default entertainment mode:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkComboBoxText" id="defaultEntertainmentComboBox">
+                                                <property name="halign">end</property>
+                                                <signal name="changed" handler="_defaultEntertainmentComboBoxChanged" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Default intensity:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkScale" id="intensityScale">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="hexpand">True</property>
+                                                <property name="round_digits">1</property>
+                                                <property name="digits">0</property>
+                                                <property name="halign">end</property>
+                                                <property name="width_request">200</property>
+                                                <property name="adjustment">intensityAdjustment</property>
+                                                <signal name="value-changed" handler="_intensityScaleValueChanged" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Default brightness:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkScale" id="brightnessScale">
+                                                <property name="visible">True</property>
+                                                <property name="can_focus">True</property>
+                                                <property name="hexpand">True</property>
+                                                <property name="round_digits">1</property>
+                                                <property name="digits">0</property>
+                                                <property name="halign">end</property>
+                                                <property name="width_request">200</property>
+                                                <property name="adjustment">brightnessAdjustment</property>
+                                                <signal name="value-changed" handler="_brightnessScaleValueChanged" swapped="no"/>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">Notification lights:</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkListBox" id="noticationLightsListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">Associated networks</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkListBox" id="associatedNetworksListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkButton">
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                        <property name="halign">fill</property>
+                        <property name="hexpand">True</property>
+                        <property name="label" translatable="yes">Remove</property>
+                        <signal name="clicked" handler="_onRemoveBridgeClicked" swapped="no"/>
+                    </object>
+                </child>
+            </object>
+        </property>
+    </template>
+</interface>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="hue-lights">
+    <template class="SyncboxTab" parent="GtkScrolledWindow">
+        <property name="child">
+            <object class="GtkBox">
+                <property name="can_focus">False</property>
+                <property name="halign">fill</property>
+                <property name="vexpand">True</property>
+                <property name="hexpand">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                    <object class="GtkListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">IP:</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkEntry" id="ipAddress">
+                                                <property name="halign">end</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkListBoxRow">
+                                <property name="halign">fill</property>
+                                <property name="hexpand">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="can-focus">False</property>
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <child>
+                                            <object class="GtkLabel" id="statusLabel">
+                                                <property name="hexpand">true</property>
+                                                <property name="halign">start</property>
+                                                <property name="label" translatable="yes">Unreachable</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkButton" id="connectButton">
+                                                <property name="halign">end</property>
+                                                <property name="label" translatable="yes">Connect</property>
+                                                <signal name="clicked" handler="_onConnectOrRemoveSyncboxClicked" swapped="no"/>
+                                            </object>
+                                        </child>
+
+                                    </object>
+                                </property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkLabel">
+                        <property name="hexpand">true</property>
+                        <property name="halign">center</property>
+                        <property name="label" translatable="yes">Associated networks</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkListBox" id="associatedNetworksListBox">
+                        <property name="halign">fill</property>
+                        <property name="vexpand">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="selection-mode">none</property>
+                        <property name="can_focus">False</property>
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkButton">
+                        <property name="margin_start">15</property>
+                        <property name="margin_end">15</property>
+                        <property name="halign">fill</property>
+                        <property name="hexpand">True</property>
+                        <property name="label" translatable="yes">Remove</property>
+                        <signal name="clicked" handler="_onRemoveSyncboxClicked" swapped="no"/>
+                    </object>
+                </child>
+            </object>
+        </property>
+    </template>
+</interface>
