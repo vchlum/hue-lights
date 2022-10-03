@@ -4617,7 +4617,11 @@ var PhueMenu = GObject.registerClass({
                         this.hue.instances[bridgeid].getAsyncData()
                     );
 
-                    this.queueNotify(bridgeid);
+                    this.queueNotify(
+                        bridgeid,
+                        this._waitingNotificationMessage[bridgeid]["title"],
+                        this._waitingNotificationMessage[bridgeid]["body"]
+                    );
                 }
             }
         );
@@ -5323,13 +5327,39 @@ var PhueMenu = GObject.registerClass({
         Utils.logDebug(`Notify lights of bridge: ${reqBridgeid} backed up: ${JSON.stringify(this.oldNotifylight[reqBridgeid])}`);
     }
 
+    notifyCheckRegex(notifyData, title, body) {
+        let regex = ".*";
+        for (let key in notifyData) {
+            switch (notifyData[key]) {
+                case Utils.NOTIFY_LIGHTS_LABEL:
+                    break;
+                case Utils.NOTIFY_LIGHTS_REGEX_TITLE:
+                    regex = `${key.split("::")[1]}`;
+                    if (! title.match(regex)) {
+                        return false;
+                    }
+                    break;
+                case Utils.NOTIFY_LIGHTS_REGEX_BODY:
+                    regex = `${key.split("::")[1]}`;
+                    if (! body.match(regex)) {
+                        return false;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Start light notification on a bridge
      * 
      * @method startNotify
      * @param {String} requested bridge
      */
-    startNotify(reqBridgeid) {
+    startNotify(reqBridgeid, title, body) {
 
         Utils.logDebug(`Starting notify lights of bridge ${reqBridgeid}: ${JSON.stringify(this._notifyLights)}`);
 
@@ -5339,6 +5369,10 @@ var PhueMenu = GObject.registerClass({
             let lightid = parseInt(i.split("::")[1]);
 
             if (reqBridgeid !== bridgeid) {
+                continue;
+            }
+
+            if (!this.notifyCheckRegex(this._notifyLights[i], title, body)) {
                 continue;
             }
 
@@ -5415,13 +5449,19 @@ var PhueMenu = GObject.registerClass({
      * 
      * @method runNotify
      */
-    runNotify() {
+    runNotify(title, body) {
         Utils.logDebug("A notification has occurred in the system.");
 
+        this._waitingNotificationMessage = {};
+    
         for (let bridgeid in this.hue.instances) {
             if (!this.hue.instances[bridgeid].isConnected()) {
                 continue;
             }
+
+            this._waitingNotificationMessage[bridgeid] = {};
+            this._waitingNotificationMessage[bridgeid]["title"] = title;
+            this._waitingNotificationMessage[bridgeid]["body"] = body;
 
             if (this._notificationQueues[bridgeid] === undefined) {
                 this._notificationQueues[bridgeid] = new Queue.Queue(Queue.handlerType.TIMED);
@@ -5433,7 +5473,7 @@ var PhueMenu = GObject.registerClass({
                 this._waitingNotification[bridgeid] = true;
                 this.hue.instances[bridgeid].getLights();
             } else {
-                this.queueNotify(bridgeid);
+                this.queueNotify(bridgeid, title, body);
             }
         }
     }
@@ -5444,8 +5484,7 @@ var PhueMenu = GObject.registerClass({
      * @method queueNotify
      * @param {String} bridge
      */
-    queueNotify(bridgeid){
-
+    queueNotify(bridgeid, title, body){
         if (this.oldNotifylight[bridgeid] === undefined ||
             Object.keys(this.oldNotifylight[bridgeid]).length === 0) {
 
@@ -5455,7 +5494,7 @@ var PhueMenu = GObject.registerClass({
 
         this._notificationQueues[bridgeid].append([
             () => {
-                this.startNotify(bridgeid);
+                this.startNotify(bridgeid, title, body);
             },
             100
         ]);

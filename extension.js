@@ -55,7 +55,7 @@ function createBannerHue() {
 
     if (hueLightsMenu !== null) {
 
-        hueLightsMenu.runNotify();
+        hueLightsMenu.runNotify(this.title, this.bannerBodyText);
     }
 
     return this.source.createBanner(this);

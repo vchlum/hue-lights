@@ -2254,8 +2254,17 @@ var Prefs = class HuePrefs {
 
 
 
-
-
+/* https://linuxhint.com/javascript-hash-function/*/
+function hashMe(string) {
+    let hash = 0;
+    if (string.length == 0) return hash;
+    for (let x = 0; x <string.length; x++) {
+    let ch = string.charCodeAt(x);
+            hash = ((hash <<5) - hash) + ch;
+            hash = hash & hash;
+        }
+    return hash;
+    }
 
 
 
@@ -2462,6 +2471,8 @@ const NotificationLightBoxRow = GObject.registerClass({
             this._lightSwitch.active = false;
         }
 
+        this.valueToExport = notifyValues;
+
         if (notifyValues["bri"] !== undefined) {
             this._brightnessAdjustment.value = notifyValues["bri"];
         } else {
@@ -2504,6 +2515,9 @@ const BridgeTab = GObject.registerClass({
         'brightnessAdjustment',
         'noticationLightsListBox',
         'associatedNetworksListBox',
+        'notifyLightRegExComboBox',
+        'reTitle',
+        'reBody',
     ],
     Signals: {
         "ip-address-connect": {},
@@ -2515,6 +2529,7 @@ const BridgeTab = GObject.registerClass({
         "default-entertainment-changed": {},
         "default-intensity-entertainment-changed": {},
         "default-brightness-entertainment-changed": {},
+        "notify-regexp-add": {},
         "remove-bridge": {},
     },
 }, class BridgeTab extends Gtk.ScrolledWindow {
@@ -2524,6 +2539,7 @@ const BridgeTab = GObject.registerClass({
         this.bridgeId = bridgeId;
         this._knownAssociatedNetworks = [];
         this._addedNotificationLights = [];
+        this._regExComboBoxItems = [];
         this._initationInProgress = true;
         
         if (this._bridge["ip"] !== undefined) {
@@ -2651,6 +2667,24 @@ const BridgeTab = GObject.registerClass({
             if (asyncData["groups"][groupId]["type"] !== "Room") {
                 continue;
             }
+            
+            for (let l in asyncData["groups"][groupId]["lights"]) {
+                let lightId = parseInt(asyncData["groups"][groupId]["lights"][l]);
+
+                let notifyLightId = `${this.bridgeId}::${lightId}`;
+
+                if (this._regExComboBoxItems.includes(notifyLightId)) {
+                    continue;
+                }
+
+                this._regExComboBoxItems.push(notifyLightId);
+
+                let lightName = asyncData["lights"][lightId]["name"];
+                let groupName = asyncData["groups"][groupId]["name"];
+
+                this._notifyLightRegExComboBox.append(notifyLightId, `${groupName} - ${lightName}`);
+                this._notifyLightRegExComboBox.set_active_id(notifyLightId);
+            }
 
             for (let l in asyncData["groups"][groupId]["lights"]) {
                 let lightId = parseInt(asyncData["groups"][groupId]["lights"][l]);
@@ -2691,6 +2725,50 @@ const BridgeTab = GObject.registerClass({
 
                 this._noticationLightsListBox.append(row);
             }
+        }
+
+        this.updateNotifyLightsRegEx(notifyLights);
+    }
+
+    updateNotifyLightsRegEx(notifyLights) {
+        for (let notifyLightId in notifyLights) {
+            if (this._addedNotificationLights.includes(notifyLightId)) {
+                continue;
+            }
+
+            this._addedNotificationLights.push(notifyLightId);
+
+            let label = _("unknown name");
+            for (let key in notifyLights[notifyLightId]) {
+                if (notifyLights[notifyLightId][key] === Utils.NOTIFY_LIGHTS_LABEL) {
+                    label = key;
+                }
+            }
+
+            let row = new NotificationLightBoxRow(notifyLightId, label);
+            let signal = row.connect(
+                "turned-on",
+                () => {
+                    this.notifyLightRow = row;
+                    this.emit("notification-light-turned-on");
+                }
+            );
+
+            signal = row.connect(
+                "turned-off",
+                () => {
+                    this.notifyLightRow = row;
+                    this.emit("notification-light-turned-off");
+                }
+            );
+
+            let notifyvalues = {};
+            if (notifyLights !== undefined && notifyLights[notifyLightId] !== undefined) {
+                notifyvalues = notifyLights[notifyLightId];
+            }
+            row.setValues(notifyvalues)
+
+            this._noticationLightsListBox.append(row);
         }
     }
 
@@ -2768,6 +2846,26 @@ const BridgeTab = GObject.registerClass({
 
         this.defaultBrightnessEntertainment = Math.round(this._brightnessAdjustment.value);
         this.emit("default-brightness-entertainment-changed");
+    }
+
+    _onAddNotifyRegExClicked(button) {
+        let title = this._reTitle.text;
+        let body = this._reBody.text;
+        
+        let hashstring = hashMe(title + body);
+        let key = `${this._notifyLightRegExComboBox.get_active_id()}::${hashstring}`;
+        let label = `${this._notifyLightRegExComboBox.get_active_text()} (${title}/${body})`;
+
+        let value = {'r': 255, 'g': 255, 'b': 255, 'bri': 255};
+
+        title = `${Utils.NOTIFY_LIGHTS_REGEX_TITLE}::${title}`;
+        body = `${Utils.NOTIFY_LIGHTS_REGEX_BODY}::${body}`;
+        value[label] = Utils.NOTIFY_LIGHTS_LABEL;
+        value[title] = Utils.NOTIFY_LIGHTS_REGEX_TITLE;
+        value[body] = Utils.NOTIFY_LIGHTS_REGEX_BODY;
+        this.notifyRegExToAdd = {};
+        this.notifyRegExToAdd[key] = value;
+        this.emit("notify-regexp-add");
     }
 
     _onRemoveBridgeClicked(button) {
@@ -3299,6 +3397,21 @@ const PrefsWidget = GObject.registerClass({
                 }
             );
 
+            signal = bridgeTab.connect(
+                "notify-regexp-add",
+                () => {
+                    for (let notifyLightId in bridgeTab.notifyRegExToAdd) {
+                        if (Object.keys(this._notifyLights).includes(notifyLightId)) {
+                            continue;
+                        }
+
+                        this._notifyLights[notifyLightId] = bridgeTab.notifyRegExToAdd[notifyLightId];
+                    }
+
+                    this.writeNotifyLightsSettings();
+                    bridgeTab.updateNotifyLightsRegEx(this._notifyLights);
+                }
+            );
             signal = bridgeTab.connect(
                 "remove-bridge",
                 () => {

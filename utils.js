@@ -64,6 +64,10 @@ var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
 var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION = "associated-connection";
 var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE = "a{sa{sas}}";
 
+var NOTIFY_LIGHTS_LABEL = 10001;
+var NOTIFY_LIGHTS_REGEX_TITLE = 10002;
+var NOTIFY_LIGHTS_REGEX_BODY = 10003;
+
 const [major] = Config.PACKAGE_VERSION.split(".");
 var shellVersion = Number.parseInt(major);
 
