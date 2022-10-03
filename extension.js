@@ -69,8 +69,6 @@ function createBannerHue() {
 function init() {
 
     ExtensionUtils.initTranslations();
-
-    log(`initializing ${Me.metadata.name} version ${Me.metadata.version}`);
 }
 
 /**
@@ -90,8 +88,6 @@ function enable() {
 
     origCreateBanner = MessageTray.Notification.prototype.createBanner;
     MessageTray.Notification.prototype.createBanner = createBannerHue;
-
-    log(`enabling ${Me.metadata.name} version ${Me.metadata.version}`);
 }
 
 /**
@@ -111,6 +107,4 @@ function disable() {
     hueLightsMenu.disableStreams();
     hueLightsMenu.disconnectSignals(true);
     hueLightsMenu.destroy();
-
-    log(`disabling ${Me.metadata.name} version ${Me.metadata.version}`);
 }

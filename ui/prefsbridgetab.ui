@@ -120,6 +120,7 @@
                     <object class="GtkLabel">
                         <property name="hexpand">true</property>
                         <property name="halign">center</property>
+                        <property name="margin_top">15</property>
                         <property name="label" translatable="yes">Entertainment areas</property>
                     </object>
                 </child>
@@ -260,6 +261,7 @@
                     <object class="GtkLabel">
                         <property name="hexpand">true</property>
                         <property name="halign">center</property>
+                        <property name="margin_top">15</property>
                         <property name="label" translatable="yes">Notification lights:</property>
                     </object>
                 </child>
@@ -278,6 +280,7 @@
                     <object class="GtkLabel">
                         <property name="hexpand">true</property>
                         <property name="halign">center</property>
+                        <property name="margin_top">15</property>
                         <property name="label" translatable="yes">Associated networks</property>
                     </object>
                 </child>
@@ -296,6 +299,7 @@
                     <object class="GtkButton">
                         <property name="margin_start">15</property>
                         <property name="margin_end">15</property>
+                        <property name="margin_top">15</property>
                         <property name="halign">fill</property>
                         <property name="hexpand">True</property>
                         <property name="label" translatable="yes">Remove</property>
