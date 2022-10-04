@@ -50,6 +50,15 @@ var forceEnglish = false;
 var hue;
 var hueSB;
 
+/**
+ * AddBridgeDialog object. Provides dialog window
+ * expecting bridge IP address as input.
+ * 
+ * @class AddBridgeDialog
+ * @constructor
+ * @param {Object} parent
+ * @return {Object} gtk dialog
+ */
 const AddBridgeDialog = GObject.registerClass({
     GTypeName: 'AddBridgeDialog',
     Template: Me.dir.get_child('ui/prefsbridgeadd.ui').get_uri(),
@@ -60,12 +69,20 @@ const AddBridgeDialog = GObject.registerClass({
         'ipAddress',
     ],
 }, class AddBridgeDialog extends Gtk.Dialog {
+
     _init(parentWindow) {
         super._init();
 
         this.set_transient_for(parentWindow);
     }
 
+    /**
+     * OK button clicket handler
+     * 
+     * @method _onOkClicked
+     * @private
+     * @param {Object} clicked button
+     */
     _onOkClicked(button) {
         this.ip = this._ipAddress.text;
         this.emit("ip-address-ok");
@@ -73,21 +90,47 @@ const AddBridgeDialog = GObject.registerClass({
     }
 });
 
+/**
+ * NotFoundBridgeDialog object. Provides dialog window
+ * noticing the bridge button is not pressed.
+ * 
+ * @class NotFoundBridgeDialog
+ * @constructor
+ * @param {Object} parent
+ * @return {Object} gtk dialog
+ */
 const NotFoundBridgeDialog = GObject.registerClass({
     GTypeName: 'NotFoundBridgeDialog',
     Template: Me.dir.get_child('ui/prefsbridgenotfound.ui').get_uri(),
 }, class NotFoundBridgeDialog extends Gtk.Dialog {
+
     _init(parentWindow) {
         super._init();
 
         this.set_transient_for(parentWindow);
     }
 
+    /**
+     * OK button clicket handler
+     * 
+     * @method _onOkClicked
+     * @private
+     * @param {Object} clicked button
+     */
     _onOkClicked(button) {
         this.destroy();
     }
 });
 
+/**
+ * AddSyncboxDialog object. Provides dialog window
+ * expecting syncbox IP address as input.
+ * 
+ * @class AddSyncboxDialog
+ * @constructor
+ * @param {Object} parent
+ * @return {Object} gtk dialog
+ */
 const AddSyncboxDialog = GObject.registerClass({
     GTypeName: 'AddSyncboxDialog',
     Template: Me.dir.get_child('ui/prefssyncboxadd.ui').get_uri(),
@@ -98,12 +141,20 @@ const AddSyncboxDialog = GObject.registerClass({
         'ipAddress',
     ],
 }, class AddSyncboxDialog extends Gtk.Dialog {
+
     _init(parentWindow) {
         super._init();
 
         this.set_transient_for(parentWindow);
     }
 
+    /**
+     * OK button clicket handler
+     * 
+     * @method _onOkClicked
+     * @private
+     * @param {Object} clicked button
+     */
     _onOkClicked(button) {
         this.ip = this._ipAddress.text;
         this.emit("ip-address-ok");
@@ -111,21 +162,48 @@ const AddSyncboxDialog = GObject.registerClass({
     }
 });
 
+/**
+ * RegisterSyncboxDialog object. Provides dialog window
+ * showed while waiting for pressing the syncbox button.
+ * 
+ * @class RegisterSyncboxDialog
+ * @constructor
+ * @param {Object} parent
+ * @return {Object} gtk dialog
+ */
 const RegisterSyncboxDialog = GObject.registerClass({
     GTypeName: 'RegisterSyncboxDialog',
     Template: Me.dir.get_child('ui/prefssyncboxregister.ui').get_uri(),
 }, class RegisterSyncboxDialog extends Gtk.Dialog {
+
     _init(parentWindow) {
         super._init();
 
         this.set_transient_for(parentWindow);
     }
 
+    /**
+     * Cancel button clicket handler
+     * closing this dialog.
+     * 
+     * @method _onOkClicked
+     * @private
+     * @param {Object} clicked button
+     */
     _onCancelClicked(button) {
         this.destroy();
     }
 });
 
+/**
+ * NetworkBoxRow object. Provides gtk ListBoxRow.
+ * This is one of the row of associated connections.
+ * 
+ * @class NetworkBoxRow
+ * @constructor
+ * @param {Object} label
+ * @return {Object} gtk ListBoxRow
+ */
 const NetworkBoxRow = GObject.registerClass({
     GTypeName: 'NetworkBoxRow',
     Template: Me.dir.get_child('ui/prefsnetworkrow.ui').get_uri(),
@@ -137,6 +215,7 @@ const NetworkBoxRow = GObject.registerClass({
         "connection-switched": {},
     },
 }, class NetworkBoxRow extends Gtk.ListBoxRow {
+
     _init(label) {
         super._init();
         this.label = label;
@@ -144,16 +223,40 @@ const NetworkBoxRow = GObject.registerClass({
         this.active = false;
     }
 
+    /**
+     * Associated connection switch handler.
+     * Called when switch is changed.
+     * 
+     * @method _networkNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _networkNotifyActive(networkSwitch) {
         this.active = networkSwitch.active;
         this.emit("connection-switched");
     }
 
+    /**
+     * Turn the switch on/off.
+     * 
+     * @method setValue
+     * @param {Boolean} value
+     */
     setValue(value) {
         this._networkSwitch.active = value;
     }
 });
 
+/**
+ * NotificationLightBoxRow object. Provides gtk ListBoxRow.
+ * This is one of the row of notification lights.
+ * 
+ * @class NotificationLightBoxRow
+ * @constructor
+ * @param {Object} id of the notification light
+ * @param {Object} label
+ * @return {Object} gtk ListBoxRow
+ */
 const NotificationLightBoxRow = GObject.registerClass({
     GTypeName: 'NotificationLightBoxRow',
     Template: Me.dir.get_child('ui/prefsnotificationlightsrow.ui').get_uri(),
@@ -168,6 +271,7 @@ const NotificationLightBoxRow = GObject.registerClass({
         "turned-off": {},
     },
 }, class NotificationLightBoxRow extends Gtk.ListBoxRow {
+
     _init(notifyLightId, label) {
         super._init();
         this.notifyLightId = notifyLightId;
@@ -178,6 +282,16 @@ const NotificationLightBoxRow = GObject.registerClass({
         this.valueToExport = {};
     }
 
+    /**
+     * Handler of brightness slider of
+     * notification light.
+     * Called when slider is moved.
+     * Also turns on the notification.
+     * 
+     * @method _brightnessScaleValueChanged
+     * @private
+     * @param {Object} slider
+     */
     _brightnessScaleValueChanged(scale) {
         if (this._initationInProgress) {
             return;
@@ -188,6 +302,14 @@ const NotificationLightBoxRow = GObject.registerClass({
         this.emit("turned-on");
     }
 
+    /**
+     * Handler of collor button. Called once the
+     * color is changed. Also turns on the notification.
+     * 
+     * @method _brightnessButtonColorSet
+     * @private
+     * @param {Object} button
+     */
     _brightnessButtonColorSet(button) {
         if (this._initationInProgress) {
             return;
@@ -198,6 +320,16 @@ const NotificationLightBoxRow = GObject.registerClass({
         this.emit("turned-on");
     }
 
+    /**
+     * Notify light switch handler.
+     * Called when switch is changed.
+     * If turned off, the record is deleted
+     * from notification lights.
+     * 
+     * @method _lightNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _lightNotifyActive(lightSwitch) {
         if (this._initationInProgress) {
             return;
@@ -211,6 +343,12 @@ const NotificationLightBoxRow = GObject.registerClass({
         }
     }
 
+    /**
+     * Makes data of this row like color and brightness
+     * ready to use by anyone who want to read it.
+     * 
+     * @method setExportReady
+     */
     setExportReady() {
         let color = this._lightColorButton.rgba;
         this.valueToExport["r"] = Math.round(color.red * 255);
@@ -220,6 +358,13 @@ const NotificationLightBoxRow = GObject.registerClass({
         this.valueToExport["bri"] = Math.round(this._brightnessAdjustment.value);
     }
 
+    /**
+     * Sets the widgets based on current values.
+     * 
+     * @method setValues
+     * @private
+     * @param {Object} values
+     */
     setValues(notifyValues) {
         if (Object.keys(notifyValues).length > 0) {
             this._lightSwitch.active = true;
@@ -257,6 +402,17 @@ const NotificationLightBoxRow = GObject.registerClass({
     }
 });
 
+/**
+ * BridgeTab object. Bridge tab of settings notebook.
+ * One tab per bridge. Event discovered and not connected bridges
+ * get their tab.
+ * 
+ * @class BridgeTab
+ * @constructor
+ * @param {Object} id of the bridge
+ * @param {Object} essential bridge data stored by settings.
+ * @return {Object} gtk ScrolledWindow
+ */
 const BridgeTab = GObject.registerClass({
     GTypeName: 'BridgeTab',
     Template: Me.dir.get_child('ui/prefsbridgetab.ui').get_uri(),
@@ -289,6 +445,7 @@ const BridgeTab = GObject.registerClass({
         "remove-bridge": {},
     },
 }, class BridgeTab extends Gtk.ScrolledWindow {
+
     _init(bridgeId, data) {
         super._init();
         this._bridge = data;
@@ -312,6 +469,14 @@ const BridgeTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Updates the overall bridge state.
+     * 
+     * @method updateBridge
+     * @param {Object} bridge instance
+     * @param {Object} bridge settings data
+     * @param {Object} bridge data retrieved from bridge
+     */
     updateBridge(instance, data, asyncData) {
         if (instance.isConnected()) {
             this._statusLabel.label = _("Connected");
@@ -322,7 +487,15 @@ const BridgeTab = GObject.registerClass({
         }
     }
 
-    updateEntertainmentAreasConnection(data, entertainment) {
+    /**
+     * Updates the state of entertainment areas settings
+     * of this bridge.
+     * 
+     * @method updateEntertainmentAreas
+     * @param {Object} data retrieved from bridge
+     * @param {Object} entertainment settings data
+     */
+    updateEntertainmentAreas(data, entertainment) {
         this._autostartComboBox.remove_all();
 
         this._autostartComboBox.append("-1", _("none"));
@@ -374,6 +547,13 @@ const BridgeTab = GObject.registerClass({
 
     }
 
+    /**
+     * Detect available networks and updates the state
+     * of associated connections settings.
+     * 
+     * @method updateAssociatedConnection
+     * @param {Object} settings data
+     */
     updateAssociatedConnection(data) {
         let connections = Utils.getConnections();
 
@@ -414,6 +594,15 @@ const BridgeTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Updates the notification lights.
+     * Creates one row per know light.
+     * 
+     * @method updateNotifyLights
+     * @param {Object} bridge data
+     * @param {Object} data retrieved from bridge
+     * @param {Object} notification lights data stored in settings
+     */
     updateNotifyLights(data, asyncData, notifyLights) {
         if (asyncData["groups"] === undefined) {
             return;
@@ -486,6 +675,13 @@ const BridgeTab = GObject.registerClass({
         this.updateNotifyLightsRegEx(notifyLights);
     }
 
+    /**
+     * Updates the notification lights.
+     * Creates one extra row per regex.
+     * 
+     * @method updateNotifyLightsRegEx
+     * @param {Object} notification lights data stored in settings
+     */
     updateNotifyLightsRegEx(notifyLights) {
         for (let notifyLightId in notifyLights) {
             if (this._addedNotificationLights.includes(notifyLightId)) {
@@ -545,6 +741,13 @@ const BridgeTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Updates the wheter the pridge is prefered and
+     * should be showed as default.
+     * 
+     * @method updateDefault
+     * @param {Object} data stored in settings
+     */
     updateDefault(data) {
         if (data["default"] !== undefined && data["default"] === this.bridgeId) {
             this.isDefault = true;
@@ -555,6 +758,14 @@ const BridgeTab = GObject.registerClass({
         this._defaultCheckButton.active = this.isDefault;
     }
 
+    /**
+     * Button handler either connect unavailable bridge
+     * or (if connected) the button can be used for deleting the bridge.
+     * 
+     * @method _onConnectOrRemoveBridgeClicked
+     * @private
+     * @param {Object} button
+     */
     _onConnectOrRemoveBridgeClicked(button) {
         switch (button.label) {
             case _("Connect"):
@@ -568,6 +779,14 @@ const BridgeTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Handler. Sets the bridge as prefered - others
+     * are set as not prefered.
+     * 
+     * @method _defaultToggled
+     * @private
+     * @param {Object} checkbox
+     */
     _defaultToggled(checkButton) {
         if (this._initationInProgress) {
             return;
@@ -577,6 +796,14 @@ const BridgeTab = GObject.registerClass({
         this.emit("default-toggled");
     }
 
+    /**
+     * Combobox handler selects the default entertainment area
+     * started on login.
+     * 
+     * @method _autostartComboBoxChanged
+     * @private
+     * @param {Object} combobox
+     */
     _autostartComboBoxChanged(comboBox) {
         if (this._initationInProgress) {
             return;
@@ -590,6 +817,14 @@ const BridgeTab = GObject.registerClass({
         this.emit("autostart-changed");
     }
 
+    /**
+     * Combobox handler selects the default entertainment mode
+     * started on login.
+     * 
+     * @method _defaultEntertainmentComboBoxChanged
+     * @private
+     * @param {Object} combobox
+     */
     _defaultEntertainmentComboBoxChanged(comboBox) {
         if (this._initationInProgress) {
             return;
@@ -603,6 +838,13 @@ const BridgeTab = GObject.registerClass({
         this.emit("default-entertainment-changed");
     }
 
+    /**
+     * Slider handler of default intensity for light synchronization.
+     * 
+     * @method _intensityScaleValueChanged
+     * @private
+     * @param {Object} slider
+     */
     _intensityScaleValueChanged(scale) {
         if (this._initationInProgress) {
             return;
@@ -612,6 +854,13 @@ const BridgeTab = GObject.registerClass({
         this.emit("default-intensity-entertainment-changed");
     }
 
+    /**
+     * Slider handler of default brightness for light synchronization.
+     * 
+     * @method _brightnessScaleValueChanged
+     * @private
+     * @param {Object} slider
+     */
     _brightnessScaleValueChanged(scale) {
         if (this._initationInProgress) {
             return;
@@ -621,6 +870,14 @@ const BridgeTab = GObject.registerClass({
         this.emit("default-brightness-entertainment-changed");
     }
 
+    /**
+     * Button handler adds new regex notification light record.
+     * It uses hash from regexes as part of id.
+     * 
+     * @method _onAddNotifyRegExClicked
+     * @private
+     * @param {Object} button
+     */
     _onAddNotifyRegExClicked(button) {
         let title = this._reTitle.text;
         let body = this._reBody.text;
@@ -649,15 +906,40 @@ const BridgeTab = GObject.registerClass({
         this.emit("notify-regexp-add");
     }
 
+    /**
+     * Button handler emites the need of removing the bridges.
+     * Removed from settings too.
+     * 
+     * @method _onRemoveBridgeClicked
+     * @private
+     * @param {Object} button
+     */
     _onRemoveBridgeClicked(button) {
         this.emit("remove-bridge");
     }
 
+    /**
+     * Called when initial settings is finished and the handlers
+     * can start to operate. Otherwise the handlers of initilized widget
+     * would be called in inproprite time.
+     * 
+     * @method setInitializationFinished
+     */
     setInitializationFinished() {
         this._initationInProgress = false;
     }
 });
 
+/**
+ * SyncboxTab object. Syncbox tab of settings notebook.
+ * One tab per syncbox.
+ * 
+ * @class SyncboxTab
+ * @constructor
+ * @param {Object} id of the syncbox
+ * @param {Object} essential syncbox data stored by settings.
+ * @return {Object} gtk ScrolledWindow
+ */
 const SyncboxTab = GObject.registerClass({
     GTypeName: 'SyncboxTab',
     Template: Me.dir.get_child('ui/prefssyncboxtab.ui').get_uri(),
@@ -674,6 +956,7 @@ const SyncboxTab = GObject.registerClass({
         "default-toggled": {},
     },
 }, class SyncboxTab extends Gtk.ScrolledWindow {
+
     _init(syncboxId, data) {
         super._init();
         this._syncbox = data;
@@ -685,6 +968,14 @@ const SyncboxTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Updates the overall syncbox state.
+     * 
+     * @method updateSyncbox
+     * @param {Object} syncbox instance
+     * @param {Object} syncbox settings data
+     * @param {Object} syncbox data retrieved from syncbox
+     */
     updateSyncbox(instance, data, asyncData) {
         if (instance.isConnected()) {
             this._statusLabel.label = _("Connected");
@@ -695,6 +986,13 @@ const SyncboxTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Detect available networks and updates the state
+     * of associated connections settings.
+     * 
+     * @method updateAssociatedConnection
+     * @param {Object} settings data
+     */
     updateAssociatedConnection(data) {
         let connections = Utils.getConnections();
 
@@ -735,6 +1033,14 @@ const SyncboxTab = GObject.registerClass({
         }
     }
 
+    /**
+     * Button handler either connect unavailable syncbox
+     * or (if connected) the button can be used for deleting the syncbox.
+     * 
+     * @method _onConnectOrRemoveSyncboxClicked
+     * @private
+     * @param {Object} button
+     */
     _onConnectOrRemoveSyncboxClicked(button) {
         switch (button.label) {
             case _("Connect"):
@@ -748,11 +1054,28 @@ const SyncboxTab = GObject.registerClass({
         }
     };
 
+    /**
+     * Button handler emites the need of removing the syncbox.
+     * Removed from settings too.
+     * 
+     * @method _onRemoveSyncboxClicked
+     * @private
+     * @param {Object} button
+     */
     _onRemoveSyncboxClicked(button) {
         this.emit("remove-syncbox");
     };
 });
 
+/**
+ * PrefsWidget object. Main preferences widget.
+ * 
+ * @class PrefsWidget
+ * @constructor
+ * @param {Object} object of bridges
+ * @param {Object} object of syncboxes
+ * @return {Object} gtk Box
+ */
 const PrefsWidget = GObject.registerClass({
     GTypeName: 'PrefsWidget',
     Template: Me.dir.get_child('ui/prefs.ui').get_uri(),
@@ -834,7 +1157,12 @@ const PrefsWidget = GObject.registerClass({
         this._connectionTimeoutSB = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB);
         this._associatedConnection = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION).deep_unpack();
     }
-    
+
+    /**
+     * Wite setting for bridges
+     *
+     * @method writeBridgesSettings
+     */
     writeBridgesSettings() {
         this._settings.set_value(
             Utils.HUELIGHTS_SETTINGS_BRIDGES,
@@ -845,6 +1173,11 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Wite setting for syncboxes
+     *
+     * @method writeSyncboxSettings
+     */
     writeSyncboxSettings() {
         this._settings.set_value(
             Utils.HUELIGHTS_SETTINGS_SYNCBOXES,
@@ -901,12 +1234,27 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Button handler initates discovering bridges in the network.
+     * 
+     * @method _onDiscoverBridgeClicked
+     * @private
+     * @param {Object} button
+     */
     _onDiscoverBridgeClicked(button) {
         this._hue.checkBridges();
         this.writeBridgesSettings();
         this._updateBridgesTabs();
     }
 
+    /**
+     * Button handler for adding a new bridge manually.
+     * Opens dialog with ip adress input.
+     * 
+     * @method _onAddBridgeClicked
+     * @private
+     * @param {Object} button
+     */
     _onAddBridgeClicked(button) {
         let addBridgeDialog = new AddBridgeDialog(this.get_ancestor(Gtk.Window));
 
@@ -930,6 +1278,14 @@ const PrefsWidget = GObject.registerClass({
         addBridgeDialog.show();
     }
 
+    /**
+     * Button handler for adding a new syncbox manually.
+     * Opens dialog with ip adress input.
+     * 
+     * @method _onAddSyncboxClicked
+     * @private
+     * @param {Object} button
+     */
     _onAddSyncboxClicked(button) {
         let addSyncboxDialog = new AddSyncboxDialog(this.get_ancestor(Gtk.Window));
 
@@ -949,6 +1305,13 @@ const PrefsWidget = GObject.registerClass({
         addSyncboxDialog.show();
     }
 
+    /**
+     * Sets initial signal connection of bridge. Like receiving data from bridge.
+     * 
+     * @method _connectBridgeInstance
+     * @private
+     * @param {Object} bridgeid
+     */
     _connectBridgeInstance(bridgeId) {
         let signal = this._hue.instances[bridgeId].connect(
             "all-data",
@@ -963,6 +1326,13 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Sets signal connection of syncbox for connecting a new syncbox.
+     * 
+     * @method _connectSyncboxRegistration
+     * @private
+     * @param {Object} syncboxid
+     */
     _connectSyncboxRegistration() {
         let signal = this._hueSB.connect(
             "registration-complete",
@@ -993,6 +1363,13 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Sets initial signal connection of syncbox. Like receiving data from syncbox.
+     * 
+     * @method _connectSyncboxInstance
+     * @private
+     * @param {Object} syncboxid
+     */
     _connectSyncboxInstance(syncboxId) {
         let signal = this._hueSB.instances[syncboxId].connect(
             "device-state",
@@ -1007,6 +1384,11 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Removes any bridge set as preferred.
+     * 
+     * @method deleteDefaultBridge
+     */
     deleteDefaultBridge() {
         for (let bridge in this._hue.bridges) {
             if (this._hue.bridges[bridge]["default"] !== undefined) {
@@ -1015,6 +1397,11 @@ const PrefsWidget = GObject.registerClass({
         }
     }
 
+    /**
+     * Sets the correct bridge as preferred. If any.
+     * 
+     * @method updateDefaultBridgeTabs
+     */
     updateDefaultBridgeTabs() {
         for (let bridgeId in this._bridgesTabs) {
             this._bridgesTabs[bridgeId].updateDefault(
@@ -1023,6 +1410,12 @@ const PrefsWidget = GObject.registerClass({
         }
     }
 
+    /**
+     * Creates a new tab for bridge without a tab and makes the tab ready for use.
+     * 
+     * @method _updateBridgesTabs
+     * @private
+     */
     _updateBridgesTabs() {
         for (let bridgeId in this._hue.bridges) {
 
@@ -1225,13 +1618,21 @@ const PrefsWidget = GObject.registerClass({
         }
     }
 
+    /**
+     * Over all bridge state update based on data from bridge and settings.
+     * 
+     * @method _updateBridge
+     * @private
+     * @param {Object} bridgeid
+     * @param {Object} asynchrnously obtained data from bridge
+     */
     _updateBridge(bridgeId, data) {
         this._bridgesTabs[bridgeId].updateBridge(
             this._hue.instances[bridgeId],
             this._hue.bridges[bridgeId],
             data
         );
-        this._bridgesTabs[bridgeId].updateEntertainmentAreasConnection(
+        this._bridgesTabs[bridgeId].updateEntertainmentAreas(
             data["groups"],
             this._entertainment
         );
@@ -1245,6 +1646,12 @@ const PrefsWidget = GObject.registerClass({
         this._bridgesTabs[bridgeId].setInitializationFinished();
     }
 
+    /**
+     * Creates a new tab for syncbox without a tab and makes the tab ready for use.
+     * 
+     * @method _updateSyncboxTabs
+     * @private
+     */
     _updateSyncboxTabs() {
         for (let syncboxId in this._hueSB.syncboxes) {
 
@@ -1331,6 +1738,14 @@ const PrefsWidget = GObject.registerClass({
         }
     }
 
+    /**
+     * Over all syncbox state update based on data from syncbox and settings.
+     * 
+     * @method _updateSyncbox
+     * @private
+     * @param {Object} syncboxid
+     * @param {Object} asynchrnously obtained data from syncbox
+     */
     _updateSyncbox(syncboxId, data) {
         this._syncboxesTabs[syncboxId].updateSyncbox(
             this._hueSB.instances[syncboxId],
@@ -1339,6 +1754,12 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Update general settings based on stored settings.
+     * 
+     * @method _updateGeneral
+     * @private
+     */
     _updateGeneral() {
         this._positionInPanelComboBox.set_active(this._indicatorPosition);
         this._iconPackComboBox.set_active(this._iconPack);
@@ -1348,6 +1769,14 @@ const PrefsWidget = GObject.registerClass({
         this._forceEnglishSwitch.set_active(this._forceEnglish);
     }
 
+    /**
+     * Combobox handler of changing position in panel.
+     * The value is stored in settings.
+     * 
+     * @method _positionInPanelChanged
+     * @private
+     * @param {Object} combobox
+     */
     _positionInPanelChanged(comboBox) {
         this._indicatorPosition = comboBox.get_active();
         this._settings.set_enum(
@@ -1356,6 +1785,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Combobox handler of changing bright/dark icons.
+     * The value is stored in settings.
+     * 
+     * @method _iconPackChanged
+     * @private
+     * @param {Object} combobox
+     */
     _iconPackChanged(comboBox) {
         this._iconPack = comboBox.get_active();
         this._settings.set_enum(
@@ -1364,6 +1801,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Switch handler of displaying zones first.
+     * The value is stored in settings.
+     * 
+     * @method _zonesFirstNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _zonesFirstNotifyActive(zoneSwitch) {
         this._zonesFirst = zoneSwitch.get_active();
         this._settings.set_boolean(
@@ -1372,6 +1817,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Switch handler of displaying scenes.
+     * The value is stored in settings.
+     * 
+     * @method _showScenesNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _showScenesNotifyActive(showScenesSwitch) {
         this._showScenes = showScenesSwitch.get_active();
         this._settings.set_boolean(
@@ -1380,6 +1833,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Switch handler of using comact menu as default.
+     * The value is stored in settings.
+     * 
+     * @method _compactMenuNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _compactMenuNotifyActive(compactMenuSwitch) {
         this._compactMenu = compactMenuSwitch.get_active();
         this._settings.set_boolean(
@@ -1388,6 +1849,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Switch handler of forcing english language of the extension.
+     * The value is stored in settings.
+     * 
+     * @method _forceEnglishNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _forceEnglishNotifyActive(forceEnglishSwitch) {
         this._forceEnglish = forceEnglishSwitch.get_active();
         this._settings.set_boolean(
@@ -1396,12 +1865,26 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Update advanced settings based on stored settings.
+     * 
+     * @method _updateAdvanced
+     * @private
+     */
     _updateAdvanced() {
         this._connectionTimeoutBridgeComboBox.set_active(this._connectionTimeout - 1);
         this._connectionTimeoutSyncboxComboBox.set_active(this._connectionTimeoutSB - 1);
         this._debugSwitch.set_active(Utils.debug);
     }
 
+    /**
+     * Combobox handler of changing bridge timeout.
+     * The value is stored in settings.
+     * 
+     * @method _connectionTimeoutBridgeChanged
+     * @private
+     * @param {Object} combobox
+     */
     _connectionTimeoutBridgeChanged(comboBox) {
         this._connectionTimeout = comboBox.get_active() + 1;
         this._settings.set_int(
@@ -1410,6 +1893,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Combobox handler of changing syncbox timeout.
+     * The value is stored in settings.
+     * 
+     * @method _connectionTimeoutSyncboxChanged
+     * @private
+     * @param {Object} combobox
+     */
     _connectionTimeoutSyncboxChanged(comboBox) {
         this._connectionTimeoutSB = comboBox.get_active() + 1;
         this._settings.set_int(
@@ -1418,6 +1909,14 @@ const PrefsWidget = GObject.registerClass({
         );
     }
 
+    /**
+     * Switch handler of enabling debug messages.
+     * The value is stored in settings.
+     * 
+     * @method _debugNotifyActive
+     * @private
+     * @param {Object} switch
+     */
     _debugNotifyActive(debugSwitch) {
         Utils.debug = debugSwitch.get_active();
         this._settings.set_boolean(

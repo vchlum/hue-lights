@@ -5327,6 +5327,15 @@ var PhueMenu = GObject.registerClass({
         Utils.logDebug(`Notify lights of bridge: ${reqBridgeid} backed up: ${JSON.stringify(this.oldNotifylight[reqBridgeid])}`);
     }
 
+    /**
+     * Check if notify light is sutible for this notification
+     * (messagetitle and body is checked).
+     * 
+     * @method notifyCheckRegex
+     * @param {Object} data of checked notify light
+     * @param {String} notification message title
+     * @param {String} notification message body
+     */
     notifyCheckRegex(notifyData, title, body) {
         let regex = ".*";
         for (let key in notifyData) {
@@ -5358,6 +5367,8 @@ var PhueMenu = GObject.registerClass({
      * 
      * @method startNotify
      * @param {String} requested bridge
+     * @param {String} notification message title
+     * @param {String} notification message body
      */
     startNotify(reqBridgeid, title, body) {
 
@@ -5448,6 +5459,8 @@ var PhueMenu = GObject.registerClass({
      * throught the getLights().
      * 
      * @method runNotify
+     * @param {String} notification message title
+     * @param {String} notification message body
      */
     runNotify(title, body) {
         Utils.logDebug("A notification has occurred in the system.");
@@ -5483,6 +5496,8 @@ var PhueMenu = GObject.registerClass({
      * 
      * @method queueNotify
      * @param {String} bridge
+     * @param {String} notification message title
+     * @param {String} notification message body
      */
     queueNotify(bridgeid, title, body){
         if (this.oldNotifylight[bridgeid] === undefined ||
