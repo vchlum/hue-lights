@@ -17,6 +17,10 @@
         <property name="page_size">0</property>
     </object>
     <template class="BridgeTab" parent="GtkScrolledWindow">
+        <property name="max_content_height">1000</property>
+        <property name="min_content_height">400</property>
+        <property name="max_content_width">1000</property>
+        <property name="min_content_width">600</property>
         <property name="child">
             <object class="GtkBox">
                 <property name="can_focus">True</property>
@@ -276,37 +280,112 @@
                         <property name="margin_end">15</property>
                     </object>
                 </child>
-
                 <child>
                     <object class="GtkBox">
-                        <property name="halign">center</property>
+                        <property name="halign">fill</property>
                         <property name="hexpand">True</property>
                         <property name="orientation">horizontal</property>
                         <property name="can_focus">True</property>
+                        <property name="margin_top">15</property>
                         <property name="margin_start">15</property>
                         <property name="margin_end">15</property>
-
                         <child>
-                            <object class="GtkComboBoxText" id="notifyLightRegExComboBox">
-                                <property name="halign">start</property>
-                            </object>
-                        </child>
-
-                        <child>
-                            <object class="GtkEntry" id="reTitle">
-                                <property name="halign">center</property>
-                                <property name="text">.*title.*</property>
+                            <object class="GtkListBox">
+                                <property name="halign">fill</property>
+                                <property name="vexpand">False</property>
+                                <property name="hexpand">True</property>
+                                <property name="selection-mode">none</property>
                                 <property name="can_focus">True</property>
-                                <property name="editable">True</property>
-                            </object>
-                        </child>
+                                <child>
+                                    <object class="GtkListBoxRow">
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="child">
+                                            <object class="GtkBox">
+                                                <property name="can-focus">False</property>
+                                                <property name="halign">fill</property>
+                                                <property name="hexpand">True</property>
+                                                <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="hexpand">true</property>
+                                                        <property name="halign">start</property>
+                                                        <property name="label" translatable="yes">Select light:</property>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="GtkComboBoxText" id="notifyLightRegExComboBox">
+                                                        <property name="halign">start</property>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkListBoxRow">
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="child">
+                                            <object class="GtkBox">
+                                                <property name="can-focus">True</property>
+                                                <property name="halign">fill</property>
+                                                <property name="hexpand">True</property>
 
-                        <child>
-                            <object class="GtkEntry" id="reBody">
-                                <property name="halign">center</property>
-                                <property name="text">.*body.*</property>
-                                <property name="can_focus">True</property>
-                                <property name="editable">True</property>
+                                                <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="hexpand">true</property>
+                                                        <property name="halign">start</property>
+                                                        <property name="label" translatable="yes">Notification title regex:</property>
+                                                    </object>
+                                                </child>
+
+                                                <child>
+                                                    <object class="GtkEntry" id="reTitle">
+                                                        <property name="halign">center</property>
+                                                        <property name="text">.*title.*</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="editable">True</property>
+                                                    </object>
+                                                </child>
+
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkListBoxRow">
+                                        <property name="halign">fill</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="child">
+                                            <object class="GtkBox">
+                                                <property name="can-focus">True</property>
+                                                <property name="halign">fill</property>
+                                                <property name="hexpand">True</property>
+
+                                                <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="hexpand">true</property>
+                                                        <property name="halign">start</property>
+                                                        <property name="label" translatable="yes">Notification body regex:</property>
+                                                    </object>
+                                                </child>
+
+                                                <child>
+                                                    <object class="GtkEntry" id="reBody">
+                                                        <property name="halign">center</property>
+                                                        <property name="text">.*body.*</property>
+                                                        <property name="can_focus">True</property>
+                                                        <property name="editable">True</property>
+                                                    </object>
+                                                </child>
+
+                                            </object>
+                                        </property>
+                                    </object>
+                                </child>
                             </object>
                         </child>
                         <child>
@@ -319,7 +398,6 @@
 
                     </object>
                 </child>
-
                 <child>
                     <object class="GtkLabel">
                         <property name="hexpand">true</property>

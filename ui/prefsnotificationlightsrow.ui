@@ -19,8 +19,10 @@
                 <property name="hexpand">True</property>
                 <child>
                     <object class="GtkLabel" id="lightLabel">
-                        <property name="hexpand">true</property>
+                        <property name="hexpand">True</property>
                         <property name="halign">start</property>
+                        <property name="wrap">True</property>
+                        <property name="wrap_mode">char</property>
                         <property name="label"></property>
                     </object>
                 </child>

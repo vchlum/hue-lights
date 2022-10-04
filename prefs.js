@@ -2257,18 +2257,19 @@ var Prefs = class HuePrefs {
 /* https://linuxhint.com/javascript-hash-function/*/
 function hashMe(string) {
     let hash = 0;
-    if (string.length == 0) return hash;
-    for (let x = 0; x <string.length; x++) {
-    let ch = string.charCodeAt(x);
-            hash = ((hash <<5) - hash) + ch;
-            hash = hash & hash;
-        }
-    return hash;
+
+    if (string.length == 0) {
+        return hash;
     }
 
+    for (let x = 0; x <string.length; x++) {
+        let ch = string.charCodeAt(x);
+        hash = ((hash <<5) - hash) + ch;
+        hash = hash & hash;
+    }
 
-
-
+    return hash;
+}
 
 /**
  * Gets all known connections
@@ -2736,6 +2737,10 @@ const BridgeTab = GObject.registerClass({
                 continue;
             }
 
+            if (notifyLightId.split("::")[0] !== this.bridgeId) {
+                continue;
+            }
+
             this._addedNotificationLights.push(notifyLightId);
 
             let label = _("unknown name");
@@ -2851,10 +2856,18 @@ const BridgeTab = GObject.registerClass({
     _onAddNotifyRegExClicked(button) {
         let title = this._reTitle.text;
         let body = this._reBody.text;
+
+        if (this._notifyLightRegExComboBox.get_active_id() === null) {
+            return;
+        }
+
+        if (title === "" || body === "") {
+            return;
+        }
         
         let hashstring = hashMe(title + body);
         let key = `${this._notifyLightRegExComboBox.get_active_id()}::${hashstring}`;
-        let label = `${this._notifyLightRegExComboBox.get_active_text()} (${title}/${body})`;
+        let label = `${this._notifyLightRegExComboBox.get_active_text()}\n\t(${title}/${body})`;
 
         let value = {'r': 255, 'g': 255, 'b': 255, 'bri': 255};
 
@@ -3412,6 +3425,8 @@ const PrefsWidget = GObject.registerClass({
                     bridgeTab.updateNotifyLightsRegEx(this._notifyLights);
                 }
             );
+            bridgeTab.updateNotifyLightsRegEx(this._notifyLights);
+
             signal = bridgeTab.connect(
                 "remove-bridge",
                 () => {
