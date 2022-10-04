@@ -252,12 +252,8 @@ msgstr "OK"
 msgid "Hold HDMI sync box button"
 msgstr "Držte tlačítko na HDMI sync boxu"
 
-msgid ""
-"While this dialog is shown, hold the button on HDMI sync box\n"
-"until the led blinks green (~3 seconds) and release."
-msgstr ""
-"Zatímco je zobrazeno toto okno, držte tlačítko na HDMI sync boxu\n"
-"dokud neblikne zeleně (~3 sekundy), pak jej uvolněte."
+msgid "While this dialog is shown, hold the button on HDMI sync box until the led blinks green (~3 seconds) and release."
+msgstr "Zatímco je zobrazeno toto okno, držte tlačítko na HDMI sync boxu dokud neblikne zeleně (~3 sekundy), pak jej uvolněte."
 
 msgid "Enter new IP address"
 msgstr "Vložte novou IP adresu"
@@ -318,3 +314,27 @@ msgstr "odpojeno"
 
 msgid "Associated networks"
 msgstr "Přidružené sítě"
+
+msgid "About"
+msgstr "O"
+
+msgid "Caveats"
+msgstr "Upozornění"
+
+msgid "Compact menu as default:"
+msgstr "Nastavit kompaktní nabídku jako výchozí:"
+
+msgid "IP address:"
+msgstr "IP adresa:"
+
+msgid "Select light:"
+msgstr "Vyber světlo:"
+
+msgid "Notification title regex:"
+msgstr "Regularní výraz nadpisu notifikace:"
+
+msgid "Notification body regex:"
+msgstr "Regulární výraz zprávy notifikace:"
+
+msgid "Add"
+msgstr "Přidat"

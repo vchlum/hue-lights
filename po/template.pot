@@ -246,9 +246,7 @@ msgstr ""
 msgid "Hold HDMI sync box button"
 msgstr ""
 
-msgid ""
-"While this dialog is shown, hold the button on HDMI sync box\n"
-"until the led blinks green (~3 seconds) and release."
+msgid "While this dialog is shown, hold the button on HDMI sync box until the led blinks green (~3 seconds) and release."
 msgstr ""
 
 msgid "Enter new IP address"
@@ -309,4 +307,28 @@ msgid "disconnected"
 msgstr ""
 
 msgid "Associated networks"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Caveats"
+msgstr ""
+
+msgid "Compact menu as default:"
+msgstr ""
+
+msgid "IP address:"
+msgstr ""
+
+msgid "Select light:"
+msgstr ""
+
+msgid "Notification title regex:"
+msgstr ""
+
+msgid "Notification body regex:"
+msgstr ""
+
+msgid "Add"
 msgstr ""

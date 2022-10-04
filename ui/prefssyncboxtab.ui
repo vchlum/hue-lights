@@ -31,7 +31,7 @@
                                             <object class="GtkLabel">
                                                 <property name="hexpand">true</property>
                                                 <property name="halign">start</property>
-                                                <property name="label" translatable="yes">IP:</property>
+                                                <property name="label" translatable="yes">IP address:</property>
                                             </object>
                                         </child>
                                         <child>

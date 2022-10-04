@@ -16,7 +16,7 @@
                 <child>
                     <object class="GtkLabel" >
                         <property name="halign">center</property>
-                        <property name="label" translatable="yes">While this dialog is shown, hold the button on HDMI sync box\nuntil the led blinks green (~3 seconds) and release.</property>
+                        <property name="label" translatable="yes">While this dialog is shown, hold the button on HDMI sync box until the led blinks green (~3 seconds) and release.</property>
                     </object>
                 </child>
             </object>      

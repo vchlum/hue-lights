@@ -255,12 +255,8 @@ msgstr "OK"
 msgid "Hold HDMI sync box button"
 msgstr "Knopf auf der HDMI Sync Box drücken"
 
-msgid ""
-"While this dialog is shown, hold the button on HDMI sync box\n"
-"until the led blinks green (~3 seconds) and release."
-msgstr ""
-"Während dieser Dialog angezeigt wird, den Knopf auf der\n"
-"HDMI Sync Box ca. 3 Sekunden drücken, bis die LED grün blinkt."
+msgid "While this dialog is shown, hold the button on HDMI sync box until the led blinks green (~3 seconds) and release."
+msgstr "Während dieser Dialog angezeigt wird, den Knopf auf der HDMI Sync Box ca. 3 Sekunden drücken, bis die LED grün blinkt."
 
 msgid "Enter new IP address"
 msgstr "Neue IP-Adresse eingeben"
@@ -321,3 +317,27 @@ msgstr "nicht verbunden"
 
 msgid "Associated networks"
 msgstr "Zugehörige Netzwerke"
+
+msgid "About"
+msgstr "About"
+
+msgid "Caveats"
+msgstr "Caveats"
+
+msgid "Compact menu as default:"
+msgstr "Compact menu as default:"
+
+msgid "IP address:"
+msgstr "IP Adresse:"
+
+msgid "Select light:"
+msgstr "Select light:"
+
+msgid "Notification title regex:"
+msgstr "Notification title regex:"
+
+msgid "Notification body regex:"
+msgstr "Notification body regex:"
+
+msgid "Add"
+msgstr "Add"
