@@ -496,14 +496,27 @@ const BridgeTab = GObject.registerClass({
                 continue;
             }
 
-            this._addedNotificationLights.push(notifyLightId);
-
             let label = _("unknown name");
+            let isRegex = false;
             for (let key in notifyLights[notifyLightId]) {
                 if (notifyLights[notifyLightId][key] === Utils.NOTIFY_LIGHTS_LABEL) {
                     label = key;
                 }
+
+                if (notifyLights[notifyLightId][key] === Utils.NOTIFY_LIGHTS_REGEX_TITLE) {
+                    isRegex = true;
+                }
+
+                if (notifyLights[notifyLightId][key] === Utils.NOTIFY_LIGHTS_REGEX_BODY) {
+                    isRegex = true;
+                }
             }
+
+            if (!isRegex) {
+                continue;
+            }
+
+            this._addedNotificationLights.push(notifyLightId);
 
             let row = new NotificationLightBoxRow(notifyLightId, label);
             let signal = row.connect(
