@@ -38,6 +38,7 @@ const GLib = imports.gi.GLib;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Config = imports.misc.config;
+const NM = imports.gi.NM;
 
 var HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
 var HUELIGHTS_SETTINGS_FORCE_ENGLISH = "force-english";
@@ -328,6 +329,30 @@ function logDebug(msg) {
  */
  function logError(msg) {
     log(`Hue Lights [error]: ${msg}`)
+}
+
+/**
+ * Gets all known connections
+ * 
+ * @method getConnections
+ * @returns {Object} array of conections
+ */
+ function getConnections() {
+
+    let c = [];
+
+    let client = NM.Client.new(null);
+
+    let connections = client.get_connections();
+    for (let connection of connections) {
+        if (! allowedConnectionTypes.includes(connection.get_connection_type())) {
+            continue;
+        }
+
+        c.push(connection.get_id());
+    }
+
+    return c;
 }
 
 /**
@@ -681,4 +706,27 @@ function string2Hex(s) {
     }
 
     return ret;
+}
+
+/**
+ * Hash function string to number.
+ * https://linuxhint.com/javascript-hash-function/
+ *
+ * @param {String} string to hash
+ * @return {Integer} number
+ */
+function hashMe(string) {
+    let hash = 0;
+
+    if (string.length == 0) {
+        return hash;
+    }
+
+    for (let x = 0; x <string.length; x++) {
+        let ch = string.charCodeAt(x);
+        hash = ((hash <<5) - hash) + ch;
+        hash = hash & hash;
+    }
+
+    return hash;
 }
