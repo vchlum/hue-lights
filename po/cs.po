@@ -331,10 +331,10 @@ msgid "Light selection:"
 msgstr "Výběr světla:"
 
 msgid "Notification title regex:"
-msgstr "Regularní výraz nadpisu notifikace:"
+msgstr "Regularní výraz nadpisu oznámení:"
 
 msgid "Notification body regex:"
-msgstr "Regulární výraz zprávy notifikace:"
+msgstr "Regulární výraz zprávy oznámení:"
 
 msgid "Add"
 msgstr "Přidat"
