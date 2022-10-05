@@ -1081,6 +1081,14 @@ var PhueSyncBoxMenu = GObject.registerClass({
         }
 
         /**
+         * if no device should be connected,
+         * thus we are invisible - we end here
+         */
+        if (!this.visible) {
+            return;
+        }
+
+        /**
          * In case of not getting any response from some bridge
          * within the time
          * this will build menu for bridges that responded so far
