@@ -1,3 +1,8 @@
+## Version 25
+ * new preferences UI
+ * dropping support for Gnome version < 40
+ * possibility to use diferent notification lights based on regex
+ * Hue Play Gradient Strip for PC support
 ## Version 24
  * Fix associated connections
 ## Version 23
