@@ -93,11 +93,13 @@ function discoverBridges3() {
     let msg = Soup.Message.new('GET', "https://discovery.meethue.com/");
 
     try {
-        let data = session.send_and_read(msg, null).get_data();
+        let bytes = session.send_and_read(msg, null);
 
         if (msg.status_code !== Soup.Status.OK) {
             return [];
         }
+
+        let data = ByteArray.toString(bytes.get_data());
 
         let discovered = JSON.parse(data);
 

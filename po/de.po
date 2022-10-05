@@ -330,8 +330,8 @@ msgstr "Compact menu as default:"
 msgid "IP address:"
 msgstr "IP Adresse:"
 
-msgid "Select light:"
-msgstr "Select light:"
+msgid "Light selection:"
+msgstr "Light selection:"
 
 msgid "Notification title regex:"
 msgstr "Notification title regex:"

@@ -472,6 +472,7 @@
                                         <property name="valign">center</property>
                                         <property name="hexpand">True</property>
                                         <property name="wrap">True</property>
+                                        <property name="justify">center</property>
                                     </object>
                                 </child>
                             </object>

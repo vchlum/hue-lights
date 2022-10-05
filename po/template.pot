@@ -321,7 +321,7 @@ msgstr ""
 msgid "IP address:"
 msgstr ""
 
-msgid "Select light:"
+msgid "Light selection:"
 msgstr ""
 
 msgid "Notification title regex:"

@@ -327,8 +327,8 @@ msgstr "Nastavit kompaktní nabídku jako výchozí:"
 msgid "IP address:"
 msgstr "IP adresa:"
 
-msgid "Select light:"
-msgstr "Vyber světlo:"
+msgid "Light selection:"
+msgstr "Výběr světla:"
 
 msgid "Notification title regex:"
 msgstr "Regularní výraz nadpisu notifikace:"
