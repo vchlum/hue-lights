@@ -1,3 +1,6 @@
+## Version 26
+ * address e.g.o comment
+ * prefs: using asynchronous mode by default, not by explicit setting
 ## Version 25
  * new preferences UI
  * dropping support for Gnome version < 40
