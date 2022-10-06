@@ -47,9 +47,6 @@ const Gettext = imports.gettext.domain('hue-lights');
 var _ = Gettext.gettext;
 var forceEnglish = false;
 
-var hue;
-var hueSB;
-
 /**
  * AddBridgeDialog object. Provides dialog window
  * expecting bridge IP address as input.
@@ -1121,9 +1118,6 @@ const PrefsWidget = GObject.registerClass({
 
         this._connectSyncboxRegistration();
 
-        this._hue.enableAsyncMode();
-        this._hueSB.enableAsyncMode();
-
         this._hue.checkBridges();
         this._hueSB.checkSyncBoxes();
 
@@ -1934,9 +1928,6 @@ const PrefsWidget = GObject.registerClass({
 function init() {
 
     ExtensionUtils.initTranslations();
-
-    hue = new Hue.Phue(false);
-    hueSB = new HueSB.PhueSyncBox({async: false});
 }
 
 /**
@@ -1947,5 +1938,8 @@ function init() {
  * @return {Object} returns the prefsWidget
  */
 function buildPrefsWidget() {
+    let hue = new Hue.Phue(true);
+    let hueSB = new HueSB.PhueSyncBox({async: true});
+
     return new PrefsWidget(hue, hueSB);
 }
