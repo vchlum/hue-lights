@@ -557,7 +557,7 @@ var PhueMenu = GObject.registerClass({
         let colorTemperature;
         let cmd = {};
 
-        if (this.bridesData[bridgeid].length === 0) {
+        if (Object.keys(this.bridesData[bridgeid]).length === 0) {
             Utils.logDebug(`Bridge ${bridgeid} has no data.`);
             return;
         }

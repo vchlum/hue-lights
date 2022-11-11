@@ -96,15 +96,21 @@ var PhuePanelMenu = GObject.registerClass({
         this._mainLabel = {};
         this.deviceShouldBeAvailable = {};
 
+        let box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
+
         let icon = new St.Icon({
             gicon : Gio.icon_new_for_string(params.iconFile),
             style_class : 'system-status-icon',
         });
 
+        this.style = `-natural-hpadding: 6px; -minimum-hpadding: 6px;`;
+
         let iconEffect = this._getIconBriConEffect(PhueIconPack.BRIGHT);
         icon.add_effect(iconEffect);
 
-        this.add_child(icon);
+        this._icon = icon;
+        box.add_child(icon);
+        this.add_child(box);
     }
 
     /**
