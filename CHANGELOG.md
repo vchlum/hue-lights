@@ -1,3 +1,6 @@
+## Version 27
+ * fix e.g.o. standards
+ * reduce space around panel icons
 ## Version 26
  * address e.g.o comment
  * prefs: using asynchronous mode by default, not by explicit setting
