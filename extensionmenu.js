@@ -63,12 +63,6 @@ const Shell = imports.gi.Shell;
  */
 let SystemNetwork = Utils.shellVersion < 43 ? Main.panel.statusArea.aggregateMenu._network : Main.panel.statusArea.quickSettings._network;
 
-const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
-
 const StreamState = {
     STOPPED: 0,
     STARTING: 1,
@@ -1174,7 +1168,7 @@ var PhueMenu = GObject.registerClass({
                 }
 
                 let switchItem = new PopupMenu.PopupMenuItem(
-                    _("Switch to") + ` ${this.bridesData[bridgeid]["config"]["name"]}`
+                    this._("Switch to") + ` ${this.bridesData[bridgeid]["config"]["name"]}`
                 )
 
                 if (this._iconPack !== PhuePanelMenu.PhueIconPack.NONE) {
@@ -1626,7 +1620,7 @@ var PhueMenu = GObject.registerClass({
          */
         if (groupid !== null) {
             light = new PopupMenu.PopupMenuItem(
-                _("All Lights")
+                this._("All Lights")
             );
         } else {
             light = new PopupMenu.PopupMenuItem(
@@ -1950,7 +1944,7 @@ var PhueMenu = GObject.registerClass({
         let groupName = "";
 
         if (groupid === "0") {
-            groupName = _("All Rooms & Zones");
+            groupName = this._("All Rooms & Zones");
         } else {
             groupName = this.bridesData[bridgeid]["groups"][groupid]["name"];
         }
@@ -2072,7 +2066,7 @@ var PhueMenu = GObject.registerClass({
 
         this._compactMenuBridges[bridgeid]["control"]["object"].menu.removeAll();
 
-        this._compactMenuBridges[bridgeid]["control"]["object"].label.text = _("Color & Temperature");
+        this._compactMenuBridges[bridgeid]["control"]["object"].label.text = this._("Color & Temperature");
 
         let controlItem = new PopupMenu.PopupMenuItem("");
         controlItem.x_align = Clutter.ActorAlign.CENTER;
@@ -2319,7 +2313,7 @@ var PhueMenu = GObject.registerClass({
 
             this._compactMenuBridges[bridgeid]["lights"]["icon"] = lightIcon;
 
-            this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = _("All Lights");
+            this._compactMenuBridges[bridgeid]["lights"]["object"].label.text = this._("All Lights");
 
             if (this._menuSelected[bridgeid]["groupid"] !== undefined &&
                 this._menuSelected[bridgeid]["groupid"] !== 0) {
@@ -2706,7 +2700,7 @@ var PhueMenu = GObject.registerClass({
         this._compactMenuBridges[bridgeid] = {};
 
         let groupsSubMenu = new PopupMenu.PopupSubMenuMenuItem(
-            _("No group selected")
+            this._("No group selected")
         );
 
         /* disable closing menu on item activated */
@@ -2804,7 +2798,7 @@ var PhueMenu = GObject.registerClass({
      */
     _createCompactMenuLights(bridgeid, data) {
         let lightsSubMenu = new PopupMenu.PopupSubMenuMenuItem(
-            _("No light selected")
+            this._("No light selected")
         );
 
         /* disable closing menu on item activated */
@@ -2858,7 +2852,7 @@ var PhueMenu = GObject.registerClass({
      */
     _createCompactMenuScenes(bridgeid, data) {
         let scenesSubMenu = new PopupMenu.PopupSubMenuMenuItem(
-            _("Scenes")
+            this._("Scenes")
         );
 
         /* disable closing menu on item activated */
@@ -2892,7 +2886,7 @@ var PhueMenu = GObject.registerClass({
 
             scenesSubMenu.menu.addMenuItem(
                 new PopupMenu.PopupMenuItem(
-                    _("No group selected")
+                    this._("No group selected")
                 )
             );
 
@@ -2919,7 +2913,7 @@ var PhueMenu = GObject.registerClass({
 
     _createCompactMenuControl(bridgeid, data) {
         let controlSubMenu = new PopupMenu.PopupSubMenuMenuItem(
-            _("Color & Temperature")
+            this._("Color & Temperature")
         );
 
         /* disable closing menu on item activated */
@@ -3196,9 +3190,9 @@ var PhueMenu = GObject.registerClass({
                     monitorRectangle.height
                 ];
 
-                serviceLabel = _("Display") + ` ${i + 1} (${displayGeometry[2]}x${displayGeometry[3]})`;
+                serviceLabel = this._("Display") + ` ${i + 1} (${displayGeometry[2]}x${displayGeometry[3]})`;
             } else {
-                serviceLabel = _(Utils.entertainmentModeText[service]);
+                serviceLabel = this._(Utils.entertainmentModeText[service]);
             }
 
             let serviceItem = new PopupMenu.PopupMenuItem(
@@ -3299,7 +3293,7 @@ var PhueMenu = GObject.registerClass({
          * Refresh desplays item
          */
         let refreshMenuItem = new PopupMenu.PopupMenuItem(
-            _("Refresh displays")
+            this._("Refresh displays")
         );
 
         if (this._iconPack !== PhuePanelMenu.PhueIconPack.NONE) {
@@ -3383,7 +3377,7 @@ var PhueMenu = GObject.registerClass({
         }
 
         entertainmentMainItem = new PopupMenu.PopupSubMenuMenuItem(
-            _("Entertainment areas")
+            this._("Entertainment areas")
         );
 
         /* disable closing menu on item activated */
@@ -3427,14 +3421,14 @@ var PhueMenu = GObject.registerClass({
 
         let entertainmentIntensityItem = this._createEntertainmentSliderItem(
             bridgeid,
-            _("Intensity"),
+            this._("Intensity"),
             ((255 - this._isStreaming[bridgeid]["intensity"] - 40)) / 100
         );
         entertainmentMainItem.menu.addMenuItem(entertainmentIntensityItem);
 
         let entertainmentBrightnessItem = this._createEntertainmentSliderItem(
             bridgeid,
-            _("Brightness"),
+            this._("Brightness"),
             this._isStreaming[bridgeid]["brightness"] / 255
         );
         entertainmentMainItem.menu.addMenuItem(entertainmentBrightnessItem);
@@ -3465,7 +3459,7 @@ var PhueMenu = GObject.registerClass({
         }
 
         entertainmentModeItem = new PopupMenu.PopupSubMenuMenuItem(
-            _("Entertainment mode")
+            this._("Entertainment mode")
         );
 
         /* disable closing menu on item activated */
@@ -3865,8 +3859,8 @@ var PhueMenu = GObject.registerClass({
 
         if (!this.hue.instances[bridgeid].isConnected()) {
             Main.notify(
-                "Hue Lights - " + _("key shortcut") + ": " + this._syncSelectionKeyShortcut,
-                _("Please check the connection to Philips Hue bridge.")
+                "Hue Lights - " + this._("key shortcut") + ": " + this._syncSelectionKeyShortcut,
+                this._("Please check the connection to Philips Hue bridge.")
             );
 
             return;
@@ -3877,8 +3871,8 @@ var PhueMenu = GObject.registerClass({
         if (this._isStreaming[bridgeid]["state"] === StreamState.RUNNING) {
             if (this._isStreaming[bridgeid]["groupid"] !== groupid) {
                 Main.notify(
-                    "Hue Lights - " + _("key shortcut") + ": " + this._syncSelectionKeyShortcut,
-                    _("Disable previous entertainment area.")
+                    "Hue Lights - " + this._("key shortcut") + ": " + this._syncSelectionKeyShortcut,
+                    this._("Disable previous entertainment area.")
                 );
 
                 Utils.logDebug(`Entertainment group ${this._isStreaming[bridgeid]["groupid"]} is already streaming.`);
@@ -3942,7 +3936,7 @@ var PhueMenu = GObject.registerClass({
 
             Main.notify(
                 "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                _("Please remove Philips Hue bridge and connect it again.")
+                this._("Please remove Philips Hue bridge and connect it again.")
             );
 
             Utils.logDebug("Client key not available");
@@ -4155,7 +4149,7 @@ var PhueMenu = GObject.registerClass({
 
         value = this.hue.bridges[bridgeid]["name"];
         if (! this.hue.instances[bridgeid].isConnected()) {
-            value = value + " - " + _("disconnected");
+            value = value + " - " + this._("disconnected");
         }
 
         this._mainLabel[bridgeid].text = value;
@@ -4401,7 +4395,7 @@ var PhueMenu = GObject.registerClass({
 
                 case "entertainment-label":
 
-                    object.text = _("Entertainment areas");
+                    object.text = this._("Entertainment areas");
 
                     if (this.bridesData[bridgeid]["groups"] === undefined) {
                         break;
@@ -4413,7 +4407,7 @@ var PhueMenu = GObject.registerClass({
                         }
 
                         if (this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
-                            object.text = `${this.bridesData[bridgeid]["groups"][groupid]["name"]} ` + _("is syncing");
+                            object.text = `${this.bridesData[bridgeid]["groups"][groupid]["name"]} ` + this._("is syncing");
                         }
                     }
 
@@ -4443,7 +4437,7 @@ var PhueMenu = GObject.registerClass({
 
                 case "entertainment-mode-label":
 
-                    object.text = _("Entertainment mode");
+                    object.text = this._("Entertainment mode");
 
                     if (this._isStreaming[bridgeid] === undefined) {
                         break;
@@ -4466,7 +4460,7 @@ var PhueMenu = GObject.registerClass({
                         additionlLabel = ` ${monitorN + 1} (${w}x${h})`;
                     }
 
-                    object.text = _("Sync") + " " + _(Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]) + " " + additionlLabel;
+                    object.text = this._("Sync") + " " + this._(Utils.entertainmentModeText[this._isStreaming[bridgeid]["entertainmentMode"]]) + " " + additionlLabel;
 
                     break;
 
@@ -4519,7 +4513,7 @@ var PhueMenu = GObject.registerClass({
 
                 case "entertainment-default-selection-label":
 
-                    object.text = _("Set shortcut for") + " " + _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
+                    object.text = this._("Set shortcut for") + " " + this._(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
 
                     if (this._syncSelectionDefault !== {}) {
                         bridgeid = this._syncSelectionDefault["bridgeid"];
@@ -4531,8 +4525,8 @@ var PhueMenu = GObject.registerClass({
 
                         let bridgeName = this.bridesData[bridgeid]["config"]["name"];
                         let groupName = this.bridesData[bridgeid]["groups"][groupid]["name"]
-                        object.text = _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
-                        object.text = object.text + " " + _("shortcut");
+                        object.text = this._(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION]);
+                        object.text = object.text + " " + this._("shortcut");
                         object.text = object.text + `: ${bridgeName}-${groupName}`;
                         object.text = object.text + ` (${this._syncSelectionKeyShortcut})`;
                     }
@@ -4709,7 +4703,7 @@ var PhueMenu = GObject.registerClass({
 
                 Main.notify(
                     "Hue Lights - " + this.hue.bridges[bridgeid]["name"],
-                    _("Another app is already using the entertainment areas.")
+                    this._("Another app is already using the entertainment areas.")
                 );
                 return true;
             }
@@ -4933,10 +4927,10 @@ var PhueMenu = GObject.registerClass({
              */
             let swichMenuText;
             if (this._compactMenu) {
-                swichMenuText = _("Switch to standard menu");
+                swichMenuText = this._("Switch to standard menu");
             }
             if (!this._compactMenu) {
-                swichMenuText = _("Switch to compact menu");
+                swichMenuText = this._("Switch to compact menu");
             }
             let switchMenuItem = new PopupMenu.PopupMenuItem(
                 swichMenuText
@@ -4995,12 +4989,15 @@ var PhueMenu = GObject.registerClass({
              * the first menu closes and without the timer I would open
              * different menu instad
              */
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
                 if (this._lastOpenedMenu["opening"] !== null) {
                     this._lastOpenedMenu["opening"].open(true);
                     this._lastOpenedMenu["opening"] = null;
                 }
+
+                this._timers = Utils.removeFromArray(this._timers, timerId);
             });
+            this._timers.push(timerId);
         }
 
         if (!isOpen) {
@@ -5053,7 +5050,7 @@ var PhueMenu = GObject.registerClass({
          * this will build menu for bridges that responded so far
          */
         let timeout = (this._connectionTimeout + 1) * 1000;
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
             if (this._rebuildingMenu) {
                 Utils.logDebug("Not all bridges responded. Rebuilding menu anyway.");
 
@@ -5061,8 +5058,11 @@ var PhueMenu = GObject.registerClass({
                 this._rebuildingMenuRes = {};
 
                 this._rebuildMenu();
+
+                this._timers = Utils.removeFromArray(this._timers, timerId);
             }
         });
+        this._timers.push(timerId);
 
         this.hue.checkBridges(false);
 
@@ -5167,8 +5167,8 @@ var PhueMenu = GObject.registerClass({
                     );
                 } else {
                     Main.notify(
-                        "Hue Lights - " +_("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
-                        _("Set the shortcut for sync") + " " + _(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION])
+                        "Hue Lights - " + this._("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
+                        this._("Set the shortcut for sync") + " " + this._(Utils.entertainmentModeText[Utils.entertainmentMode.SELECTION])
                     );
                 }
             }
@@ -5202,7 +5202,7 @@ var PhueMenu = GObject.registerClass({
 
         let groupSelector = new ModalSelector.ModalSelector({
             options: groupsForSelection,
-            label: _("Select an entertainment area:")
+            label: this._("Select an entertainment area:")
         });
         groupSelector.show();
         groupSelector.newPosition();
@@ -5234,8 +5234,8 @@ var PhueMenu = GObject.registerClass({
 
         if (Object.keys(bridgesInMenu).length === 0) {
             Main.notify(
-                "Hue Lights - " +_("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
-                _("No bridge connected.")
+                "Hue Lights - " +this._("key shortcut") + ": "+ this._syncSelectionKeyShortcut,
+                this._("No bridge connected.")
             );
             return;
         }
@@ -5247,7 +5247,7 @@ var PhueMenu = GObject.registerClass({
 
         let bridgeSelector = new ModalSelector.ModalSelector({
             options: bridgesInMenu,
-            label: _("Select a bridge:")
+            label: this._("Select a bridge:")
         });
         bridgeSelector.show();
         bridgeSelector.newPosition();
@@ -5528,5 +5528,25 @@ var PhueMenu = GObject.registerClass({
             },
             1000
         ]);
+    }
+
+    /**
+     * Remove timers created by GLib.timeout_add
+     * 
+     * @method disarmTimers
+     */
+    disarmTimers() {
+        super.disarmTimers()
+
+        for (let bridgeid in this.hue.instances) {
+            if (this._notificationQueues[bridgeid] !== undefined) {
+                this._notificationQueues[bridgeid].disarmTimers();
+            }
+
+            if (this._isStreaming[bridgeid] !== undefined &&
+                this._isStreaming[bridgeid]["entertainment"] !== undefined) {
+                    this._isStreaming[bridgeid]["entertainment"].disarmTimers();
+                }
+        }
     }
 });

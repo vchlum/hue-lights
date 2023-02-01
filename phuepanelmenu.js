@@ -46,10 +46,7 @@ const Main = imports.ui.main;
 const GLib = imports.gi.GLib;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+const __ = Gettext.gettext;
 
 const PhueMenuPosition = {
     CENTER: 0,
@@ -89,6 +86,9 @@ var PhuePanelMenu = GObject.registerClass({
 
         super._init(0.0, Me.metadata.name, false);
 
+        this._ = Utils.checkGettextEnglish(__);
+
+        this._timers = [];
         this._signals = {};
         this._rebuildingMenu = false;
         this.refreshMenuObjects = {};
@@ -516,6 +516,21 @@ var PhuePanelMenu = GObject.registerClass({
     }
 
     /**
+     * Remove timers created by GLib.timeout_add
+     * 
+     * @method disarmTimers
+     */
+    disarmTimers() {
+        for (let t of this._timers) {
+            if (t) {
+                GLib.Source.remove(t);
+            }
+        }
+
+        this._timers = [];
+    }
+
+    /**
      * Disconect signals
      * 
      * @method disconnectSignals
@@ -558,7 +573,7 @@ var PhuePanelMenu = GObject.registerClass({
          * Refresh menu item
          */
          let refreshMenuItem = new PopupMenu.PopupMenuItem(
-            _("Refresh menu")
+            this._("Refresh menu")
         );
 
         if (this._iconPack !== PhueIconPack.NONE) {
@@ -583,7 +598,7 @@ var PhuePanelMenu = GObject.registerClass({
          * Settings menu item
          */
         let prefsMenuItem = new PopupMenu.PopupMenuItem(
-            _("Settings")
+            this._("Settings")
         );
 
         if (this._iconPack !== PhueIconPack.NONE) {

@@ -43,10 +43,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Utils = Me.imports.utils;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+const __ = Gettext.gettext;
 
 /**
  * ModalSelector class. Modal dialog for selecting an option.
@@ -76,6 +73,8 @@ const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
 
         super._init();
 
+        this._ = Utils.checkGettextEnglish(__);
+
         let label;
         let button;
         let signal;
@@ -87,7 +86,7 @@ const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
             : this.dialogLayout;
 
         this.setButtons([{
-            label: _("Cancel"),
+            label: this._("Cancel"),
             action: () => {
                 this.emit("canceled");
                 this.disconnectSignals();

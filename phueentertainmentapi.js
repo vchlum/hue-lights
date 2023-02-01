@@ -45,10 +45,7 @@ const PhueScreenshot = Me.imports.phuescreenshot;
 const Utils = Me.imports.utils;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+const __ = Gettext.gettext;
 
 const LightRectangle = {
     WIDTH: 0.3,
@@ -84,8 +81,10 @@ var PhueEntertainment =  GObject.registerClass({
     _init(props={}) {
         super._init(props);
 
-        let signal;
+        this._ = Utils.checkGettextEnglish(__);
 
+        let signal;
+        this._timers = [];
         this.gid = "";
         this.gradient = -1;
         this.intensity = 40;
@@ -313,9 +312,11 @@ var PhueEntertainment =  GObject.registerClass({
 
         await this.promisRandom();
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
             this.doRandom();
+            this._timers = Utils.removeFromArray(this._timers, timerId);
         });
+        this._timers.push(timerId);
     }
 
     /**
@@ -381,9 +382,11 @@ var PhueEntertainment =  GObject.registerClass({
             this.dtls.sendEncrypted(lightsArray);
         }
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
             this.doCursorColor();
+            this._timers = Utils.removeFromArray(this._timers, timerId);
         });
+        this._timers.push(timerId);
     }
 
     /**
@@ -563,9 +566,11 @@ var PhueEntertainment =  GObject.registerClass({
             this.dtls.sendEncrypted(lightsArray);
         }
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, this.intensity, () => {
             this.doSyncSreen(screenRectangle);
+            this._timers = Utils.removeFromArray(this._timers, timerId);
         });
+        this._timers.push(timerId);
     }
 
     /**
@@ -735,8 +740,8 @@ var PhueEntertainment =  GObject.registerClass({
 
         if (screenRectangle === undefined && !this.checkSyncSuitableResolution()) {
             Main.notify(
-                "Hue Lights - " + _("Screen synchronization"),
-                _("Your screen is not a solid rectangle.")
+                "Hue Lights - " + this._("Screen synchronization"),
+                this._("Your screen is not a solid rectangle.")
             );
             this.closeBridge();
             return;
@@ -846,5 +851,20 @@ var PhueEntertainment =  GObject.registerClass({
      */
     stopStreaming() {
         this._doStreaming = false;
+    }
+
+    /**
+     * Remove timers created by GLib.timeout_add
+     * 
+     * @method disarmTimers
+     */
+    disarmTimers() {
+        for (let t of this._timers) {
+            if (t) {
+                GLib.Source.remove(t);
+            }
+        }
+
+        this._timers = [];
     }
 })

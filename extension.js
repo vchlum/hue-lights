@@ -100,11 +100,15 @@ function disable() {
 
     MessageTray.Notification.prototype.createBanner = origCreateBanner;
 
+    hueSyncBoxMenu.disarmTimers();
     hueSyncBoxMenu.disconnectSignals(true);
     hueSyncBoxMenu.destroy();
+    hueSyncBoxMenu = null
 
+    hueLightsMenu.disarmTimers();
     hueLightsMenu.disableKeyShortcuts();
     hueLightsMenu.disableStreams();
     hueLightsMenu.disconnectSignals(true);
     hueLightsMenu.destroy();
+    hueLightsMenu = null
 }

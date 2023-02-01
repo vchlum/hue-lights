@@ -48,10 +48,7 @@ const Params = imports.misc.params;
 const PhueScreenshot = Me.imports.phuescreenshot;
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+const __ = Gettext.gettext;
 
 /**
  * ColorSelectorButton button.
@@ -340,6 +337,8 @@ var ColorPicker =  GObject.registerClass({
 
         super._init();
 
+        this._ = Utils.checkGettextEnglish(__);
+
         this._signals = {};
         let signal;
 
@@ -353,7 +352,7 @@ var ColorPicker =  GObject.registerClass({
         this.b = 0;
 
         this.setButtons([{
-            label: _("Finish"),
+            label: this._("Finish"),
             action: () => {
                 this._colorPickedFinish();
             },

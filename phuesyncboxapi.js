@@ -115,6 +115,7 @@ var PhueSyncBox =  GObject.registerClass({
 
         super._init(props);
 
+        this._timers = [];
         this._syncBoxError = [];
 
         this._appName = "hue-lights";
@@ -560,9 +561,11 @@ var PhueSyncBox =  GObject.registerClass({
 
         Utils.logDebug(`HDMI sync box ${this._ip} registration attempt failed.`);
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
             this._tryRegister(data);
+            this._timers = Utils.removeFromArray(this._timers, timerId);
         });
+        this._timers.push(timerId);
     }
 
     /**
@@ -647,5 +650,20 @@ var PhueSyncBox =  GObject.registerClass({
         if (requestHueType !== PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED) {
             this.emit("connection-problem");
         }
+    }
+
+    /**
+     * Remove timers created by GLib.timeout_add
+     * 
+     * @method disarmTimers
+     */
+    disarmTimers() {
+        for (let t of this._timers) {
+            if (t) {
+                GLib.Source.remove(t);
+            }
+        }
+
+        this._timers = [];
     }
 });

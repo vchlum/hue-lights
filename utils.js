@@ -73,10 +73,7 @@ const [major] = Config.PACKAGE_VERSION.split(".");
 var shellVersion = Number.parseInt(major);
 
 const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+const __ = Gettext.gettext;
 
 var allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
 
@@ -286,14 +283,22 @@ var entertainmentMode = {
 };
 
 var entertainmentModeText = {
-    0: _("Display"),
-    1: _("Screen"),
-    2: _("Selection"),
-    3: _("Track cursor"),
-    4: _("Random")
+    0: "Display",
+    1: "Screen",
+    2: "Selection",
+    3: "Track cursor",
+    4: "Random"
 };
 
 var debug = false;
+
+function checkGettextEnglish(gettext) {
+    let forceEnglish = ExtensionUtils.getSettings(
+        HUELIGHTS_SETTINGS_SCHEMA
+    ).get_boolean(HUELIGHTS_SETTINGS_FORCE_ENGLISH);
+
+    return forceEnglish ? (a) => { return a; } : gettext;
+}
 
 /**
  * Check gnome version
@@ -320,6 +325,12 @@ function logDebug(msg) {
         log(`Hue Lights [debug]: ${msg}`)
     }
 }
+
+function removeFromArray(arr, remove) {
+    return arr.filter(
+        (value) => { return value != remove; }
+    );
+ }
 
 /**
  * Logs error message

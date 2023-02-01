@@ -52,25 +52,19 @@ const GLib = imports.gi.GLib;
  * GNOME <= 42 uses AggregateMenu
  * GNOME >= 43 uses QuickSettings
  */
- let SystemNetwork = Utils.shellVersion < 43 ? Main.panel.statusArea.aggregateMenu._network : Main.panel.statusArea.quickSettings._network;
-
-const Gettext = imports.gettext.domain('hue-lights');
-var forceEnglish = ExtensionUtils.getSettings(
-    Utils.HUELIGHTS_SETTINGS_SCHEMA
-).get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-const _ = forceEnglish ? (a) => { return a; } : Gettext.gettext;
+let SystemNetwork = Utils.shellVersion < 43 ? Main.panel.statusArea.aggregateMenu._network : Main.panel.statusArea.quickSettings._network;
 
 var syncModes = {
-    "game": _("Game"),
-    "video": _("Video"),
-    "music": _("Music"),
+    "game": "Game",
+    "video": "Video",
+    "music": "Music",
 }
 
 var syncIntensity = {
-    "subtle": _("Subtle"),
-    "moderate": _("Moderate"),
-    "high": _("High"),
-    "intense": _("Intense")
+    "subtle": "Subtle",
+    "moderate": "Moderate",
+    "high": "High",
+    "intense": "Intense"
 }
 
 /**
@@ -227,7 +221,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
                 if (this.syncBoxesData[id]["hdmi"][value]["status"] === "unplugged") {
                     Main.notify(
                         "Hue Lights - " + this.syncBoxesData[id]["hdmi"][value]["name"],
-                        _("Device unplugged.")
+                        this._("Device unplugged.")
                     );
                 } else {
                     this.syncBox.instances[id].setHDMISource(value);
@@ -376,7 +370,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
     _createMenuHDMI(id, data) {
 
         let hdmi = new PopupMenu.PopupSubMenuMenuItem(
-            _("Select an HDMI input:")
+            this._("Select an HDMI input:")
         );
 
         /* disable closing menu on item activated */
@@ -505,7 +499,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon;
         let mode = new PopupMenu.PopupSubMenuMenuItem(
-            _("Select a sync mode:")
+            this._("Select a sync mode:")
         );
 
         /* disable closing menu on item activated */
@@ -528,7 +522,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         for (let m in syncModes) {
 
             let item = new PopupMenu.PopupMenuItem(
-                _(syncModes[m])
+                this._(syncModes[m])
             )
 
             item.x_align = Clutter.ActorAlign.FILL;
@@ -606,7 +600,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         let themeContext = St.ThemeContext.get_for_stage(global.stage);
 
         let item = new PopupMenu.PopupMenuItem(
-            _("Brightness") + ":"
+            this._("Brightness") + ":"
         );
 
         item.set_x_align(Clutter.ActorAlign.FILL);
@@ -662,7 +656,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         let icon;
         let intensity = new PopupMenu.PopupSubMenuMenuItem(
-            _("Intensity") + ":"
+            this._("Intensity") + ":"
         );
 
         /* disable closing menu on item activated */
@@ -680,7 +674,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
         for (let i in syncIntensity) {
 
             let item = new PopupMenu.PopupMenuItem(
-                _(syncIntensity[i])
+                this._(syncIntensity[i])
             )
 
             item.x_align = Clutter.ActorAlign.FILL;
@@ -729,7 +723,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
     _createMenuEntertainment(id, data) {
 
         let entertainment = new PopupMenu.PopupSubMenuMenuItem(
-            _("Select an entertainment area:")
+            this._("Select an entertainment area:")
         );
 
         /* disable closing menu on item activated */
@@ -902,7 +896,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
         value = this.syncBox.syncboxes[id]["name"];
         if (! this.syncBox.instances[id].isConnected()) {
-            value = value + " - " + _("disconnected");
+            value = value + " - " + this._("disconnected");
         }
 
         this._mainLabel[id].text = value;
@@ -975,8 +969,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     value = this.syncBoxesData[id]["execution"]["hdmiSource"];
                     value = this.syncBoxesData[id]["hdmi"][value]["lastSyncMode"];
 
-                    if (_(syncModes[value]) !== undefined) {
-                        object.label.text = _(syncModes[value])
+                    if (this._(syncModes[value]) !== undefined) {
+                        object.label.text = this._(syncModes[value])
                     }
 
                     if (this.refreshMenuObjects[syncBoxPath]["icon"] !== null) {
@@ -1024,8 +1018,8 @@ var PhueSyncBoxMenu = GObject.registerClass({
                     value = this.syncBoxesData[id]["execution"]["hdmiSource"];
                     value = this.syncBoxesData[id]["hdmi"][value]["lastSyncMode"];
                     value =  this.syncBoxesData[id]["execution"][value]["intensity"]
-                    if (_(syncIntensity[value]) !== undefined) {
-                        object.label.text = _("Intensity") + ": " + _(syncIntensity[value])
+                    if (this._(syncIntensity[value]) !== undefined) {
+                        object.label.text = this._("Intensity") + ": " + this._(syncIntensity[value])
                     }
 
                     if (this.refreshMenuObjects[syncBoxPath]["icon"] !== null) {
@@ -1094,7 +1088,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
          * this will build menu for bridges that responded so far
          */
         let timeout = (this._connectionTimeoutSB + 1) * 1000;
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
+        let timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
             if (this._rebuildingMenu) {
                 Utils.logDebug("Not all sync boxes responded. Rebuilding menu anyway.");
 
@@ -1103,7 +1097,10 @@ var PhueSyncBoxMenu = GObject.registerClass({
 
                 this._rebuildMenu();
             }
+
+            this._timers = Utils.removeFromArray(this._timers, timerId);
         });
+        this._timers.push(timerId);
 
         this.syncBox.checkSyncBoxes(false);
 
@@ -1186,5 +1183,18 @@ var PhueSyncBoxMenu = GObject.registerClass({
         }
 
         this.refreshMenu();
+    }
+
+    /**
+     * Remove timers created by GLib.timeout_add
+     * 
+     * @method disarmTimers
+     */
+    disarmTimers() {
+        super.disarmTimers()
+
+        for (let i in this.syncBox.instances) {
+            this.syncBox.instances[i].disarmTimers();
+    }
     }
 });
