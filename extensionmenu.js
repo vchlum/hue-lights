@@ -248,18 +248,23 @@ var PhueMenu = GObject.registerClass({
             switch (this.bridesData[bridgeid]["lights"][lightid]["state"]["colormode"]) {
 
                 case "xy":
-                    [tmpR, tmpG, tmpB] = Utils.XYBriToColor(
-                        this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"][0],
-                        this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"][1],
-                        255 /* or value["bri"] */
-                    );
+                    if (this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"] !== undefined) {
+                        [tmpR, tmpG, tmpB] = Utils.XYBriToColor(
+                            this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"][0],
+                            this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"][1],
+                            255 /* or value["bri"] */
+                        );
+                    }
+
                     break;
 
                 case "ct":
-                    let kelvin = Utils.ctToKelvin(
-                        this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"]
-                    );
-                    [tmpR, tmpG, tmpB] = Utils.kelvinToRGB(kelvin);
+                    if (this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"] === undefined) {
+                        let kelvin = Utils.ctToKelvin(
+                            this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"]
+                        );
+                        [tmpR, tmpG, tmpB] = Utils.kelvinToRGB(kelvin);
+                    }
                     break;
 
                 default:
@@ -1460,19 +1465,24 @@ var PhueMenu = GObject.registerClass({
             switch (data["lights"][lightid]["state"]["colormode"]) {
 
                 case "xy":
-                    [r, g, b] = Utils.XYBriToColor(
-                        data["lights"][lightid]["state"]["xy"][0],
-                        data["lights"][lightid]["state"]["xy"][1],
-                        255 /* or data["lights"][lightid]["state"]["bri"] */
-                    );
+                    if (data["lights"][lightid]["state"]["xy"] !== undefined) {
+                        [r, g, b] = Utils.XYBriToColor(
+                            data["lights"][lightid]["state"]["xy"][0],
+                            data["lights"][lightid]["state"]["xy"][1],
+                            255 /* or data["lights"][lightid]["state"]["bri"] */
+                        );
+                    }
 
                     break;
 
                 case "ct":
-                    let kelvin = Utils.ctToKelvin(
-                        data["lights"][lightid]["state"]["ct"]
-                    );
-                    [r, g, b] = Utils.kelvinToRGB(kelvin);
+                    if (data["lights"][lightid]["state"]["ct"] !== undefined) {
+                        let kelvin = Utils.ctToKelvin(
+                            data["lights"][lightid]["state"]["ct"]
+                        );
+                        [r, g, b] = Utils.kelvinToRGB(kelvin);
+                    }
+
                     break;
 
                 default:
@@ -5318,11 +5328,11 @@ var PhueMenu = GObject.registerClass({
 
                 cmd["bri"] = lightState["bri"];
 
-                if (lightState["colormode"] == "ct") {
+                if (lightState["colormode"] == "ct" && lightState["ct"] !== undefined) {
                     cmd["ct"] = lightState["ct"];
                 }
 
-                if (lightState["colormode"] == "xy") {
+                if (lightState["colormode"] == "xy" && lightState["xy"] !== undefined) {
                     cmd["xy"] = lightState["xy"];
                 }
             } else {
