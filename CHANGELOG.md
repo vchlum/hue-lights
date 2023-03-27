@@ -1,3 +1,5 @@
+## Version 28
+ * Gnome 44 support
 ## Version 27
  * fix e.g.o. standards
  * reduce space around panel icons
