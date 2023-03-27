@@ -1,3 +1,5 @@
+## Version 29
+ * increase version
 ## Version 28
  * Gnome 44 support
 ## Version 27
