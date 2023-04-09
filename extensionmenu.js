@@ -237,11 +237,6 @@ var PhueMenu = GObject.registerClass({
                 continue;
             }
 
-            if (this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"] === undefined &&
-                this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"] === undefined) {
-                continue;
-            }
-
             let tmpR = 0;
             let tmpG = 0;
             let tmpB = 0;
@@ -254,21 +249,24 @@ var PhueMenu = GObject.registerClass({
                             this.bridesData[bridgeid]["lights"][lightid]["state"]["xy"][1],
                             255 /* or value["bri"] */
                         );
+                    } else {
+                        continue;
                     }
-
                     break;
 
                 case "ct":
-                    if (this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"] === undefined) {
+                    if (this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"] !== undefined) {
                         let kelvin = Utils.ctToKelvin(
                             this.bridesData[bridgeid]["lights"][lightid]["state"]["ct"]
                         );
                         [tmpR, tmpG, tmpB] = Utils.kelvinToRGB(kelvin);
+                    } else {
+                        continue;
                     }
                     break;
 
                 default:
-                    break;
+                    continue;
             }
 
             r += tmpR;
