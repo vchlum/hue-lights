@@ -1,3 +1,5 @@
+## Version 30
+ * fix black sliders when using color temperature
 ## Version 29
  * increase version
 ## Version 28
