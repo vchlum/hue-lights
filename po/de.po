@@ -341,3 +341,6 @@ msgstr "Notification body regex:"
 
 msgid "Add"
 msgstr "Add"
+
+msgid "Restart"
+msgstr "Neustart"

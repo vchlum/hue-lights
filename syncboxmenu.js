@@ -328,6 +328,7 @@ var PhueSyncBoxMenu = GObject.registerClass({
      * @param {Object} data from the syncbox
      */
     _createSubMenuSyncBox(id, data) {
+        let signal;
 
         let submenu = new PopupMenu.PopupSubMenuMenuItem(
             data["device"]["name"]
@@ -349,9 +350,34 @@ var PhueSyncBoxMenu = GObject.registerClass({
             submenu.get_children().length - 1
         );
 
-        let settingsItems =this._createDefaultSettingsItems(
-            this.rebuildMenuStart.bind(this)
+        let settingsItems = [];
+
+        let restartMenuItem = new PopupMenu.PopupMenuItem(
+            this._("Restart")
         );
+
+        if (this._iconPack !== PhuePanelMenu.PhueIconPack.NONE) {
+            icon = this._getIconByPath(Me.dir.get_path() + "/media/HueIcons/settingsSoftwareUpdate.svg");
+
+            if (icon !== null){
+                restartMenuItem.insert_child_at_index(icon, 1);
+            }
+        }
+
+        signal = restartMenuItem.connect(
+            'button-press-event',
+            () => {
+                this.syncBox.instances[id].restartDevice();
+            }
+        );
+        this._appendSignal(signal, restartMenuItem, true);
+
+        settingsItems.push(restartMenuItem);
+
+        settingsItems = settingsItems.concat(this._createDefaultSettingsItems(
+            this.rebuildMenuStart.bind(this)
+        ));
+
         for (let settingsItem of settingsItems) {
             submenu.menu.addMenuItem(settingsItem);
         }

@@ -601,6 +601,16 @@ var PhueSyncBox =  GObject.registerClass({
     }
 
     /**
+     * Send restart syncbox request.
+     * 
+     * @method restartDevice
+     */
+    restartDevice() {
+        let url = `${this._syncBoxUrl}/device`;
+        return this._syncBoxPUT(url, PhueSyncBoxMsgRequestType.NO_RESPONSE_NEED, {"action": "doSoftwareRestart"})
+    }
+
+    /**
      * True if the last reply of the bridge was OK.
      * 
      * @method isConnected

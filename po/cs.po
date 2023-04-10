@@ -338,3 +338,6 @@ msgstr "Regulární výraz zprávy oznámení:"
 
 msgid "Add"
 msgstr "Přidat"
+
+msgid "Restart"
+msgstr "Restartovat"

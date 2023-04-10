@@ -332,3 +332,6 @@ msgstr ""
 
 msgid "Add"
 msgstr ""
+
+msgid "Restart"
+msgstr ""
