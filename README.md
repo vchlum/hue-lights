@@ -21,7 +21,7 @@ This extension allows controlling Philips Hue HDMI sync box on local network. Yo
 This application makes use of fast changing light effects conditions alone, or in combination with certain content on the screen it may trigger previously undetected epileptic symptoms or seizures in persons who have no history of prior seizures or epilepsy.
 
 ## Supported Gnome Shell version
-This extension supports Gnome Shell verison 40 and above.
+This extension supports Gnome Shell verison 45 and above.
 
 ## Installation from e.g.o
 https://extensions.gnome.org/extension/3737/hue-lights
@@ -30,7 +30,12 @@ https://extensions.gnome.org/extension/3737/hue-lights
 
  1. `git clone https://github.com/vchlum/hue-lights.git`
  1. `cd hue-lights`
- 1. `./release.sh`
- 1. `gnome-extensions install hue-lights@chlumskyvaclav.gmail.com.zip`
+ 1. `make build`
+ 1. `make install`
  1. Log out & Log in
  1. `gnome-extensions enable hue-lights@chlumskyvaclav.gmail.com`
+
+## Install dependencies
+  - These are only required to install from source
+  - `make`
+  - `gnome-shell` (`gnome-extensions` command)

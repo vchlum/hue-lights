@@ -1,0 +1,13 @@
+{
+    "uuid": "hue-lights@chlumskyvaclav.gmail.com",
+    "settings-schema": "org.gnome.shell.extensions.hue-lights",
+    "name": "Hue Lights",
+    "description": "This extension controls Philips Hue compatible lights using Philips Hue Bridge on your local network, it also allows controlling Philips Hue Sync Box. If you are experiencing an error on the upgrade, please log out and log in again.",
+    "version": 30,
+    "original-author": "chlumskyvaclav@gmail.com",
+    "shell-version": [
+      "45"
+    ],
+    "gettext-domain": "hue-lights",
+    "url": "https://github.com/vchlum/hue-lights"
+}

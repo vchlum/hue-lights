@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+	<gresource prefix="/org/gnome/Shell/Extensions/hue-lights">
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefs.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefsbridgeadd.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefsbridgenotfound.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefsbridgetab.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefsnetworkrow.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefsnotificationlightsrow.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefssyncboxadd.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefssyncboxregister.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">ui/prefssyncboxtab.ui</file>
+	</gresource>
+</gresources>

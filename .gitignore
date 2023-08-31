@@ -1,0 +1,8 @@
+hue-lights@chlumskyvaclav.gmail.com.zip
+extension/schemas/gschemas.compiled
+extension/preferences.gresource
+build/
+
+*.po~
+*.ui~
+*.ui#
