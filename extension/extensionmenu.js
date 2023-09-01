@@ -735,58 +735,6 @@ export var PhueMenu = GObject.registerClass({
 
                 break;
 
-            case "color-picker":
-
-                parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
-
-                /* close the main manu */
-                this.menu.close(false);
-
-                if (this.colorPicker[bridgeid] !== undefined) {
-                    this.colorPicker[bridgeid].destroy();
-                    delete(this.colorPicker[bridgeid]);
-                }
-
-                if (this._checkEntertainmentStream(bridgeid, parsedBridgePath)) {
-                    break;
-                }
-
-                let [hasXY, hasCT] = this._checkColorAttributeLightOrGroup(
-                    bridgeid,
-                    parsedBridgePath[1],
-                    parsedBridgePath[2],
-                );
-
-                this.colorPicker[bridgeid] = new ColorPicker.ColorPicker(
-                    this._mainDir,
-                    this._settings,
-                    {
-                        useColorWheel: hasXY,
-                        useWhiteBox: hasCT
-                    }
-                );
-                this.colorPicker[bridgeid].show();
-                this.colorPicker[bridgeid].connect("finish", () => {
-                    delete(this.colorPicker[bridgeid]);
-                });
-
-                let dataColor = Object.assign({}, data);
-                dataColor["type"] = "set-color";
-                this.colorPicker[bridgeid].connect(
-                    "color-picked",
-                    this._menuEventHandler.bind(this, dataColor)
-                );
-
-                let dataBrightness = Object.assign({}, data);
-                dataBrightness["type"] = "brightness-colorpicker";
-                this.colorPicker[bridgeid].connect(
-                    "brightness-picked",
-                    this._menuEventHandler.bind(this, dataBrightness)
-                );
-                this.colorPicker[bridgeid].newPosition();
-
-                break;
-
             case "set-color":
 
                 parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
@@ -1610,7 +1558,7 @@ export var PhueMenu = GObject.registerClass({
      * @param {Number} groupid creates menu item for all lights (not mandatory)
      * @return {Object} menuitem with light controls
      */
-    _createItemLight(bridgeid, data, lightid, groupid, useCompact = false) {
+    _createItemLight(bridgeid, data, lightid, groupid) {
 
         let light;
         let bridgePath = "";
@@ -1658,87 +1606,61 @@ export var PhueMenu = GObject.registerClass({
             light.insert_child_at_index(lightIcon, 1);
         }
 
-        /**
-         * Open color picker on mouse click (standard menu)
-         */
-        if (groupid !== null) {
-            bridgePath = `${this._rndID()}::groups::${groupid}::action::hue`;
-        } else {
-            bridgePath = `${this._rndID()}::lights::${lightid}::state::hue`;
-        }
-
-        if (!useCompact) {
-            light.connect(
-                'activate',
-                this._menuEventHandler.bind(
-                    this,
-                    {
-                        "bridgePath": bridgePath,
-                        "bridgeid": bridgeid,
-                        "object": light,
-                        "type": "color-picker"
-                    }
-                )
-            );
-        }
-
-        if (useCompact) {
-            light.originalActivate = light.activate;
-            light.activate = (event) => {
-                if (!this.hue.instances[bridgeid].isConnected()) {
-                    return light.originalActivate(event);
-                 }
-
-                this._menuSelected[bridgeid] = {
-                    "groupid": this._menuSelected[bridgeid]["groupid"] !== undefined ? this._menuSelected[bridgeid]["groupid"] : groupid,
-                    "lightid": lightid}
-                ;
-                this.writeMenuSelectedSettings();
-
-                this._selectCompactMenuLights(bridgeid, groupid, lightid);
-
-                this._setCompactMenuControl(bridgeid, groupid, lightid);
-
-                /**
-                 * ask for async all data,
-                 * which will invoke refreshMenu
-                 */
-                this.hue.instances[bridgeid].getAll();
-
-                if (this._compactMenuBridges[bridgeid]["control"]["object"].visible) {
-                    this._compactMenuBridges[bridgeid]["control"]["object"].menu.open(true);
-                }
-
-                if (this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] !== undefined) {
-                    this._compactMenuBridges[bridgeid]["lights"]["hidden-item"].visible = true;
-                }
-
-                light.visible = false;
-                this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = light;
-
+        light.originalActivate = light.activate;
+        light.activate = (event) => {
+            if (!this.hue.instances[bridgeid].isConnected()) {
                 return light.originalActivate(event);
             }
 
-            let hiddenLight = false;
+            this._menuSelected[bridgeid] = {
+                "groupid": this._menuSelected[bridgeid]["groupid"] !== undefined ? this._menuSelected[bridgeid]["groupid"] : groupid,
+                "lightid": lightid}
+            ;
+            this.writeMenuSelectedSettings();
 
-            if ((this._menuSelected[bridgeid] !== undefined &&
-                this._menuSelected[bridgeid]["lightid"] !== undefined &&
-                this._menuSelected[bridgeid]["lightid"] === lightid) ||
-                (this._menuSelected[bridgeid] !== undefined &&
-                this._menuSelected[bridgeid]["lightid"] === undefined && groupid !== null)) {
+            this._selectCompactMenuLights(bridgeid, groupid, lightid);
 
-                hiddenLight = true;
+            this._setCompactMenuControl(bridgeid, groupid, lightid);
+
+            /**
+             * ask for async all data,
+             * which will invoke refreshMenu
+             */
+            this.hue.instances[bridgeid].getAll();
+
+            if (this._compactMenuBridges[bridgeid]["control"]["object"].visible) {
+                this._compactMenuBridges[bridgeid]["control"]["object"].menu.open(true);
             }
 
-            if (hiddenLight) {
-                light.visible = false;
-                this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = light;
-                this._compactMenuBridges[bridgeid]["lights"]["default-item"] = light;
+            if (this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] !== undefined) {
+                this._compactMenuBridges[bridgeid]["lights"]["hidden-item"].visible = true;
             }
 
-            if (groupid !== null) {
-                this._compactMenuBridges[bridgeid]["lights"]["all-lights-item"] = light;
-            }
+            light.visible = false;
+            this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = light;
+
+            return light.originalActivate(event);
+        }
+
+        let hiddenLight = false;
+
+        if ((this._menuSelected[bridgeid] !== undefined &&
+            this._menuSelected[bridgeid]["lightid"] !== undefined &&
+            this._menuSelected[bridgeid]["lightid"] === lightid) ||
+            (this._menuSelected[bridgeid] !== undefined &&
+            this._menuSelected[bridgeid]["lightid"] === undefined && groupid !== null)) {
+
+            hiddenLight = true;
+        }
+
+        if (hiddenLight) {
+            light.visible = false;
+            this._compactMenuBridges[bridgeid]["lights"]["hidden-item"] = light;
+            this._compactMenuBridges[bridgeid]["lights"]["default-item"] = light;
+        }
+
+        if (groupid !== null) {
+            this._compactMenuBridges[bridgeid]["lights"]["all-lights-item"] = light;
         }
 
         /**
@@ -1826,10 +1748,9 @@ export var PhueMenu = GObject.registerClass({
      * @param {Object} dictionary data for the bridgeid
      * @param {Number} lightid of created light (not used if groupid provided)
      * @param {Number} groupid creates menu item for all lights (not mandatory)
-     * @param {String} compact specifies scenes or lights (used by compact menu)
      * @return {Object} array of menuitem with light controls
      */
-    _createMenuLights(bridgeid, data, lights, groupid, compact = null) {
+    _createMenuLights(bridgeid, data, lights, groupid) {
 
         let lightsItems = [];
         let light;
@@ -1838,39 +1759,52 @@ export var PhueMenu = GObject.registerClass({
             return [];
         }
 
-        if (compact !== "scenes") {
 
+        light = this._createItemLight(
+            bridgeid,
+            data,
+            lights,
+            groupid
+        );
+        lightsItems.push(light);
+
+        lightsItems = lightsItems.concat(
+            [new PopupMenu.PopupSeparatorMenuItem()]
+        );
+
+        for (let lightid in lights) {
             light = this._createItemLight(
                 bridgeid,
                 data,
-                lights,
-                groupid,
-                compact === "lights" ? true : false
+                parseInt(lights[lightid]),
+                null
             );
             lightsItems.push(light);
-
-            lightsItems = lightsItems.concat(
-                [new PopupMenu.PopupSeparatorMenuItem()]
-            );
-
-            for (let lightid in lights) {
-                light = this._createItemLight(
-                    bridgeid,
-                    data,
-                    parseInt(lights[lightid]),
-                    null,
-                    compact === "lights" ? true : false
-                );
-                lightsItems.push(light);
-            }
         }
 
-        if (this._showScenes && compact !== "lights") {
-            lightsItems = lightsItems.concat(
+        return lightsItems;
+    }
+
+    /**
+     * Creates array of menu item with scenes controls.
+     * 
+     * @method _createMenuScenes
+     * @private
+     * @param {String} bridgeid which bridge we use here
+     * @param {Object} dictionary data for the bridgeid
+     * @param {Number} groupid creates menu item for all lights (not mandatory)
+     * @return {Object} array of menuitem with light controls
+     */
+    _createMenuScenes(bridgeid, data, groupid) {
+
+        let scenesItems = [];
+
+        if (this._showScenes) {
+            scenesItems = scenesItems.concat(
                 this._createScenes(bridgeid, data, groupid)
             );
         }
-        return lightsItems;
+        return scenesItems;
     }
 
     /**
@@ -2178,8 +2112,7 @@ export var PhueMenu = GObject.registerClass({
             bridgeid,
             data,
             data["groups"][groupid]["lights"],
-            groupid,
-            "lights"
+            groupid
         );
         for (let lightItem in lightItems) {
             this._compactMenuBridges[bridgeid]["lights"]["object"].menu.addMenuItem(lightItems[lightItem]);
@@ -2532,12 +2465,10 @@ export var PhueMenu = GObject.registerClass({
                 this._compactMenuBridges[bridgeid]["scenes"]["object"].label.text = scenesName;
             }
 
-            let scenesItems = this._createMenuLights(
+            let scenesItems = this._createMenuScenes(
                 bridgeid,
                 data,
-                data["groups"][groupid]["lights"],
                 groupid,
-                "scenes"
             );
             for (let sceneItem in scenesItems) {
                 this._compactMenuBridges[bridgeid]["scenes"]["object"].menu.addMenuItem(scenesItems[sceneItem]);
@@ -2890,15 +2821,13 @@ export var PhueMenu = GObject.registerClass({
 
         let groupid = this._compactMenuBridges[bridgeid]["selected-group"];
 
-        let lightItems = this._createMenuLights(
+        let sceneItems = this._createMenuScenes(
             bridgeid,
             data,
-            data["groups"][groupid]["lights"],
             groupid,
-            "scenes"
         );
-        for (let lightItem in lightItems) {
-            scenesSubMenu.menu.addMenuItem(lightItems[lightItem]);
+        for (let sceneItem in sceneItems) {
+            scenesSubMenu.menu.addMenuItem(sceneItems[sceneItem]);
         }
 
         return scenesSubMenu;
