@@ -45,13 +45,13 @@ export default class HueLightsPreferences extends ExtensionPreferences {
         const resource = Gio.Resource.load(GLib.build_filenamev([this.path, 'preferences.gresource']));
         Gio.resources_register(resource);
 
-        window.set_default_size(720, 480);
+        window.set_default_size(860, 520);
 
-        const dummyPage = new Adw.PreferencesPage();
-        window.add(dummyPage);
+        const tmpPage = new Adw.PreferencesPage();
+        window.add(tmpPage);
 
         import('./prefspage.js').then((prefspage) => {
-            window.remove(dummyPage);
+            window.remove(tmpPage);
             let hue = new Hue.Phue(true);
             let hueSB = new HueSB.PhueSyncBox(this.dir, {async: true});
             let prefs = new prefspage.PreferencesPage(

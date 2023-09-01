@@ -1078,7 +1078,6 @@ export const PreferencesPage = GObject.registerClass({
         'iconPackComboBox',
         'zonesFirstSwitch',
         'showScenesSwitch',
-        'compactMenuSwitch',
         'forceEnglishSwitch',
         'connectionTimeoutBridgeComboBox',
         'connectionTimeoutSyncboxComboBox',
@@ -1140,7 +1139,6 @@ export const PreferencesPage = GObject.registerClass({
         this._zonesFirst = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_ZONESFIRST);
         this._showScenes = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_SHOWSCENES);
         this._forceEnglish = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_FORCE_ENGLISH);
-        this._compactMenu = this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_COMPACTMENU);
         this._connectionTimeout = this._settings.get_int(Utils.HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT);
         Utils.setDebug(this._settings.get_boolean(Utils.HUELIGHTS_SETTINGS_DEBUG));
         this._notifyLights = this._settings.get_value(Utils.HUELIGHTS_SETTINGS_NOTIFY_LIGHTS).deep_unpack();
@@ -1758,7 +1756,6 @@ export const PreferencesPage = GObject.registerClass({
         this._iconPackComboBox.set_active(this._iconPack);
         this._zonesFirstSwitch.set_active(this._zonesFirst);
         this._showScenesSwitch.set_active(this._showScenes);
-        this._compactMenuSwitch.set_active(this._compactMenu);
         this._forceEnglishSwitch.set_active(this._forceEnglish);
     }
 
@@ -1823,22 +1820,6 @@ export const PreferencesPage = GObject.registerClass({
         this._settings.set_boolean(
             Utils.HUELIGHTS_SETTINGS_SHOWSCENES,
             this._showScenes
-        );
-    }
-
-    /**
-     * Switch handler of using comact menu as default.
-     * The value is stored in settings.
-     * 
-     * @method _compactMenuNotifyActive
-     * @private
-     * @param {Object} switch
-     */
-    _compactMenuNotifyActive(compactMenuSwitch) {
-        this._compactMenu = compactMenuSwitch.get_active();
-        this._settings.set_boolean(
-            Utils.HUELIGHTS_SETTINGS_COMPACTMENU,
-            this._compactMenu
         );
     }
 

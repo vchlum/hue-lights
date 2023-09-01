@@ -42,7 +42,6 @@ export var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
 export var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
 export var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
 export var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
-export var HUELIGHTS_SETTINGS_COMPACTMENU = "compact-menu";
 export var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
 export var HUELIGHTS_SETTINGS_DEBUG = "debug";
 export var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";

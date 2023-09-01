@@ -392,19 +392,6 @@ export var PhuePanelMenu = GObject.registerClass({
         }
 
         /**
-         * this._compactMenu needs rebuild
-         */
-        tmpVal = this._compactMenu;
-
-        this._compactMenu = this._settings.get_boolean(
-            Utils.HUELIGHTS_SETTINGS_COMPACTMENU
-        );
-
-        if (tmpVal !== this._compactMenu) {
-            menuNeedsRebuild = true;
-        }
-
-        /**
          * debug doesn't need rebuild
          */
         Utils.setDebug(this._settings.get_boolean(
