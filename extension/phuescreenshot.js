@@ -86,7 +86,7 @@ export var PhueScreenshot =  GObject.registerClass({
                     reject();
                 });
             } catch(e) {
-                logError(e, "Failed to get pixel from screenshot.");
+                console.error("Failed to get pixel from screenshot.");
             }
         });
     }

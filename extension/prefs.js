@@ -63,6 +63,9 @@ export default class HueLightsPreferences extends ExtensionPreferences {
                 this.path
             );
             window.add(prefs);
+        }).catch(err => {
+            console.error(err.message);
+            console.error(err.stack);
         });
     }
 }

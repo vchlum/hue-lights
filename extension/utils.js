@@ -312,7 +312,7 @@ export function isGnome40() {
  */
 export function logDebug(msg) {
     if (_debug) {
-        log(`Hue Lights [debug]: ${msg}`)
+        console.log(`Hue Lights [debug]: ${msg}`)
     }
 }
 
@@ -329,7 +329,7 @@ export function removeFromArray(arr, remove) {
  * @param {String} meassage to print
  */
 export function logError(msg) {
-    log(`Hue Lights [error]: ${msg}`)
+    console.error(`Hue Lights [error]: ${msg}`)
 }
 
 /**
