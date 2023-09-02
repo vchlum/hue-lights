@@ -45,7 +45,7 @@ export default class HueLightsPreferences extends ExtensionPreferences {
         const resource = Gio.Resource.load(GLib.build_filenamev([this.path, 'preferences.gresource']));
         Gio.resources_register(resource);
 
-        window.set_default_size(860, 520);
+        window.set_default_size(860, 580);
 
         const tmpPage = new Adw.PreferencesPage();
         window.add(tmpPage);

@@ -120,6 +120,8 @@ export function discoverBridges3() {
             }
 
             if (bridge["mac"] !== undefined) {
+                discovered[i]["name"] = bridge["name"];
+                discovered[i]["mac"] = bridge["mac"];
                 bridges.push(discovered[i]);
             }
         }

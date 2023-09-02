@@ -230,7 +230,11 @@ class _Phue {
                 }
 
             } else {
-                this.bridges[bridgeid] = {"ip":discovered[i]["internalipaddress"]};
+                this.bridges[bridgeid] = {
+                    "ip":discovered[i]["internalipaddress"],
+                    "name":discovered[i]["name"],
+                    "mac":discovered[i]["mac"]
+                };
             }
         }
 
