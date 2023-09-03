@@ -537,9 +537,6 @@ export var PhueBridge =  GObject.registerClass({
      * @return {Object} JSON with response
      */
     _requestJson(method, url, requestHueType, data) {
-
-        let outputData;
-
         Utils.logDebug(`Bridge ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
 
         let msg = PhueMessage.new(method, url);
@@ -574,7 +571,7 @@ export var PhueBridge =  GObject.registerClass({
         }
 
         try {
-            outputData = this._bridgeSession.send_and_read(msg, null).get_data();
+            const bytes = this._bridgeSession.send_and_read(msg, null);
 
             if (msg.status_code !== Soup.Status.OK) {
                 Utils.logDebug(`Bridge sync-respond to ${url} ended with status: ${msg.status_code}`);
@@ -582,7 +579,10 @@ export var PhueBridge =  GObject.registerClass({
                 return [];
             }
 
-            this._data = JSON.parse(outputData);
+            let decoder = new TextDecoder();
+            let responseData = decoder.decode(bytes.get_data());
+
+            this._data = JSON.parse(responseData);
             this._bridgeConnected = true;
         } catch(e) {
             Utils.logError(`Bridge sync-respond to ${url} failed: ${e}`);
