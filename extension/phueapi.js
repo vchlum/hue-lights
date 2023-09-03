@@ -41,48 +41,12 @@ import GObject from 'gi://GObject';
 import * as Utils from './utils.js';
 
 /**
-  * Check all bridges in the local network.
-  * 
-  * @method discoverBridges
-  * @return {Object} dictionary with bridges in local network
-  */
-export function discoverBridges() {
-
-    if (Soup.MAJOR_VERSION >= 3) {
-        return discoverBridges3();
-    }
-
-    let bridges = [];
-    let session = Soup.Session.new();
-    session.timeout = 3;
-
-    let message = Soup.Message.new('GET', "https://discovery.meethue.com/");
-    let statusCode = session.send_message(message);
-
-    if (statusCode === Soup.Status.OK) {
-        let discovered = JSON.parse(message.response_body.data);
-
-        for (let i in discovered) {
-            message = Soup.Message.new('GET', `http://${discovered[i]["internalipaddress"]}/api/config`);
-            statusCode = session.send_message(message);
-            if (statusCode === Soup.Status.OK &&
-                JSON.parse(message.response_body.data)["mac"] !== undefined) {
-
-                bridges.push(discovered[i]);
-            }
-        }
-    }
-
-    return bridges;
-}
-
-/**
   * Check all bridges in the local network using libsoup3.
   * 
   * @method discoverBridges
   * @return {Object} dictionary with bridges in local network
   */
-export function discoverBridges3() {
+export function discoverBridges() {
     let bridges = [];
     let session = Soup.Session.new();
     session.timeout = 3;
@@ -505,7 +469,7 @@ export var PhueBridge =  GObject.registerClass({
      * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
-    _requestJson3(method, url, requestHueType, data) {
+    _requestJson(method, url, requestHueType, data) {
 
         let outputData;
 
@@ -557,67 +521,6 @@ export var PhueBridge =  GObject.registerClass({
             Utils.logError(`Bridge sync-respond to ${url} failed: ${e}`);
             this._bridgeConnected = false;
             return [];
-        }
-
-        return this._data;
-    }
-
-    /**
-     * Process url request to the bridge.
-     * 
-     * @method _requestJson
-     * @private
-     * @param {String} method to be used like POST, PUT, GET
-     * @param {String} url to be requested
-     * @param {Object} request hue type
-     * @param {Object} JSON input data in case of supported method
-     * @return {Object} JSON with response
-     */
-    _requestJson(method, url, requestHueType, data) {
-
-        if (Soup.MAJOR_VERSION >= 3) {
-            return this._requestJson3(method, url, requestHueType, data);
-        }
-
-        Utils.logDebug(`Bridge ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
-
-        let msg = PhueMessage.new(method, url);
-
-        msg.requestHueType = requestHueType;
-
-        if (data !== null) {
-            data = JSON.stringify(data);
-            msg.set_request("application/gnome-extension", 2, data);
-        } else {
-            msg.set_request("application/gnome-extension", 2, "");
-        }
-
-        if (this._asyncRequest) {
-            this._data = [];
-
-            this._bridgeSession.queue_message(msg, (sess, mess) => {
-                if (mess.status_code === Soup.Status.OK) {
-                    this._responseJsonParse(method, url, requestHueType, mess.response_body.data);
-                } else {
-                    this._connectionProblem(requestHueType);
-                }
-            });
-
-            return []
-        }
-
-        let statusCode = this._bridgeSession.send_message(msg);
-        if (statusCode === Soup.Status.OK) {
-
-            Utils.logDebug(`Bridge ${method} sync-responded OK to url: ${url}`);
-
-            try {
-                this._bridgeConnected = true;
-                this._data = JSON.parse(msg.response_body.data);
-            } catch {
-                Utils.logError(`Bridge ${method} sync-respond, failed to parse JSON`);
-                return [];
-            }
         }
 
         return this._data;
@@ -1147,74 +1050,42 @@ export var PhueBridge =  GObject.registerClass({
 
         this._eventStreamMsg = msg;
 
-        if (Soup.MAJOR_VERSION >= 3) {
-            this._eventStreamSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
-                switch (msg.get_status()) {
-                    case Soup.Status.NONE:
-                        Utils.logDebug(`Event stream ${this._eventStreamUrl} message none`);
-                        break;
-                    case Soup.Status.OK:
-                        const bytes = this._eventStreamSession.send_and_read_finish(res);
-                        let decoder = new TextDecoder();
-                        let responseData = decoder.decode(bytes.get_data());
+        this._eventStreamSession.send_and_read_async(msg, Soup.MessagePriority.NORMAL, null, (sess, res) => {
+            switch (msg.get_status()) {
+                case Soup.Status.NONE:
+                    Utils.logDebug(`Event stream ${this._eventStreamUrl} message none`);
+                    break;
+                case Soup.Status.OK:
+                    const bytes = this._eventStreamSession.send_and_read_finish(res);
+                    let decoder = new TextDecoder();
+                    let responseData = decoder.decode(bytes.get_data());
 
-                        this._eventStreamMsg = null;
-                        try {
-                            this._eventStreamData = JSON.parse(responseData);
+                    this._eventStreamMsg = null;
+                    try {
+                        this._eventStreamData = JSON.parse(responseData);
 
-                            this.emit("event-stream-data");
-                        } catch {
-                            Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
-                            this._eventStreamData = [];
-                        }
-
-                        this._requestEventStream();
-                        break;
-
-                    case Soup.Status.CANCELLED:
-                        /* event stream already disabled - this is what left from the msg, do nothing*/
-                        Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
-                        return;
-                        break;
-
-                    default:
-                        this._eventStreamMsg = null;
-                        Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${msg.get_status()}: ${msg.get_reason_phrase()}`);
+                        this.emit("event-stream-data");
+                    } catch {
+                        Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
                         this._eventStreamData = [];
-                        break;
-                }
-            });
-        } else {
-            this._eventStreamSession.queue_message(msg, (sess, mess) => {
-                switch(mess.status_code) {
-                    case Soup.Status.OK:
-                        this._eventStreamMsg = null;
-                        try {
-                            this._eventStreamData = JSON.parse(mess.response_body.data);
+                    }
 
-                            this.emit("event-stream-data");
-                        } catch {
-                            Utils.logError(`Event stream ${this._eventStreamUrl} data problem - failed to parse JSON`);
-                            this._eventStreamData = [];
-                        }
+                    this._requestEventStream();
+                    break;
 
-                        this._requestEventStream();
-                        break;
+                case Soup.Status.CANCELLED:
+                    /* event stream already disabled - this is what left from the msg, do nothing*/
+                    Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
+                    return;
+                    break;
 
-                    case Soup.Status.CANCELLED:
-                        /* event stream already disabled - this is what left from the msg, do nothing*/
-                        Utils.logDebug(`Event stream ${this._eventStreamUrl} cancelled`);
-                        return;
-                        break;
-
-                    default:
-                        this._eventStreamMsg = null;
-                        Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${mess.status_code}`);
-                        this._eventStreamData = [];
-                        break;
-                }
-            })
-        }
+                default:
+                    this._eventStreamMsg = null;
+                    Utils.logDebug(`Event stream ${this._eventStreamUrl} stopped due to error code: ${msg.get_status()}: ${msg.get_reason_phrase()}`);
+                    this._eventStreamData = [];
+                    break;
+            }
+        });
     }
 
     /**
@@ -1236,12 +1107,8 @@ export var PhueBridge =  GObject.registerClass({
         if (this._eventStreamSession === null) {
             this._eventStreamSession = Soup.Session.new();
 
-            if (Soup.MAJOR_VERSION >= 3) {
-                let tlsDatabase =  new TlsDatabaseBridge();
-                this._eventStreamSession.tls_database  = tlsDatabase;
-            } else {
-                this._eventStreamSession.ssl_strict = false;
-            }
+            let tlsDatabase =  new TlsDatabaseBridge();
+            this._eventStreamSession.tls_database  = tlsDatabase;
         }
 
         this._eventStreamSession.timeout = 0;
@@ -1274,9 +1141,6 @@ export var PhueBridge =  GObject.registerClass({
 
         if (this._eventStreamMsg !== null) {
             this._eventStreamSession.timeout = 1;
-            if (Soup.MAJOR_VERSION < 3) {
-                this._eventStreamSession.cancel_message(this._eventStreamMsg, Soup.Status.CANCELLED);
-            }
         }
 
         this._eventStreamSession.abort();
