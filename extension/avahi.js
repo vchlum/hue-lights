@@ -42,7 +42,7 @@ import Gio from 'gi://Gio';
  */
 
 export var Avahi = GObject.registerClass({
-    GTypeName: "NanoAvahi",
+    GTypeName: "HueAvahi",
     Properties: {
         "service": GObject.ParamSpec.string("service", "service", "service", GObject.ParamFlags.READWRITE, null),
     },

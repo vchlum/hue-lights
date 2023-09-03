@@ -1121,7 +1121,7 @@ export var PhueSyncBoxMenu = GObject.registerClass({
         });
         this._timers.push(timerId);
 
-        this.syncBox.checkSyncBoxes(false);
+        this.syncBox.checkSyncBoxes();
 
         for (let id in this.syncBox.syncboxes) {
             this._connectSyncBoxInstance(id);

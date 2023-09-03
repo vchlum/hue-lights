@@ -36,9 +36,9 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Soup from 'gi://Soup?version=3.0';
-import Json from 'gi://Json';
 import GObject from 'gi://GObject';
 import * as Utils from './utils.js';
+import * as Avahi from './avahi.js';
 
 const PhueSyncBoxMsgRequestType = {
     NO_RESPONSE_NEED: 0,
@@ -70,6 +70,111 @@ const TlsDatabaseSyncBox = GObject.registerClass({
         return 0;
     }
 });
+
+export var DiscoverySyncBox = GObject.registerClass({
+    GTypeName: "DiscoverySyncBox",
+    Signals: {
+        "discoverFinished": {},
+    }
+}, class DiscoverySyncBox extends GObject.Object {
+    _init(mainDir, props={}) {
+        super._init(props);
+        this.discoveredSyncBox = [];
+        this._mainDir = mainDir;
+    }
+
+    discover() {
+        this.discoverSyncBoxAvahi();
+    }
+
+    _insertDiscoveredSyncBox(syncBox) {
+        if (syncBox["uniqueId"] === undefined) 
+            return;
+
+        for (let i in this.discoveredSyncBox) {
+            if (this.discoveredSyncBox[i]["ipAddress"] === syncBox["ipAddress"]) {
+                return;
+            }
+        }
+
+        this.discoveredSyncBox.push(syncBox);
+    }
+
+    _getSyncBox(ip) {
+        let syncBox = {};
+        let session = Soup.Session.new();
+        session.timeout = 3;
+
+        /**
+         * Philips Hue HDMI Sync Box API supports only HTTPS requests [1].
+         * That is the reason I added the TLS certificate [2] to this extension
+         * as Philips company recommends.
+         * After initialization and pairing with the Philips Hue HDMI Sync Box,
+         * the certificate is used as suggested by Philips company [1].
+         * 
+         * Note: You need a Philips Hue developer account to access the referenced links.
+         * 
+         * [1] https://developers.meethue.com/develop/hue-entertainment/hue-hdmi-sync-box-api/
+         * [2] https://developers.meethue.com/wp-content/uploads/2020/01/hsb_cacert.pem_.txt
+         */
+        const HsbCert = this._mainDir.get_path() + "/crypto/hsb_cacert.pem"
+
+        let tlsDatabase =  new TlsDatabaseSyncBox(
+            { anchors: HsbCert }
+        );
+        session.tls_database  = tlsDatabase;
+        session.ssl_strict = true;
+
+        let msg = Soup.Message.new('GET', `https://${ip}/api/v1/device`);
+
+        try {
+            let bytes = session.send_and_read(msg, null);
+
+            if (msg.status_code !== Soup.Status.OK) {
+                return null;
+            }
+
+            let decoder = new TextDecoder();
+            let data = decoder.decode(bytes.get_data());
+
+            syncBox = JSON.parse(data);
+        } catch(e) {
+            Utils.logError(`Failed to discover info about syncbox ${ip}: ${e}`);
+            return null;
+        }
+
+        return syncBox;
+    }
+
+    /**
+     * Check all bridges in the local network using avahi discovery.
+     * 
+     * @method discoverBridgesAvahi
+     */
+    discoverSyncBoxAvahi() {
+        this._avahi = new Avahi.Avahi({ service: "_huesync._tcp"});
+        this._avahi.connect(
+            "finished",
+            () => {
+                for (let ip in this._avahi.discovered) {
+                    let syncBox = this._getSyncBox(ip);
+                    if (syncBox !== null) {
+                        Utils.logDebug(`Syncbox ${syncBox["name"]} dicovered on ip ${syncBox["ipAddress"]} via avahi.`);
+                        this._insertDiscoveredSyncBox(syncBox);
+                    }
+                }
+                this.emit("discoverFinished");
+            }
+        );
+        this._avahi.connect(
+            "error",
+            () => {
+                this.emit("discoverFinished");
+            }
+        );
+        this._avahi.discover();
+    }
+})
 
 /**
  * PhueSyncBox API class for Philips Hue Sync Box
@@ -264,7 +369,7 @@ export var PhueSyncBox =  GObject.registerClass({
     /**
      * Process url request to the sync box with libsoup3.
      * 
-     * @method _requestJson3
+     * @method _requestJson
      * @private
      * @param {String} method to be used like POST, PUT, GET
      * @param {String} url to be requested
@@ -272,9 +377,7 @@ export var PhueSyncBox =  GObject.registerClass({
      * @param {Object} JSON input data in case of supported method
      * @return {Object} JSON with response
      */
-    _requestJson3(method, url, requestHueType, data) {
-
-        let outputData;
+    _requestJson(method, url, requestHueType, data) {
 
         Utils.logDebug(`Sync Box ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
 
@@ -314,7 +417,7 @@ export var PhueSyncBox =  GObject.registerClass({
         }
 
         try {
-            outputData = this._syncBoxSession.send_and_read(msg, null).get_data();
+            const bytes = this._syncBoxSession.send_and_read(msg, null);
 
             if (msg.status_code !== Soup.Status.OK) {
                 Utils.logDebug(`Sync Box sync-respond to ${url} ended with status: ${msg.status_code}`);
@@ -322,7 +425,9 @@ export var PhueSyncBox =  GObject.registerClass({
                 return [];
             }
 
-            this._data = JSON.parse(outputData);
+            let decoder = new TextDecoder();
+            let responseData = decoder.decode(bytes.get_data());
+            this._data = JSON.parse(responseData);
             this._syncBoxConnected = true;
         } catch(e) {
             Utils.logError(`Sync Box sync-respond to ${url} failed: ${e}`);
@@ -331,71 +436,6 @@ export var PhueSyncBox =  GObject.registerClass({
         }
 
         return this._data;
-    }
-
-    /**
-     * Process url request to the sync box.
-     * 
-     * @method _requestJson
-     * @private
-     * @param {String} method to be used like POST, PUT, GET
-     * @param {String} url to be requested
-     * @param {Object} request hue type
-     * @param {Object} JSON input data in case of supported method
-     * @return {Object} JSON with response
-     */
-    _requestJson(method, url, requestHueType, data) {
-
-        if (Soup.MAJOR_VERSION >= 3) {
-            return this._requestJson3(method, url, requestHueType, data);
-        }
-
-        Utils.logDebug(`HDMI sync box ${method} request, url: ${url} data: ${JSON.stringify(data)}`);
-
-        let msg = PhueSyncBoxMessage.new(method, url);
-
-        msg.requestHueType = requestHueType;
-
-        if (this._accessToken !== "") {
-            msg.request_headers.append("Authorization", `Bearer ${this._accessToken}`);
-        }
-
-        if (data !== null) {
-            data = JSON.stringify(data);
-            msg.set_request("application/gnome-extension", 2, data);
-        } else {
-            msg.set_request("application/gnome-extension", 2, "");
-        }
-
-        if (this._asyncRequest) {
-            this._data = [];
-
-            this._syncBoxSession.queue_message(msg, (sess, mess) => {
-                if (mess.status_code === Soup.Status.OK) {
-                    this._responseJsonParse(method, url, requestHueType, mess.response_body.data);
-                } else {
-                    this._connectionProblem(requestHueType);
-                }
-            });
-
-            return []
-        }
-
-        let statusCode = this._syncBoxSession.send_message(msg);
-        if (statusCode === Soup.Status.OK) {
-
-            Utils.logDebug(`HDMI sync box ${method} sync-responded OK to url: ${url}`);
-
-            try {
-                this._syncBoxConnected = true;
-                return JSON.parse(msg.response_body.data);
-            } catch {
-                Utils.logError(`HDMI sync box ${method} sync-respond, failed to parse JSON`);
-                return [];
-            }
-        }
-
-        return [];
     }
 
     /**

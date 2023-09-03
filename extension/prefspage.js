@@ -1128,6 +1128,15 @@ export const PreferencesPage = GObject.registerClass({
             }
         );
 
+        this._hueSB.discoverSyncBox.connect(
+            "discoverFinished",
+            () => {
+                this._hueSB.checkSyncBoxes(this._hueSB.discoverSyncBox.discoveredSyncBox);
+                this.writeSyncboxSettings();
+                this._updateSyncboxTabs();
+            }
+        );
+
         this._updateBridgesTabs();
         this._updateSyncboxTabs();
         this._updateGeneral();
@@ -1301,6 +1310,10 @@ export const PreferencesPage = GObject.registerClass({
         );
 
         addSyncboxDialog.show();
+    }
+
+    _onDiscoverSyncBoxClicked(button) {
+        this._hueSB.discoverSyncBox.discover();
     }
 
     /**
@@ -1660,7 +1673,10 @@ export const PreferencesPage = GObject.registerClass({
             }
 
             if (this._syncboxesTabs[syncboxId] !== undefined) {
-                continue
+                this._syncboxesNotebook.detach_tab(
+                    this._syncboxesTabs[syncboxId]
+                );
+                delete(this._syncboxesTabs[syncboxId]);
             }
 
             let syncboxTab = new SyncboxTab(syncboxId, this._hueSB.syncboxes[syncboxId]);

@@ -528,7 +528,7 @@ export var PhueBridge =  GObject.registerClass({
     /**
      * Process url request to the bridge with libsoup3.
      * 
-     * @method _requestJson3
+     * @method _requestJson
      * @private
      * @param {String} method to be used like POST, PUT, GET
      * @param {String} url to be requested

@@ -63,6 +63,24 @@
                                                 </child>
                                             </object>
                                         </child>
+                                        <child>
+                                            <object class="GtkBox">
+                                                <property name="can-focus">False</property>
+                                                <property name="halign">fill</property>
+                                                <property name="hexpand">True</property>
+                                                <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="hexpand">true</property>
+                                                        <property name="halign">center</property>
+                                                        <property name="valign">center</property>
+                                                        <property name="hexpand">True</property>
+                                                        <property name="wrap">True</property>
+                                                        <property name="justify">center</property>
+                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi' installed.</property>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
                                     </object>
                                 </property>
                             </object>
@@ -101,6 +119,34 @@
                                                         <property name="margin_bottom">10</property>
                                                         <property name="label" translatable="yes">Add Philips Hue HDMI sync box IP</property>
                                                         <signal name="clicked" handler="_onAddSyncboxClicked" swapped="no"/>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="GtkButton">
+                                                        <property name="margin_start">5</property>
+                                                        <property name="margin_end">5</property>
+                                                        <property name="margin_top">10</property>
+                                                        <property name="margin_bottom">10</property>
+                                                        <property name="label" translatable="yes">Discover HDMI sync boxes</property>
+                                                        <signal name="clicked" handler="_onDiscoverSyncBoxClicked" swapped="no"/>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkBox">
+                                                <property name="can-focus">False</property>
+                                                <property name="halign">fill</property>
+                                                <property name="hexpand">True</property>
+                                                <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="hexpand">true</property>
+                                                        <property name="halign">center</property>
+                                                        <property name="valign">center</property>
+                                                        <property name="hexpand">True</property>
+                                                        <property name="wrap">True</property>
+                                                        <property name="justify">center</property>
+                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi' installed.</property>
                                                     </object>
                                                 </child>
                                             </object>

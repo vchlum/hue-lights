@@ -64,6 +64,7 @@ import * as Utils from './utils.js';
         this.data = {};
         this._connectionTimeout = 2;
         this._mainDir = mainDir
+        this.discoverSyncBox = new HueSyncBoxApi.DiscoverySyncBox(mainDir);
     }
 
     set async(value) {
@@ -212,8 +213,19 @@ import * as Utils from './utils.js';
      * @method checkBridges
      * @return {Object} dictionary with data of all bridges.
      */
-    checkSyncBoxes() {
+    checkSyncBoxes(discovered = []) {
 
+        for (let i in discovered) {
+            let id = discovered[i]["uniqueId"];
+
+            if (this.syncboxes[id] === undefined) {
+                this.syncboxes[id] = {
+                    "name": discovered[i]["name"],
+                    "ip": discovered[i]["ipAddress"]
+                };
+            }
+        }
+        Utils.logDebug(`Discovered sync boxes: ${JSON.stringify(discovered)}`);
         Utils.logDebug(`Checking for available sync boxes.`);
 
         for (let id in this.syncboxes) {
