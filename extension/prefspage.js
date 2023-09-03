@@ -1112,13 +1112,21 @@ export const PreferencesPage = GObject.registerClass({
             */
         });
 
-
         this.readSettings();
 
         this._connectSyncboxRegistration();
 
         this._hue.checkBridges();
         this._hueSB.checkSyncBoxes();
+
+        this._hue.discoverBridges.connect(
+            "discoverFinished",
+            () => {
+                this._hue.checkBridges(this._hue.discoverBridges.discoveredBridges);
+                this.writeBridgesSettings();
+                this._updateBridgesTabs();
+            }
+        );
 
         this._updateBridgesTabs();
         this._updateSyncboxTabs();
@@ -1234,9 +1242,7 @@ export const PreferencesPage = GObject.registerClass({
      * @param {Object} button
      */
     _onDiscoverBridgeClicked(button) {
-        this._hue.checkBridges();
-        this.writeBridgesSettings();
-        this._updateBridgesTabs();
+        this._hue.discoverBridges.discover();
     }
 
     /**

@@ -4821,7 +4821,7 @@ export var PhueMenu = GObject.registerClass({
         });
         this._timers.push(timerId);
 
-        this.hue.checkBridges(false);
+        this.hue.checkBridges();
 
         for (let bridgeid in this.hue.bridges) {
             this._connectHueInstance(bridgeid);

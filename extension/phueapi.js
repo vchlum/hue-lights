@@ -36,67 +36,134 @@
 import Soup from 'gi://Soup?version=3.0';
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
-import Json from 'gi://Json';
 import GObject from 'gi://GObject';
 import * as Utils from './utils.js';
+import * as Avahi from './avahi.js';
 
-/**
-  * Check all bridges in the local network using libsoup3.
-  * 
-  * @method discoverBridges
-  * @return {Object} dictionary with bridges in local network
-  */
-export function discoverBridges() {
-    let bridges = [];
-    let session = Soup.Session.new();
-    session.timeout = 3;
-
-    let msg = Soup.Message.new('GET', "https://discovery.meethue.com/");
-
-    try {
-        let bytes = session.send_and_read(msg, null);
-
-        if (msg.status_code !== Soup.Status.OK) {
-            return [];
-        }
-
-        let decoder = new TextDecoder();
-        let data = decoder.decode(bytes.get_data());
-
-        let discovered = JSON.parse(data);
-
-        for (let i in discovered) {
-            msg = Soup.Message.new('GET', `http://${discovered[i]["internalipaddress"]}/api/config`);
-
-            let bridge = {};
-            try {
-                data = session.send_and_read(msg, null).get_data();
-
-                if (msg.status_code !== Soup.Status.OK) {
-                    continue;
-                }
-
-                bridge = JSON.parse(data);
-            } catch(e) {
-                bridge = {};
-                Utils.logError(`Failed to discover bridge ${discovered[i]["internalipaddress"]}: ${e}`);
-                continue;
-            }
-
-            if (bridge["mac"] !== undefined) {
-                discovered[i]["name"] = bridge["name"];
-                discovered[i]["mac"] = bridge["mac"];
-                bridges.push(discovered[i]);
-            }
-        }
-
-    } catch(e) {
-        Utils.logError(`Failed to discover bridges: ${e}`);
-        return [];
+export var DiscoveryBridges = GObject.registerClass({
+    GTypeName: "DiscoveryBridges",
+    Signals: {
+        "discoverFinished": {},
+    }
+}, class DiscoveryBridges extends GObject.Object {
+    _init(props={}) {
+        super._init(props);
+        this.discoveredBridges = [];
     }
 
-    return bridges;
-}
+    discover() {
+        this.discoverBridgesCloud();
+        this.discoverBridgesAvahi();
+    }
+
+    _insertDiscoveredBridge(bridge) {
+        if (bridge["mac"] === undefined) 
+            return;
+
+        for (let i in this.discoveredBridges) {
+            if (this.discoveredBridges[i]["internalipaddress"] === bridge["internalipaddress"]) {
+                return;
+            }
+        }
+
+        this.discoveredBridges.push(bridge);
+    }
+
+    _getBridge(ip) {
+        let bridge = {};
+        let session = Soup.Session.new();
+        session.timeout = 3;
+
+        let msg = Soup.Message.new('GET', `http://${ip}/api/config`);
+
+        try {
+            let bytes = session.send_and_read(msg, null);
+
+            if (msg.status_code !== Soup.Status.OK) {
+                return null;
+            }
+
+            let decoder = new TextDecoder();
+            let data = decoder.decode(bytes.get_data());
+
+            bridge = JSON.parse(data);
+        } catch(e) {
+            Utils.logError(`Failed to discover info about bridge ${ip}: ${e}`);
+            return null;
+        }
+
+        return bridge;
+    }
+
+    /**
+     * Check all bridges in the local network using cloud discovery.
+     * 
+     * @method discoverBridgesCloud
+     * @return {Object} dictionary with bridges in local network
+     */
+    discoverBridgesCloud() {
+        let session = Soup.Session.new();
+        session.timeout = 3;
+
+        let msg = Soup.Message.new('GET', "https://discovery.meethue.com/");
+
+        try {
+            let bytes = session.send_and_read(msg, null);
+
+            if (msg.status_code !== Soup.Status.OK) {
+                return [];
+            }
+
+            let decoder = new TextDecoder();
+            let data = decoder.decode(bytes.get_data());
+
+            let discovered = JSON.parse(data);
+
+            for (let i in discovered) {
+                let bridge = this._getBridge(discovered[i]["internalipaddress"]);
+                if (bridge !== null) {
+                    bridge["internalipaddress"] = discovered[i]["internalipaddress"];
+                    Utils.logDebug(`Bridge ${bridge["name"]} dicovered on ip ${bridge["internalipaddress"]} via cloud.`);
+                    this._insertDiscoveredBridge(bridge);
+                }
+            }
+
+        } catch(e) {
+            Utils.logError(`Failed to discover bridges via cloud: ${e}`);
+            return [];
+        }
+    }
+
+    /**
+     * Check all bridges in the local network using avahi discovery.
+     * 
+     * @method discoverBridgesAvahi
+     */
+    discoverBridgesAvahi() {
+        this._avahi = new Avahi.Avahi({ service: "_hue._tcp"});
+        this._avahi.connect(
+            "finished",
+            () => {
+                for (let ip in this._avahi.discovered) {
+                    let bridge = this._getBridge(ip);
+                    if (bridge !== null) {
+                        bridge["internalipaddress"] = ip;
+                        Utils.logDebug(`Bridge ${bridge["name"]} dicovered on ip ${bridge["internalipaddress"]} via avahi.`);
+                        this._insertDiscoveredBridge(bridge);
+                    }
+                }
+                this.emit("discoverFinished");
+            }
+        );
+        this._avahi.connect(
+            "error",
+            () => {
+                this.emit("discoverFinished");
+            }
+        );
+        this._avahi.discover();
+    }
+})
 
 export var PhueRequestype = {
     NO_RESPONSE_NEED: 0,

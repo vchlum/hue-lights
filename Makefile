@@ -26,6 +26,7 @@ package: gresource
 	--extra-source=crypto \
 	--extra-source=media \
 	--extra-source=areaselector.js \
+	--extra-source=avahi.js \
 	--extra-source=colorpicker.js \
 	--extra-source=dtlsclient.js \
 	--extra-source=extensionmenu.js \

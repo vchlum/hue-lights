@@ -53,6 +53,7 @@ class _Phue {
         this.data = {};
         this._connectionTimeout = 2;
         this._asyncMode = asyncMode;
+        this.discoverBridges = new HueApi.DiscoveryBridges();
     }
 
     /**
@@ -196,16 +197,12 @@ class _Phue {
      * @method checkBridges
      * @return {Object} dictionary with data of all bridges.
      */
-    checkBridges(discover = true) {
+    checkBridges(discovered = []) {
 
         let known;
         let errs;
-        let discovered = [];
 
-        Utils.logDebug(`Checking for available bridges, discover: ${discover}`);
-
-        if (discover)
-            discovered = HueApi.discoverBridges();
+        Utils.logDebug(`Checking for available bridges, discover: ${JSON.stringify(discovered)}`);
 
         /* first, check for deleted bridges */
         for (let bridgeidInstance in this.instances) {
@@ -222,7 +219,7 @@ class _Phue {
         }
 
         for (let i in discovered) {
-            let bridgeid = discovered[i]["id"];
+            let bridgeid = discovered[i]["bridgeid"].toLowerCase();
 
             if (this.bridges[bridgeid] !== undefined) {
                 if (discovered[i]["internalipaddress"] !== this.bridges[bridgeid]["ip"]) {
