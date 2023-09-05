@@ -1303,6 +1303,23 @@ export var PhueMenu = GObject.registerClass({
             )
         );
 
+        slider.connect(
+            "scroll-event",
+            this._runOnlyOnceInTime.bind(
+                this,
+                this._scrollDelay,
+                this._menuEventHandler.bind(
+                    this,
+                    {
+                        "bridgePath": bridgePath,
+                        "bridgeid": bridgeid,
+                        "object":slider,
+                        "type": "brightness"
+                    }
+                )
+            )
+        );
+
         this.refreshMenuObjects[bridgePath] = {
             "bridgeid": bridgeid,
             "object":slider,
@@ -2982,6 +2999,23 @@ export var PhueMenu = GObject.registerClass({
                     "object":slider,
                     "type": "entertainment" + name
                 }
+            )
+        );
+
+        slider.connect(
+            "scroll-event",
+            this._runOnlyOnceInTime.bind(
+                this,
+                this._scrollDelay,
+                this._menuEventHandler.bind(
+                    this,
+                    {
+                        "bridgePath": bridgePath,
+                        "bridgeid": bridgeid,
+                        "object":slider,
+                        "type": "entertainment" + name
+                    }
+                )
             )
         );
 

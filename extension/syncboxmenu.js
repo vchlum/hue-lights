@@ -654,6 +654,22 @@ export var PhueSyncBoxMenu = GObject.registerClass({
             )
         );
 
+        slider.connect(
+            "scroll-event",
+            this._runOnlyOnceInTime.bind(
+                this,
+                this._scrollDelay,
+                this._menuEventHandler.bind(
+                    {
+                        "syncBoxPath": syncBoxPath,
+                        "id": id,
+                        "object":slider,
+                        "type": "brightness"
+                    }
+                )
+            )
+        );
+
         this.refreshMenuObjects[syncBoxPath] = {
             "id": id,
             "object": slider,
