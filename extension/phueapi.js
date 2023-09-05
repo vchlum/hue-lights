@@ -40,24 +40,43 @@ import GObject from 'gi://GObject';
 import * as Utils from './utils.js';
 import * as Avahi from './avahi.js';
 
+/**
+ * DiscoveryBridges class for discovering device on local network or via cloud.
+ *
+ * @class DiscoveryBridges
+ * @return {Object} instance
+ */
 export var DiscoveryBridges = GObject.registerClass({
     GTypeName: "DiscoveryBridges",
     Signals: {
         "discoverFinished": {},
     }
 }, class DiscoveryBridges extends GObject.Object {
+
     _init(props={}) {
         super._init(props);
         this.discoveredBridges = [];
     }
 
+    /**
+     * Run discover bridges procedures.
+     *
+     * @method discover
+     */
     discover() {
         this.discoverBridgesCloud();
         this.discoverBridgesAvahi();
     }
 
+    /**
+     * Add bridge as discovered.
+     * 
+     * @method _insertDiscoveredBridge
+     * @private
+     * @param {Object} bridge to be inserted
+     */
     _insertDiscoveredBridge(bridge) {
-        if (bridge["mac"] === undefined) 
+        if (bridge["mac"] === undefined)
             return;
 
         for (let i in this.discoveredBridges) {
@@ -69,6 +88,14 @@ export var DiscoveryBridges = GObject.registerClass({
         this.discoveredBridges.push(bridge);
     }
 
+    /**
+     * Get info about bridge on local network.
+     * 
+     * @method _getBridge
+     * @private
+     * @param {String} ip address
+     * @return {Object} json with bridge info or null
+     */
     _getBridge(ip) {
         let bridge = {};
         let session = Soup.Session.new();
@@ -96,7 +123,7 @@ export var DiscoveryBridges = GObject.registerClass({
     }
 
     /**
-     * Check all bridges in the local network using cloud discovery.
+     * Check all bridges on the local network using cloud discovery.
      * 
      * @method discoverBridgesCloud
      * @return {Object} dictionary with bridges in local network

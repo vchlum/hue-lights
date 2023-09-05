@@ -83,7 +83,7 @@ export default class HueLightsExtension extends Extension {
         this._hueSyncBoxMenu.disconnectSignals(true);
         this._hueSyncBoxMenu.destroy();
         this._hueSyncBoxMenu = null
-    
+
         this._hueLightsMenu.disarmTimers();
         this._hueLightsMenu.disableKeyShortcuts();
         this._hueLightsMenu.disableStreams();

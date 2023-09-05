@@ -1578,7 +1578,7 @@ export var PhueMenu = GObject.registerClass({
             );
         }
 
-        let label = light.label
+        let label = light.label;
         light.remove_child(light.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;
@@ -2526,7 +2526,7 @@ export var PhueMenu = GObject.registerClass({
                 this._getGroupName(bridgeid, groupid)
             );
 
-            let label = groupItem.label
+            let label = groupItem.label;
             groupItem.remove_child(groupItem.label);
             let itemBox = new St.BoxLayout();
             itemBox.vertical = true;
@@ -2630,7 +2630,7 @@ export var PhueMenu = GObject.registerClass({
         /* disable closing menu on item activated */
         groupsSubMenu.menu.itemActivated = (animate) => {};
 
-        let label = groupsSubMenu.label
+        let label = groupsSubMenu.label;
         groupsSubMenu.remove_child(groupsSubMenu.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;
@@ -2728,7 +2728,7 @@ export var PhueMenu = GObject.registerClass({
         /* disable closing menu on item activated */
         lightsSubMenu.menu.itemActivated = (animate) => {};
 
-        let label = lightsSubMenu.label
+        let label = lightsSubMenu.label;
         lightsSubMenu.remove_child(lightsSubMenu.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;

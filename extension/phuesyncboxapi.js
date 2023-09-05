@@ -71,24 +71,43 @@ const TlsDatabaseSyncBox = GObject.registerClass({
     }
 });
 
+/**
+ * DiscoverySyncBox class for discovering device on local network.
+ *
+ * @class DiscoverySyncBox
+ * @return {Object} instance
+ */
 export var DiscoverySyncBox = GObject.registerClass({
     GTypeName: "DiscoverySyncBox",
     Signals: {
         "discoverFinished": {},
     }
 }, class DiscoverySyncBox extends GObject.Object {
+
     _init(mainDir, props={}) {
         super._init(props);
         this.discoveredSyncBox = [];
         this._mainDir = mainDir;
     }
 
+    /**
+     * Run discover bridges procedures.
+     *
+     * @method discover
+     */
     discover() {
         this.discoverSyncBoxAvahi();
     }
 
+    /**
+     * Add syncbox as discovered.
+     * 
+     * @method _insertDiscoveredSyncBox
+     * @private
+     * @param {Object} syncbox to be inserted
+     */
     _insertDiscoveredSyncBox(syncBox) {
-        if (syncBox["uniqueId"] === undefined) 
+        if (syncBox["uniqueId"] === undefined)
             return;
 
         for (let i in this.discoveredSyncBox) {
@@ -100,6 +119,14 @@ export var DiscoverySyncBox = GObject.registerClass({
         this.discoveredSyncBox.push(syncBox);
     }
 
+    /**
+     * Get info about syncbox on local network.
+     * 
+     * @method _getSyncBox
+     * @private
+     * @param {String} ip address
+     * @return {Object} json with syncbox info or null
+     */
     _getSyncBox(ip) {
         let syncBox = {};
         let session = Soup.Session.new();
@@ -147,7 +174,7 @@ export var DiscoverySyncBox = GObject.registerClass({
     }
 
     /**
-     * Check all bridges in the local network using avahi discovery.
+     * Check all syncboxes on the local network using avahi discovery.
      * 
      * @method discoverBridgesAvahi
      */
