@@ -30,6 +30,7 @@ package: gresource
 	--extra-source=colorpicker.js \
 	--extra-source=dtlsclient.js \
 	--extra-source=extensionmenu.js \
+	--extra-source=gstreamer.js \
 	--extra-source=modalselector.js \
 	--extra-source=phue.js \
 	--extra-source=phueapi.js \

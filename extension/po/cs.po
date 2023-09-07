@@ -341,3 +341,6 @@ msgstr "Přidat"
 
 msgid "Restart"
 msgstr "Restartovat"
+
+msgid "Audio"
+msgstr "Zvuk"

@@ -39,6 +39,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as DTLSClient from './dtlsclient.js';
 import * as PhueScreenshot from './phuescreenshot.js';
 import * as Utils from './utils.js';
+import * as Gstreamer from './gstreamer.js';
 import {Extension, gettext} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const __ = gettext;
@@ -85,6 +86,7 @@ export var PhueEntertainment =  GObject.registerClass({
         this.gradient = -1;
         this.intensity = 40;
         this.brightness = 0xFF;
+        this._stopFunction = null;
 
         this._signals = {};
 
@@ -154,7 +156,7 @@ export var PhueEntertainment =  GObject.registerClass({
      * @method closeBridge
      */
     closeBridge() {
-        this.stopStreaming();
+        this.stopEntertainment();
         this.dtls.closeBridge();
 
         for (let id in this._signals) {
@@ -569,6 +571,97 @@ export var PhueEntertainment =  GObject.registerClass({
         this._timers.push(timerId);
     }
 
+
+    freq2rgb(freq, coef) {
+        let red = 0;
+        let green = 0;
+        let blue = 0;
+        let freqCoef = 1 - (freq / 80);
+
+        if (freqCoef) {
+            [red, green, blue] = Utils.hslToRgb(
+                freqCoef * coef,
+                0.8, /* feels good coeficient:-) */
+                (this.brightness / 255) * 0.75 /* brightness = 1 means color close to white */
+            );
+
+            red = this.adjustColorElement(red);
+            green = this.adjustColorElement(green);
+            blue = this.adjustColorElement(blue);
+        }
+
+        let r = Math.round(red * (this.brightness/255));
+        let g = Math.round(green * (this.brightness/255));
+        let b = Math.round(blue * (this.brightness/255));
+
+        return [r, g, b];
+    }
+
+    /**
+     * This is the core of sync audio effect.
+     * 
+     * @method doSyncAudio
+     * @param {Object} frequences
+     */
+    doSyncAudio(freqs) {
+        if (!this._doStreaming) {
+            this._gstreamer.stop();
+            return;
+        }
+
+        if (this._checkChangeStream()) {
+            this._gstreamer.stop();
+            return;
+        }
+
+        let lightsArray = this._createLightHeader("color");
+
+        for (let i = 0; i < this.lights.length; i++) {
+            let [r, g, b] = this.freq2rgb(
+                freqs[i],
+                this.intensity / 255
+            );
+
+            lightsArray = lightsArray.concat(this.lights[i]);
+
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+            lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+        }
+
+        this.dtls.sendEncrypted(lightsArray);
+
+        if (this.gradient >= 0) {
+            lightsArray = this._createLightHeader2("color");
+
+            lightsArray = lightsArray.concat(Utils.string2Hex(this.gid));
+
+            let counter = 0;
+            for (let i = this.gradient; i < 7 + this.gradient; i++) {
+
+                let [r, g, b] = this.freq2rgb(
+                    freqs[this.lights.length + counter],
+                    this.intensity / 255
+                );
+                counter++;
+
+                lightsArray = lightsArray.concat([i]);
+
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(r, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(g, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+                lightsArray = lightsArray.concat(DTLSClient.uintToArray(b, 8));
+            }
+
+            this.dtls.sendEncrypted(lightsArray);
+        }
+    }
+
     /**
      * Checks the suitability of screen
      * and display(s) resolution for sync
@@ -680,6 +773,7 @@ export var PhueEntertainment =  GObject.registerClass({
         this.gradient = gradient;
         this._doStreaming = true;
 
+        this._stopFunction = null;
         this.doRandom();
     }
 
@@ -712,6 +806,7 @@ export var PhueEntertainment =  GObject.registerClass({
 
         this.screenshot = new PhueScreenshot.PhueScreenshot();
 
+        this._stopFunction = null;
         this.doCursorColor();
     }
 
@@ -837,15 +932,96 @@ export var PhueEntertainment =  GObject.registerClass({
             ));
         }
 
+        this._stopFunction = null;
         this.doSyncSreen(screenRectangle);
+    }
+
+    /**
+     * Starts audio entertainment effect
+     * 
+     * @method startSyncAudio
+     * @param {Array} lights to by synchronized
+     * @param {Array} relative locations of lights
+     * @param {Number} index of the gradient light strip in the group
+     */
+    startSyncAudio(lights, lightsLocations, gradient) {
+        if (this._doStreaming) {
+            this._changeToMe = {
+                "done": false,
+                "func": this.startSyncAudio,
+                "prams": [lights, lightsLocations, gradient]
+            }
+
+            return;
+        }
+
+        /**
+         * Sort lights from center to outer brim.
+         */
+        let sorted = Array.from(lights).sort(
+            (a, b) => {
+                /**
+                 * get distance from (0,0,0) according to Euclidean geometry
+                 */
+                let distA = Math.sqrt(
+                    Math.pow(lightsLocations[a][0], 2) +
+                    Math.pow(lightsLocations[a][1], 2) +
+                    Math.pow(lightsLocations[a][2], 2)
+                );
+
+                let distB = Math.sqrt(
+                    Math.pow(lightsLocations[b][0], 2) +
+                    Math.pow(lightsLocations[b][1], 2) +
+                    Math.pow(lightsLocations[b][2], 2)
+                );
+
+                if (distA < distB)
+                    return -1;
+
+                if (distA > distB)
+                    return 1;
+
+                return 0;
+            }
+        );
+
+        this.lights = [];
+        this.lightsLocations = [];
+        for (let i = 0; i < sorted.length; i++) {
+            this.lights.push(DTLSClient.uintToArray(sorted[i], 24));
+            this.lightsLocations.push(lightsLocations[sorted[i]]);
+        }
+
+        this.gradient = gradient;
+        this._doStreaming = true;
+
+        if (this._gstreamer) {
+            this._gstreamer.stop();
+        } else {
+            this._gstreamer = new Gstreamer.HueGStreamer();
+        }
+
+        if (gradient === -1) {
+            this._gstreamer.setBands(lights.length);
+        } else {
+            this._gstreamer.setBands(lights.length + 7);
+        }
+        this._gstreamer.setHandler(this.doSyncAudio.bind(this));
+        this._gstreamer.start();
+        this._stopFunction = () => {
+            this._gstreamer.stop();
+        };
     }
 
     /**
      * Disable the scheduler of entertainment effect
      * 
-     * @method stopStreaming
+     * @method stopEntertainment
      */
-    stopStreaming() {
+    stopEntertainment() {
+        if (this._stopFunction) {
+            this._stopFunction();
+        }
         this._doStreaming = false;
     }
 

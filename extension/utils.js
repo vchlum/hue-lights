@@ -266,16 +266,18 @@ export var entertainmentMode = {
     DISPLAYN: 0,
     SYNC: 1,
     SELECTION: 2,
-    CURSOR: 3,
-    RANDOM: 4
+    AUDIOSYNC: 3,
+    CURSOR: 4,
+    RANDOM: 5
 };
 
 export var entertainmentModeText = {
     0: "Display",
     1: "Screen",
     2: "Selection",
-    3: "Track cursor",
-    4: "Random"
+    3: "Audio",
+    4: "Track cursor",
+    5: "Random"
 };
 
 var _debug = false;
@@ -730,4 +732,61 @@ export function hashMe(string) {
     }
 
     return hash;
+}
+
+/**
+ * HSLToRGB
+ * https://www.30secondsofcode.org/js/s/hsl-to-rgb/
+ * 
+ * @param {Number} hue in [0, 360]
+ * @param {Number} saturation in [0, 100]
+ * @param {Number} lightness in [0, 100]
+ * @returns {Object} [r, g, b]
+ */
+export const HSLToRGB = (h, s, l) => {
+    s /= 100;
+    l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n =>
+        l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [255 * f(0), 255 * f(8), 255 * f(4)];
+  };
+
+/**
+ * Converts an HSL color value to RGB. Conversion formula
+ * adapted from https://en.wikipedia.org/wiki/HSL_color_space.
+ * Assumes h, s, and l are contained in the set [0, 1] and
+ * returns r, g, and b in the set [0, 255].
+ *
+ * https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
+ *
+ * @param   {number}  h       The hue
+ * @param   {number}  s       The saturation
+ * @param   {number}  l       The lightness
+ * @return  {Array}           The RGB representation
+ */
+export function hslToRgb(h, s, l) {
+    let r, g, b;
+
+    if (s === 0) {
+        r = g = b = l; // achromatic
+    } else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hueToRgb(p, q, h + 1/3);
+        g = hueToRgb(p, q, h);
+        b = hueToRgb(p, q, h - 1/3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+export function hueToRgb(p, q, t) {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
 }

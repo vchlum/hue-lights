@@ -344,3 +344,6 @@ msgstr "Add"
 
 msgid "Restart"
 msgstr "Neustart"
+
+msgid "Audio"
+msgstr "Audio"
