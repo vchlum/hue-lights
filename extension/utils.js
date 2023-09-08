@@ -735,25 +735,6 @@ export function hashMe(string) {
 }
 
 /**
- * HSLToRGB
- * https://www.30secondsofcode.org/js/s/hsl-to-rgb/
- * 
- * @param {Number} hue in [0, 360]
- * @param {Number} saturation in [0, 100]
- * @param {Number} lightness in [0, 100]
- * @returns {Object} [r, g, b]
- */
-export const HSLToRGB = (h, s, l) => {
-    s /= 100;
-    l /= 100;
-    const k = n => (n + h / 30) % 12;
-    const a = s * Math.min(l, 1 - l);
-    const f = n =>
-        l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    return [255 * f(0), 255 * f(8), 255 * f(4)];
-  };
-
-/**
  * Converts an HSL color value to RGB. Conversion formula
  * adapted from https://en.wikipedia.org/wiki/HSL_color_space.
  * Assumes h, s, and l are contained in the set [0, 1] and

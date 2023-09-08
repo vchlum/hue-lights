@@ -150,6 +150,18 @@ export var HueGStreamer = GObject.registerClass({
     }
 
     /**
+     * Sets the interval of messages
+     *
+     * @method setBands
+     * @param {Number} interval coeficient
+     */
+    setInterval(intervalCoef) {
+        let base = 100000000; /* 0.2 seconds */
+        this._interval = base * intervalCoef + 30000000; /* + 0.03 seconds*/
+        this._spectrum.set_property("interval", this._interval);
+    }
+
+    /**
      * Sets the device to listen.
      * 
      * @method setStream
@@ -186,7 +198,7 @@ export var HueGStreamer = GObject.registerClass({
     }
 
     /**
-     * Starts audio entertainment effect
+     * Sets external handler
      * 
      * @method setHandler
      * @param {Object} main, external handler to be call

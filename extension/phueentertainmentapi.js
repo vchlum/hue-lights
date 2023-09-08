@@ -179,6 +179,9 @@ export var PhueEntertainment =  GObject.registerClass({
      */
     setIntensity(intensity) {
         this.intensity = intensity;
+        if (this._gstreamer) {
+            this._gstreamer.setInterval((this.intensity - 40) / 255);
+        }
     }
 
     /**
@@ -571,8 +574,14 @@ export var PhueEntertainment =  GObject.registerClass({
         this._timers.push(timerId);
     }
 
-
-    freq2rgb(freq, coef) {
+    /**
+     * Converts freq to rgb color
+     *
+     * @method freq2rgb
+     * @param {number} freq
+     * @return {Object} [r,g,b] color
+     */
+    freq2rgb(freq) {
         let red = 0;
         let green = 0;
         let blue = 0;
@@ -580,7 +589,7 @@ export var PhueEntertainment =  GObject.registerClass({
 
         if (freqCoef) {
             [red, green, blue] = Utils.hslToRgb(
-                freqCoef * coef,
+                freqCoef,
                 0.8, /* feels good coeficient:-) */
                 (this.brightness / 255) * 0.75 /* brightness = 1 means color close to white */
             );
@@ -617,10 +626,7 @@ export var PhueEntertainment =  GObject.registerClass({
         let lightsArray = this._createLightHeader("color");
 
         for (let i = 0; i < this.lights.length; i++) {
-            let [r, g, b] = this.freq2rgb(
-                freqs[i],
-                this.intensity / 255
-            );
+            let [r, g, b] = this.freq2rgb(freqs[i]);
 
             lightsArray = lightsArray.concat(this.lights[i]);
 
@@ -642,10 +648,7 @@ export var PhueEntertainment =  GObject.registerClass({
             let counter = 0;
             for (let i = this.gradient; i < 7 + this.gradient; i++) {
 
-                let [r, g, b] = this.freq2rgb(
-                    freqs[this.lights.length + counter],
-                    this.intensity / 255
-                );
+                let [r, g, b] = this.freq2rgb(freqs[this.lights.length + counter]);
                 counter++;
 
                 lightsArray = lightsArray.concat([i]);
@@ -960,19 +963,22 @@ export var PhueEntertainment =  GObject.registerClass({
          */
         let sorted = Array.from(lights).sort(
             (a, b) => {
+                /* starting point */
+                let s = [0,0,-1];
+
                 /**
-                 * get distance from (0,0,0) according to Euclidean geometry
+                 * get distance from 's' according to Euclidean distance
                  */
                 let distA = Math.sqrt(
-                    Math.pow(lightsLocations[a][0], 2) +
-                    Math.pow(lightsLocations[a][1], 2) +
-                    Math.pow(lightsLocations[a][2], 2)
+                    Math.pow(lightsLocations[a][0] - s[0], 2) +
+                    Math.pow(lightsLocations[a][1] - s[1], 2) +
+                    Math.pow(lightsLocations[a][2] - s[2], 2)
                 );
 
                 let distB = Math.sqrt(
-                    Math.pow(lightsLocations[b][0], 2) +
-                    Math.pow(lightsLocations[b][1], 2) +
-                    Math.pow(lightsLocations[b][2], 2)
+                    Math.pow(lightsLocations[b][0] - s[0], 2) +
+                    Math.pow(lightsLocations[b][1] - s[1], 2) +
+                    Math.pow(lightsLocations[b][2] - s[2], 2)
                 );
 
                 if (distA < distB)
@@ -1006,7 +1012,9 @@ export var PhueEntertainment =  GObject.registerClass({
         } else {
             this._gstreamer.setBands(lights.length + 7);
         }
+        this._gstreamer.setInterval((this.intensity - 40) / 255);
         this._gstreamer.setHandler(this.doSyncAudio.bind(this));
+
         this._gstreamer.start();
         this._stopFunction = () => {
             this._gstreamer.stop();

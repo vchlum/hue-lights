@@ -68,6 +68,7 @@ export default class HueLightsPreferences extends ExtensionPreferences {
                 this.getSettings(),
                 this.path
             );
+            window.set_default_size(860, 580);
             window.add(prefs);
         }).catch(err => {
             console.error(err.message);

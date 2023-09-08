@@ -76,7 +76,7 @@
                                                         <property name="hexpand">True</property>
                                                         <property name="wrap">True</property>
                                                         <property name="justify">center</property>
-                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi' installed.</property>
+                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi-browse' installed.</property>
                                                     </object>
                                                 </child>
                                             </object>
@@ -146,7 +146,7 @@
                                                         <property name="hexpand">True</property>
                                                         <property name="wrap">True</property>
                                                         <property name="justify">center</property>
-                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi' installed.</property>
+                                                        <property name="label" translatable="yes">The discovery feature needs 'avahi-browse' installed.</property>
                                                     </object>
                                                 </child>
                                             </object>
