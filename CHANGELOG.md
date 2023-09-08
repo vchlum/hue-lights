@@ -1,3 +1,10 @@
+## Version 31
+ * porting to Gnome 45
+ * add sync audio feature
+ * add possibility to restart syncbox
+ * the only menu is now the compact menu
+ * add discovery devices using avahi (mDNS)
+ * change brightness with scroll wheel
 ## Version 30
  * fix black sliders when using color temperature
 ## Version 29
