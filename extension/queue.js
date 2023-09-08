@@ -37,7 +37,7 @@
 
  import GLib from 'gi://GLib';
 
-export var handlerType = {
+export const handlerType = {
     CUSTOM: 0,
     PROMPT: 1,
     TIMED: 2
@@ -172,7 +172,7 @@ class _Queue {
  * @constructor
  * @return {Object} instance
  */
- export var Queue = class Queue extends _Queue {
+ export const Queue = class Queue extends _Queue {
 
     constructor(params) {
 

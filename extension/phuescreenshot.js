@@ -45,7 +45,7 @@
  * @private
  * @return {Object} instance
  */
-export var PhueScreenshot =  GObject.registerClass({
+export const PhueScreenshot =  GObject.registerClass({
     GTypeName: "PhueScreenshot",
 }, class PhueScreenshot extends GObject.Object {
 

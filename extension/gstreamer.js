@@ -53,7 +53,7 @@ import * as Utils from './utils.js';
  * @constructor
  * @return {Object} menu widget instance
  */
-export var HueGStreamer = GObject.registerClass({
+export const HueGStreamer = GObject.registerClass({
     GTypeName: "HueGStreamer",
     Signals: {
     }

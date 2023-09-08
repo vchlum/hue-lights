@@ -44,7 +44,7 @@ import * as Utils from './utils.js';
  * @constructor
  * @return {Object} instance
  */
- export var PhueSyncBox =  GObject.registerClass({
+ export const PhueSyncBox =  GObject.registerClass({
     GTypeName: "PhueSyncBox",
     Properties: {
         'async': GObject.ParamSpec.boolean("async", "async", "async", GObject.ParamFlags.READWRITE, false),

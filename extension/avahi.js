@@ -41,7 +41,7 @@ import Gio from 'gi://Gio';
  * https://gjs.guide/guides/gio/subprocesses.html#asynchronous-communication
  */
 
-export var Avahi = GObject.registerClass({
+export const Avahi = GObject.registerClass({
     GTypeName: "HueAvahi",
     Properties: {
         "service": GObject.ParamSpec.string("service", "service", "service", GObject.ParamFlags.READWRITE, null),

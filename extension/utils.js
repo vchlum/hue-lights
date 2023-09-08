@@ -35,42 +35,42 @@
 
 import NM from 'gi://NM';
 
-export var HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
-export var HUELIGHTS_SETTINGS_FORCE_ENGLISH = "force-english";
-export var HUELIGHTS_SETTINGS_BRIDGES = "bridges";
-export var HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
-export var HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
-export var HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
-export var HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
-export var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
-export var HUELIGHTS_SETTINGS_DEBUG = "debug";
-export var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
-export var HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
-export var HUELIGHTS_SETTINGS_ICONPACK = "icon-pack";
-export var HUELIGHTS_SETTINGS_ENTERTAINMENT = "entertainment";
-export var HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE = "a{sa{si}}";
-export var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT = "sync-selection";
-export var HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT_TYPE = "as";
-export var HUELIGHTS_SETTINGS_MENU_SELECTED = "menu-selected";
-export var HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
-export var HUELIGHTS_SETTINGS_SYNCBOXES = "syncboxes";
-export var HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
-export var HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
-export var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION = "associated-connection";
-export var HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE = "a{sa{sas}}";
+export const HUELIGHTS_SETTINGS_SCHEMA = "org.gnome.shell.extensions.hue-lights";
+export const HUELIGHTS_SETTINGS_FORCE_ENGLISH = "force-english";
+export const HUELIGHTS_SETTINGS_BRIDGES = "bridges";
+export const HUELIGHTS_SETTINGS_BRIDGES_TYPE = "a{sa{ss}}";
+export const HUELIGHTS_SETTINGS_INDICATOR = "indicator-position";
+export const HUELIGHTS_SETTINGS_ZONESFIRST = "zones-first";
+export const HUELIGHTS_SETTINGS_SHOWSCENES = "show-scenes";
+export const HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT = "connection-timeout";
+export const HUELIGHTS_SETTINGS_DEBUG = "debug";
+export const HUELIGHTS_SETTINGS_NOTIFY_LIGHTS = "notify-lights";
+export const HUELIGHTS_SETTINGS_NOTIFY_LIGHTS_TYPE = "a{sa{si}}";
+export const HUELIGHTS_SETTINGS_ICONPACK = "icon-pack";
+export const HUELIGHTS_SETTINGS_ENTERTAINMENT = "entertainment";
+export const HUELIGHTS_SETTINGS_ENTERTAINMENT_TYPE = "a{sa{si}}";
+export const HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT = "sync-selection";
+export const HUELIGHTS_SETTINGS_SYNC_SELECTION_KEY_SHORTCUT_TYPE = "as";
+export const HUELIGHTS_SETTINGS_MENU_SELECTED = "menu-selected";
+export const HUELIGHTS_SETTINGS_MENU_SELECTED_TYPE = "a{sa{si}}";
+export const HUELIGHTS_SETTINGS_SYNCBOXES = "syncboxes";
+export const HUELIGHTS_SETTINGS_SYNCBOXES_TYPE = "a{sa{ss}}";
+export const HUELIGHTS_SETTINGS_CONNECTION_TIMEOUT_SB = "connection-timeout-sb";
+export const HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION = "associated-connection";
+export const HUELIGHTS_SETTINGS_ASSOCIATED_CONNECTION_TYPE = "a{sa{sas}}";
 
-export var NOTIFY_LIGHTS_LABEL = 10001;
-export var NOTIFY_LIGHTS_REGEX_TITLE = 10002;
-export var NOTIFY_LIGHTS_REGEX_BODY = 10003;
+export const NOTIFY_LIGHTS_LABEL = 10001;
+export const NOTIFY_LIGHTS_REGEX_TITLE = 10002;
+export const NOTIFY_LIGHTS_REGEX_BODY = 10003;
 
-export var allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
+export const allowedConnectionTypes = ['802-11-wireless', '802-3-ethernet'];
 
 /**
  * https://developers.meethue.com/develop/hue-api/supported-devices/
  * https://zigbee.blakadder.com/all.html
  * https://compatibility.jeedom.com/index.php?v=d&p=home&search=&lang=en_US
  */
-export var getHueIconFile = {
+export const getHueIconFile = {
     "HML004": "archetypesWallShade",
     "HML006": "archetypesRecessedCeiling",
     "LCA001": "bulbsSultan",
@@ -262,7 +262,7 @@ export var getHueIconFile = {
     "Pool": "roomsPool"
 };
 
-export var entertainmentMode = {
+export const entertainmentMode = {
     DISPLAYN: 0,
     SYNC: 1,
     SELECTION: 2,
@@ -271,7 +271,7 @@ export var entertainmentMode = {
     RANDOM: 5
 };
 
-export var entertainmentModeText = {
+export const entertainmentModeText = {
     0: "Display",
     1: "Screen",
     2: "Selection",
@@ -280,7 +280,7 @@ export var entertainmentModeText = {
     5: "Random"
 };
 
-var _debug = false;
+let _debug = false;
 
 export function setDebug(debug) {
     _debug = debug;

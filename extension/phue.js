@@ -315,7 +315,7 @@ class _Phue {
  * @constructor
  * @return {Object} instance
  */
-export var Phue = class Phue extends _Phue {
+export const Phue = class Phue extends _Phue {
 
     constructor(params) {
 

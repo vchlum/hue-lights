@@ -48,7 +48,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
  * @private
  * @return {Object} instance
  */
-export var AreaSelector =  GObject.registerClass({
+export const AreaSelector =  GObject.registerClass({
     GTypeName: "AreaSelector",
     Signals: {
         "area-selected": {},

@@ -50,7 +50,7 @@ const __ = gettext;
  * @constructor
  * @return {Object} modal dialog instance
  */
- export var ModalSelector =  GObject.registerClass({
+ export const ModalSelector =  GObject.registerClass({
     GTypeName: "ModalSelector",
     Signals: {
         'selected': {},

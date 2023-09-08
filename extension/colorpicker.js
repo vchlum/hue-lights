@@ -53,7 +53,7 @@ const __ = gettext;
  * @constructor
  * @return {Object} object
  */
-var ColorSelectorButton = GObject.registerClass(
+const ColorSelectorButton = GObject.registerClass(
 class ColorSelectorButton extends St.Bin {
 
     /**
@@ -105,7 +105,7 @@ class ColorSelectorButton extends St.Bin {
  * @constructor
  * @return {Object} object
  */
-export var ColorPickerBox =  GObject.registerClass({
+export const ColorPickerBox =  GObject.registerClass({
     GTypeName: "ColorPickerBox",
     Signals: {
         'color-picked': {},
@@ -309,7 +309,7 @@ export var ColorPickerBox =  GObject.registerClass({
  * @constructor
  * @return {Object} modal dialog instance
  */
-export var ColorPicker =  GObject.registerClass({
+export const ColorPicker =  GObject.registerClass({
     GTypeName: "ColorPicker",
     Signals: {
         'opened': {},

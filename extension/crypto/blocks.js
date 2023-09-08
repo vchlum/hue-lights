@@ -34,8 +34,8 @@
 
 import * as bytes from './bytes.js';
 
-export var createZeroBlock = function(length) {
-    var result = [];
+export const createZeroBlock = function(length) {
+    let result = [];
 
     for(let i = 0; i < length; i++) {
       result.push(0x00);
@@ -44,9 +44,9 @@ export var createZeroBlock = function(length) {
     return result;
 };
 
-var R = [0xe1].concat(createZeroBlock(15));
+let R = [0xe1].concat(createZeroBlock(15));
 
-export var exclusiveOR = function(block0, block1) {
+export const exclusiveOR = function(block0, block1) {
     let result = [];
 
     for(let i = 0; i < block0.length; i++) {
@@ -56,7 +56,7 @@ export var exclusiveOR = function(block0, block1) {
     return result;
 };
 
-var rightShift = function(block) {
+const rightShift = function(block) {
     let carry = 0;
     let oldCarry = 0;
 
@@ -73,7 +73,7 @@ var rightShift = function(block) {
     return block;
 }
 
-export var multiply = function(block0, block1) {
+export const multiply = function(block0, block1) {
     let v = block1.slice();
     let z = createZeroBlock(16);
 
@@ -94,7 +94,7 @@ export var multiply = function(block0, block1) {
     return z;
 };
 
-export var incrementLeastSignificantThirtyTwoBits = function(block) {
+export const incrementLeastSignificantThirtyTwoBits = function(block) {
     let result = block.slice();
     for(let i = 15; i != 11; i--) {
         result[i] = result[i] + 1;
@@ -109,7 +109,7 @@ export var incrementLeastSignificantThirtyTwoBits = function(block) {
     return result;
 };
 
-export var createCompletingPart = function(partialBlock) {
+export const createCompletingPart = function(partialBlock) {
     let result = [];
     let partialPartLength = partialBlock.length % 16;
 

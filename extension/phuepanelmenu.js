@@ -54,7 +54,7 @@ const PhueMenuPosition = {
 
 const IconSize = 20;
 
-export var PhueIconPack = {
+export const PhueIconPack = {
     NONE: 0,
     BRIGHT: 1,
     DARK: 2
@@ -67,7 +67,7 @@ export var PhueIconPack = {
  * @constructor
  * @return {Object} menu widget instance
  */
-export var PhuePanelMenu = GObject.registerClass({
+export const PhuePanelMenu = GObject.registerClass({
     GTypeName: 'PhuePanelMenu',
     Properties: {
         "iconFile": GObject.ParamSpec.string("iconFile", "iconFile", "iconFile", GObject.ParamFlags.READWRITE, null),

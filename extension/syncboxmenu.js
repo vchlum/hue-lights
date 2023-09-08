@@ -44,13 +44,13 @@ import * as PhuePanelMenu from './phuepanelmenu.js';
 import * as HueSyncBox from './phuesyncbox.js';
 import * as Utils from './utils.js';
 
-var syncModes = {
+const syncModes = {
     "game": "Game",
     "video": "Video",
     "music": "Music",
 }
 
-var syncIntensity = {
+const syncIntensity = {
     "subtle": "Subtle",
     "moderate": "Moderate",
     "high": "High",
@@ -64,7 +64,7 @@ var syncIntensity = {
  * @constructor
  * @return {Object} menu widget instance
  */
-export var PhueSyncBoxMenu = GObject.registerClass({
+export const PhueSyncBoxMenu = GObject.registerClass({
     GTypeName: 'PhueSyncBoxMenu'
 }, class PhueSyncBoxMenu extends PhuePanelMenu.PhuePanelMenu {
 

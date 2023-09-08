@@ -68,7 +68,7 @@ const StreamState = {
  * @constructor
  * @return {Object} menu widget instance
  */
-export var PhueMenu = GObject.registerClass({
+export const PhueMenu = GObject.registerClass({
      GTypeName: 'PhueMenu'
 }, class PhueMenu extends PhuePanelMenu.PhuePanelMenu {
 

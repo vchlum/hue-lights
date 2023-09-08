@@ -37,7 +37,7 @@
  * <p>Hash functions and hashing.</p>
  * @requires encoding
  */
-export var hashing = (function() {
+export const hashing = (function() {
     let sha256 = {
         name: 'sha-256',
         identifier: '608648016503040201',

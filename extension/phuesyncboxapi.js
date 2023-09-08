@@ -47,7 +47,7 @@ const PhueSyncBoxMsgRequestType = {
     DEVICE_STATE: 3
 };
 
-var PhueSyncBoxMessage = class PhueSyncBoxMessage extends Soup.Message {
+const PhueSyncBoxMessage = class PhueSyncBoxMessage extends Soup.Message {
 
     constructor(params) {
 
@@ -77,7 +77,7 @@ const TlsDatabaseSyncBox = GObject.registerClass({
  * @class DiscoverySyncBox
  * @return {Object} instance
  */
-export var DiscoverySyncBox = GObject.registerClass({
+export const DiscoverySyncBox = GObject.registerClass({
     GTypeName: "DiscoverySyncBox",
     Signals: {
         "discoverFinished": {},
@@ -212,7 +212,7 @@ export var DiscoverySyncBox = GObject.registerClass({
  * @param {String} ip address
  * @return {Object} instance
  */
-export var PhueSyncBox =  GObject.registerClass({
+export const PhueSyncBox =  GObject.registerClass({
     GTypeName: "PhueSyncBoxApi",
     Properties: {
         "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),

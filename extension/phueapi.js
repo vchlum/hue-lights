@@ -46,7 +46,7 @@ import * as Avahi from './avahi.js';
  * @class DiscoveryBridges
  * @return {Object} instance
  */
-export var DiscoveryBridges = GObject.registerClass({
+export const DiscoveryBridges = GObject.registerClass({
     GTypeName: "DiscoveryBridges",
     Signals: {
         "discoverFinished": {},
@@ -192,7 +192,7 @@ export var DiscoveryBridges = GObject.registerClass({
     }
 })
 
-export var PhueRequestype = {
+export const PhueRequestype = {
     NO_RESPONSE_NEED: 0,
     CHANGE_OCCURRED: 1,
     ALL_DATA: 2,
@@ -222,7 +222,7 @@ const TlsDatabaseBridge = GObject.registerClass({
     }
 });
 
-var PhueMessage = class PhueMessage extends Soup.Message {
+const PhueMessage = class PhueMessage extends Soup.Message {
 
     constructor(params) {
 
@@ -243,7 +243,7 @@ var PhueMessage = class PhueMessage extends Soup.Message {
  * @param {String} ip address
  * @return {Object} instance
  */
-export var PhueBridge =  GObject.registerClass({
+export const PhueBridge =  GObject.registerClass({
     GTypeName: "PhueBridge",
     Properties: {
         "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),

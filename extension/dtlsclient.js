@@ -202,7 +202,7 @@ export function stringToArray(s) {
  * @constructor
  * @return {Object} DTLS client
  */
-export var DTLSClient =  GObject.registerClass({
+export const DTLSClient =  GObject.registerClass({
     GTypeName: "DTLSClient",
     Properties: {
         "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),

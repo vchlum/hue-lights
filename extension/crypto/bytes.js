@@ -32,19 +32,19 @@
  * THE SOFTWARE.
  */
 
-export var checkBit = function(byteArray, byteIndex, bitIndex) {
+export const checkBit = function(byteArray, byteIndex, bitIndex) {
     return (byteArray[byteIndex] & (0x01 << bitIndex)) ? 1 : 0;
 };
     
-export var setBit = function(byteArray, byteIndex, bitIndex) {
+export const setBit = function(byteArray, byteIndex, bitIndex) {
     byteArray[byteIndex] = byteArray[byteIndex] | 0x01 << bitIndex;
 };
 
-export var resetBit = function(byteArray, byteIndex, bitIndex) {
+export const resetBit = function(byteArray, byteIndex, bitIndex) {
     byteArray[byteIndex] = byteArray[byteIndex] & ~(0x01 << bitIndex);
 };
 
-export var getBytes = function(numericValue) {
+export const getBytes = function(numericValue) {
     return [
       (numericValue & 0xFF000000) >>> 24,
       (numericValue & 0x00FF0000) >> 16,

@@ -56,7 +56,7 @@ const LightRectangle = {
  * @constructor
  * @return {Object} menu widget instance
  */
-export var PhueEntertainment =  GObject.registerClass({
+export const PhueEntertainment =  GObject.registerClass({
     GTypeName: "PhueEntertainment",
     Properties: {
         "ip": GObject.ParamSpec.string("ip", "ip", "ip", GObject.ParamFlags.READWRITE, null),

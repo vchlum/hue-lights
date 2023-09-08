@@ -41,8 +41,6 @@ import GObject from 'gi://GObject';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import * as Utils from './utils.js';
 
-var forceEnglish = false;
-
 /**
  * AddBridgeDialog object. Provides dialog window
  * expecting bridge IP address as input.
