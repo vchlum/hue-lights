@@ -62,33 +62,19 @@ export const PhueScreenshot =  GObject.registerClass({
      * @param {Number} y coordinate
      * @return {Object} color
      */
-    getColorPixel(x, y) {
-        return new Promise((resolve, reject) => {
-            if (!this.pixelWithinScreen(x, y)) {
-                let color = new Clutter.Color();
-                color.red = 0;
-                color.green = 0;
-                color.blue = 0;
-                color.alfa = 0;
+    async getColorPixel(x, y) {
+        let color = new Clutter.Color();
+        color.red = 0;
+        color.green = 0;
+        color.blue = 0;
+        color.alfa = 0;
 
-                resolve(color);
-                return;
-            }
+        if (!this.pixelWithinScreen(x, y)) {
+            return color;
+        }
 
-            try {
-                this._screenshot.pick_color(x, y, (o, res) => {
-                    let [ok, color] = this._screenshot.pick_color_finish(res);
-                    if (ok) {
-                        resolve(color);
-                        return;
-                    }
-
-                    reject();
-                });
-            } catch(e) {
-                console.error("Failed to get pixel from screenshot.");
-            }
-        });
+        [color] = await this._screenshot.pick_color(x, y);
+        return color;
     }
 
     pixelWithinScreen(x, y) {
