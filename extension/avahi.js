@@ -120,7 +120,9 @@ export const Avahi = GObject.registerClass({
                 ['avahi-browse', this._service, '-r', '-k', '-p', '-t'],
                 null,
                 GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
-                null
+                () => {
+                    /* child_setup can not be null, but we do not need it */
+                }
             );
 
             this._pid = pid;
