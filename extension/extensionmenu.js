@@ -39,6 +39,7 @@ import St from 'gi://St';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import Mtk from 'gi://Mtk';
 import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -4309,7 +4310,7 @@ export const PhueMenu = GObject.registerClass({
                         }
 
                         let [x, y, w, h] = this._isStreaming[bridgeid]["syncGeometry"];
-                        let rect = new Meta.Rectangle({ x, y, width: w, height: h });
+                        let rect = new Mtk.Rectangle({ x: x, y: y, width: w, height: h });
                         let monitorN = global.display.get_monitor_index_for_rect(rect);
                         additionlLabel = ` ${monitorN + 1} (${w}x${h})`;
                     }
@@ -4347,7 +4348,7 @@ export const PhueMenu = GObject.registerClass({
                             }
 
                             let [x, y, w, h] = this._isStreaming[bridgeid]["syncGeometry"];
-                            let rect = new Meta.Rectangle({ x, y, width: w, height: h });
+                            let rect = new Mtk.Rectangle({ x: x, y: y, width: w, height: h });
                             let monitorN = global.display.get_monitor_index_for_rect(rect);
 
                             if (service[1] !== monitorN) {
