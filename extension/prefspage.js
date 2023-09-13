@@ -1068,7 +1068,7 @@ const SyncboxTab = GObject.registerClass({
  * @return {Object} gtk Box
  */
 export const PreferencesPage = GObject.registerClass({
-    GTypeName: 'PrefsWidget',
+    GTypeName: 'HuePrefsWidget',
     Template: 'resource:///org/gnome/Shell/Extensions/hue-lights/ui/prefs.ui',
     InternalChildren: [
         'bridgesNotebook',

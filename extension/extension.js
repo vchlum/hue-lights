@@ -39,17 +39,18 @@
  import * as HueMenu from './extensionmenu.js';
  import * as HueSyncBox from './syncboxmenu.js';
 
+ let runNotify = null;
+
 export default class HueLightsExtension extends Extension {
     /**
-     * Function to substitute original createBanner.
+     * Function for replacing of the original createBanner.
      *
      * @method createBannerHue
      */
     createBannerHue() {
 
-        if (this._hueLightsMenu !== null) {
-
-            this._hueLightsMenu.runNotify(this.title, this.bannerBodyText);
+        if (runNotify !== null) {
+            runNotify(this.title, this.bannerBodyText);
         }
 
         return this.source.createBanner(this);
@@ -72,6 +73,7 @@ export default class HueLightsExtension extends Extension {
         );
         Main.panel.addToStatusArea('hue-sync-box', this._hueSyncBoxMenu);
 
+        runNotify = this._hueLightsMenu.runNotify.bind(this._hueLightsMenu);
         this._origCreateBanner = MessageTray.Notification.prototype.createBanner;
         MessageTray.Notification.prototype.createBanner = this.createBannerHue;
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface domain="hue-lights">
-    <template class="PrefsWidget" parent="AdwPreferencesPage">
+    <template class="HuePrefsWidget" parent="AdwPreferencesPage">
         <child>
             <object class="GtkBox">
                 <property name="can_focus">True</property>
