@@ -39,5 +39,9 @@ https://extensions.gnome.org/extension/3737/hue-lights
   - These are only required to install from source
   - `make`
   - `gnome-shell` (`gnome-extensions` command)
+  - `glib-compile-resources`
+  - `libglib2.0-dev-bin`
+  - `gettext`
   - These are recommended to run the extension
-  - `avahi` (discovering devices on local network)
+  - `avahi-tools` (`avahi-browse` command for discovering devices on local network)
+  
