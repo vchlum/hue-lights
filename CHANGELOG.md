@@ -1,3 +1,5 @@
+## Version 33
+ * null runNotify in disable
 ## Version 32
  * fix replacing createBanner function for notifications
  * improve use of pick_color
