@@ -1,0 +1,348 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-10-10 17:46+0200\n"
+"PO-Revision-Date: 2023-09-19 14:29+0200\n"
+"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+
+msgid "Finish"
+msgstr "Afronden"
+
+msgid "Switch to"
+msgstr "Schakelen naar"
+
+msgid "All Lights"
+msgstr "Alle verlichting"
+
+msgid "All Rooms & Zones"
+msgstr "Alle kamers en zones"
+
+msgid "Color & Temperature"
+msgstr "Kleur en temperatuur"
+
+msgid "No group selected"
+msgstr "U heeft geen groep gekozen"
+
+msgid "No light selected"
+msgstr "U heeft geen verlichting gekozen"
+
+msgid "Scenes"
+msgstr "Scènes"
+
+msgid "Display"
+msgstr "Scherm"
+
+msgid "Refresh displays"
+msgstr "Schermen herladen"
+
+msgid "Entertainment areas"
+msgstr "Vermaakzones"
+
+msgid "Intensity"
+msgstr "Lichtsterkte"
+
+msgid "Brightness"
+msgstr "Helderheid"
+
+msgid "Entertainment mode"
+msgstr "Vermaakmodus"
+
+msgid "key shortcut"
+msgstr "Sneltoets"
+
+msgid "Please check the connection to Philips Hue bridge."
+msgstr "Controleer de verbinding met de Philips Hue-bridge."
+
+msgid "Disable previous entertainment area."
+msgstr "Schakel de vorige vermaakzone uit."
+
+msgid "Please remove Philips Hue bridge and connect it again."
+msgstr "Koppel de Philips Hue-bridge af en verbind de bridge opnieuw."
+
+msgid "is syncing"
+msgstr "wordt gesynchroniseerd"
+
+msgid "Sync"
+msgstr "Synchroniseren"
+
+msgid "Set shortcut for"
+msgstr "Sneltoets instellen voor"
+
+msgid "shortcut"
+msgstr "sneltoets"
+
+msgid "Connection to Philips Hue bridge restored."
+msgstr "De verbinding met de Philips Hue-bridge is hersteld."
+
+msgid "Another app is already using the entertainment areas."
+msgstr "Een andere toepassing maakt reeds gebruik van de vermaakgebieden."
+
+msgid "Switch to standard menu"
+msgstr "Standaardmenu gebruiken"
+
+msgid "Switch to compact menu"
+msgstr "Compact menu gebruiken"
+
+msgid "Set the shortcut for sync"
+msgstr "Sneltoets instellen voor synchronisatie"
+
+msgid "Select an entertainment area:"
+msgstr "Kies een vermaakzone:"
+
+msgid "No bridge connected."
+msgstr "Er is geen bridge verbonden."
+
+msgid "Select a bridge:"
+msgstr "Kies een bridge:"
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "Screen synchronization"
+msgstr "Schermsynchronisatie"
+
+msgid "Your screen is not a solid rectangle."
+msgstr "Uw scherm is niet rechthoekig."
+
+msgid "Refresh menu"
+msgstr "Menu herladen"
+
+msgid "Settings"
+msgstr "Voorkeuren"
+
+msgid "Philips Hue bridges"
+msgstr "Philips Hue-bridges"
+
+msgid "General settings"
+msgstr "Algemene voorkeuren"
+
+msgid "Philips Hue HDMI sync boxes"
+msgstr "Philips Hue-hdmi-synchronisatieboxen"
+
+msgid "Advanced settings"
+msgstr "Geavanceerde voorkeuren"
+
+msgid "unknown name"
+msgstr "Onbekende naam"
+
+msgid "Connected"
+msgstr "Verbonden"
+
+msgid "Unreachable"
+msgstr "Onbereikbaar"
+
+msgid "Connect"
+msgstr "Verbinden"
+
+msgid "Remove"
+msgstr "Verwijderen"
+
+msgid "Disprefer"
+msgstr "Lage rang"
+
+msgid "Prefer"
+msgstr "Hoge rang"
+
+msgid "Add Philips Hue bridge IP"
+msgstr "Ip-adres van Philips Hue-bridge toevoegen"
+
+msgid "Discover Philips Hue bridges"
+msgstr "Zoeken naar Philips Hue-bridges"
+
+msgid "Position of the menu icon in panel:"
+msgstr "Locatie van menupictogram op bovenbalk:"
+
+msgid "center"
+msgstr "Midden"
+
+msgid "right"
+msgstr "Rechts"
+
+msgid "left"
+msgstr "Links"
+
+msgid "Icon pack:"
+msgstr "Pictogramthema:"
+
+msgid "none"
+msgstr "Geen"
+
+msgid "bright"
+msgstr "Licht"
+
+msgid "dark"
+msgstr "Donker"
+
+msgid "Show zones first:"
+msgstr "Zones bovenaan tonen:"
+
+msgid "Show scenes:"
+msgstr "Scènes tonen:"
+
+msgid "Compact menu settings"
+msgstr "Compacte menuvoorkeuren"
+
+msgid "Default use:"
+msgstr "Standaard gebruiken:"
+
+msgid "Notification lights:"
+msgstr "Verlichting met meldingen:"
+
+msgid "Select lights"
+msgstr "Kies verlichting"
+
+msgid "Autostart on GNOME login:"
+msgstr "Automatisch opstarten:"
+
+msgid "Default entertainment mode:"
+msgstr "Standaard vermaakmodus"
+
+msgid "Default intensity:"
+msgstr "Standaard lichtsterkte:"
+
+msgid "Default brightness:"
+msgstr "Standaard helderheid:"
+
+msgid "Nothing here yet. Connect your bridge."
+msgstr "Er is nog niets beschikbaar. Maak verbinding met uw bridge."
+
+msgid "Add Philips Hue HDMI sync box IP"
+msgstr "Ip-adres van Philips Hue hdmi-synchronisatiebox toevoegen"
+
+msgid "Philips Hue Bridge connection timeout (seconds):"
+msgstr "Philips Hue-bridgeverbindingstime-out (in seconden):"
+
+msgid "Philips Hue HDMI sync box connection timeout (seconds):"
+msgstr "Philips Hue hdmi-synchronisatieboxtime-out (in seconden):"
+
+msgid "Log debug messages:"
+msgstr "Foutopsporingsberichten opslaan in logboek:"
+
+msgid "version"
+msgstr "Versie"
+
+msgid ""
+"This application makes use of fast changing light effects conditions alone, "
+"or in combination with certain content on the screen it may trigger "
+"previously undetected epileptic symptoms or seizures in persons who have no "
+"history of prior seizures or epilepsy."
+msgstr ""
+"Met deze toepassing kunt u lichteffecten snel aanpassen, zowel handmatig "
+"als op basis van scherminhoud. Dit kan mogelĳk leiden tot epileptische "
+"aanvallen of beroertes, ook bĳ personen die geen voorgeschiedenis hebben."
+
+msgid "Bridge not found"
+msgstr "Geen bridge aangetroffen"
+
+msgid "Press the button on the bridge and try again."
+msgstr "Druk op de bridgeknop en probeer het opnieuw."
+
+msgid "OK"
+msgstr "Oké"
+
+msgid "Hold HDMI sync box button"
+msgstr "Houd de hdmi-synchronisatieknop ingedrukt"
+
+msgid ""
+"While this dialog is shown, hold the button on HDMI sync box until the led "
+"blinks green (~3 seconds) and release."
+msgstr ""
+"Houd de hdmi-synchronisatieknop ingedrukt totdat het ledlampje groen "
+"knippert (ong. 3 seconden) en laat los."
+
+msgid "Enter new IP address"
+msgstr "Voer een ip-adres in"
+
+msgid "Game"
+msgstr "Game"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Music"
+msgstr "Muziek"
+
+msgid "Subtle"
+msgstr "Subtiel"
+
+msgid "Moderate"
+msgstr "Redelijk"
+
+msgid "High"
+msgstr "Veel"
+
+msgid "Intense"
+msgstr "Intens"
+
+msgid "Device unplugged."
+msgstr "Het apparaat is ontkoppeld."
+
+msgid "Select an HDMI input:"
+msgstr "Kies een hdmi-invoer:"
+
+msgid "Select a sync mode:"
+msgstr "Kies een synchronisatiemodus:"
+
+msgid "Connection to Philips Hue sync box restored."
+msgstr "De verbinding met Philips Hue-synchronisatiebox is hersteld."
+
+msgid "Please check the connection to Philips Hue sync box."
+msgstr "Controleer de verbinding met Philips Hue-synchronisatiebox."
+
+msgid "Screen"
+msgstr "Scherm"
+
+msgid "Selection"
+msgstr "Selectie"
+
+msgid "Track cursor"
+msgstr "Cursor volgen"
+
+msgid "Random"
+msgstr "Willekeurig"
+
+msgid "Force English language (requires relogin):"
+msgstr "Engelse taal gebruiken (vereist af- en aanmelden):"
+
+msgid "disconnected"
+msgstr "Verbinding verbroken"
+
+msgid "Associated networks"
+msgstr "Gekoppelde netwerken"
+
+msgid "About"
+msgstr "Over"
+
+msgid "Caveats"
+msgstr "Disclaimer"
+
+msgid "Compact menu as default:"
+msgstr "Compact menu gebruiken:"
+
+msgid "IP address:"
+msgstr "Ip-adres:"
+
+msgid "Light selection:"
+msgstr "Lampkeuze:"
+
+msgid "Notification title regex:"
+msgstr "Reguliere uitdrukking van meldingstitel:"
+
+msgid "Notification body regex:"
+msgstr "Reguliere uitdrukking van meldingsinhoud:"
+
+msgid "Add"
+msgstr "Toevoegen"
+
+msgid "Restart"
+msgstr "Herstarten"
+
+msgid "Audio"
+msgstr "Audio"
