@@ -80,6 +80,7 @@ export default class HueLightsExtension extends Extension {
 
     disable() {
         MessageTray.Notification.prototype.createBanner = this._origCreateBanner;
+        runNotify = null;
 
         this._hueSyncBoxMenu.disarmTimers();
         this._hueSyncBoxMenu.disconnectSignals(true);
