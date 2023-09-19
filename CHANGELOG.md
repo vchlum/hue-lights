@@ -1,3 +1,7 @@
+## Version 32
+ * fix replacing createBanner function for notifications
+ * improve use of pick_color
+ * miscellaneous fixes
 ## Version 31
  * porting to Gnome 45
  * add sync audio feature
