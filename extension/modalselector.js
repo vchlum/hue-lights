@@ -97,7 +97,7 @@ const __ = gettext;
             label = new St.Label();
             label.text = params.label;
             label.set_x_expand(true);
-            this.contentLayout.add(label);
+            this.contentLayout.add_child(label);
         }
 
         for (let i in params.options) {
@@ -123,7 +123,7 @@ const __ = gettext;
             );
             this._signals[signal] = button;
 
-            this.contentLayout.add(button);
+            this.contentLayout.add_child(button);
         }
     }
 

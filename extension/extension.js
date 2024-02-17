@@ -64,6 +64,7 @@ export default class HueLightsExtension extends Extension {
             this.openPreferences.bind(this)
         );
         Main.panel.addToStatusArea('hue-lights', this._hueLightsMenu);
+        this._hueLightsMenu.setPositionInPanel();
 
         this._hueSyncBoxMenu = new HueSyncBox.PhueSyncBoxMenu(
             this.metadata,
@@ -72,6 +73,7 @@ export default class HueLightsExtension extends Extension {
             this.openPreferences.bind(this)
         );
         Main.panel.addToStatusArea('hue-sync-box', this._hueSyncBoxMenu);
+        this._hueSyncBoxMenu.setPositionInPanel();
 
         runNotify = this._hueLightsMenu.runNotify.bind(this._hueLightsMenu);
         this._origCreateBanner = MessageTray.Notification.prototype.createBanner;

@@ -181,10 +181,10 @@ export const ColorPickerBox =  GObject.registerClass({
             );
             this._signals[signal] = { "object": colorWheel };
             this._centerObject(colorWheel);
-            mainbox.add(colorWheel);
+            mainbox.add_child(colorWheel);
 
             if (this._useWhiteBox) {
-                mainbox.add(new PopupMenu.PopupSeparatorMenuItem());
+                mainbox.add_child(new PopupMenu.PopupSeparatorMenuItem());
             }
         }
 
@@ -215,11 +215,11 @@ export const ColorPickerBox =  GObject.registerClass({
             );
             this._signals[signal] = { "object": whiteBox };
             this._centerObject(whiteBox);
-            mainbox.add(whiteBox);
+            mainbox.add_child(whiteBox);
         }
 
         if (this._showBrightness) {
-            mainbox.add(new PopupMenu.PopupSeparatorMenuItem());
+            mainbox.add_child(new PopupMenu.PopupSeparatorMenuItem());
 
             /**
              * Brightness slider
@@ -227,7 +227,7 @@ export const ColorPickerBox =  GObject.registerClass({
             this.slider = new Slider.Slider(0);
             signal = this.slider.connect("drag-end", this._brightnessEvent.bind(this));
             this._signals[signal] = { "object": this.slider };
-            mainbox.add(this.slider);
+            mainbox.add_child(this.slider);
         }
 
         return mainbox;
@@ -389,7 +389,7 @@ export const ColorPicker =  GObject.registerClass({
         );
         this._signals[signal] = { "object": this.colorPickerBox };
 
-        this.contentLayout.add(this.colorPickerBox.createColorBox());
+        this.contentLayout.add_child(this.colorPickerBox.createColorBox());
     }
 
     /**

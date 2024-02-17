@@ -219,7 +219,7 @@ export const AreaSelector =  GObject.registerClass({
             this._shellGlobal.stage.disconnect(this._signalCapturedEvent);
         }
 
-        Main.uiGroup.remove_actor(this._container);
+        Main.uiGroup.remove_child(this._container);
         Main.popModal(this._container);
         this._container.destroy();
     }

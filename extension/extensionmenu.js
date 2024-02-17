@@ -1058,29 +1058,29 @@ export const PhueMenu = GObject.registerClass({
 
         let temperature = this._tryaddSensorsTemperature(bridgeid, uniqueid, data);
         if (temperature !== null) {
-            item.add(temperature);
+            item.add_child(temperature);
         }
 
 
         let lightlevel = this._tryaddSensorsLightLevel(bridgeid, uniqueid, data);
         if (lightlevel !== null) {
-            item.add(lightlevel);
+            item.add_child(lightlevel);
         }
 
         let battery = this._tryaddSensorsBattery(bridgeid, sensorid, data);
         if (battery !== null) {
-            item.add(battery);
+            item.add_child(battery);
 
             let icon = this._getIconByPath(this._mainDir.get_path() + '/media/battery.svg');
 
             if (icon !== null) {
-                item.add(icon);
+                item.add_child(icon);
             }
         }
 
         let sensorSwitch = this._tryaddSensorsSwitch(bridgeid, sensorid, data);
         if (sensorSwitch !== null) {
-            item.add(sensorSwitch);
+            item.add_child(sensorSwitch);
         }
 
         return item;
@@ -1608,7 +1608,7 @@ export const PhueMenu = GObject.registerClass({
         light.remove_child(light.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;
-        itemBox.add(label);
+        itemBox.add_child(label);
         light.insert_child_at_index(itemBox, 1);
 
         light.set_x_align(Clutter.ActorAlign.FILL);
@@ -1700,7 +1700,7 @@ export const PhueMenu = GObject.registerClass({
                 defaultValue = data["lights"][lightid]["state"]["bri"] / 255;
             }
 
-            itemBox.add(this._createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, true));
+            itemBox.add_child(this._createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, true));
         }
 
         /**
@@ -1713,7 +1713,7 @@ export const PhueMenu = GObject.registerClass({
             defaultValue = data["lights"][lightid]["state"]["on"];
         }
 
-        light.add(this._createLightSwitch(bridgeid, lightid, groupid, defaultValue));
+        light.add_child(this._createLightSwitch(bridgeid, lightid, groupid, defaultValue));
 
         return light;
     }
@@ -2052,7 +2052,7 @@ export const PhueMenu = GObject.registerClass({
                 useWhiteBox: hasCT,
             }
         );
-        controlItem.add(colorPickerBox.createColorBox());
+        controlItem.add_child(colorPickerBox.createColorBox());
 
         if (groupid !== null) {
             bridgePath = `${this._rndID()}::groups::${groupid}::action::hue`;
@@ -2310,7 +2310,7 @@ export const PhueMenu = GObject.registerClass({
                 }
 
                 lightSlider = this._createBrightnessSlider(bridgeid, lightid, groupid, defaultValue, true);
-                this._compactMenuBridges[bridgeid]["lights"]["box"].add(lightSlider);
+                this._compactMenuBridges[bridgeid]["lights"]["box"].add_child(lightSlider);
             }
 
             this._compactMenuBridges[bridgeid]["lights"]["object"].insert_child_at_index(
@@ -2556,11 +2556,11 @@ export const PhueMenu = GObject.registerClass({
             groupItem.remove_child(groupItem.label);
             let itemBox = new St.BoxLayout();
             itemBox.vertical = true;
-            itemBox.add(label);
+            itemBox.add_child(label);
             if (this._checkBrightnessAttributeLightOrGroup(bridgeid, "groups", groupid)) {
                 defaultValue = this._getGroupBrightness(bridgeid, groupid) / 255;
 
-                itemBox.add(this._createBrightnessSlider(bridgeid, null, groupid, defaultValue));
+                itemBox.add_child(this._createBrightnessSlider(bridgeid, null, groupid, defaultValue));
             }
             groupItem.insert_child_at_index(itemBox, 1);
 
@@ -2572,7 +2572,7 @@ export const PhueMenu = GObject.registerClass({
             groupItem.set_x_align(Clutter.ActorAlign.FILL);
             groupItem.label.set_x_expand(true);
 
-            groupItem.add(this._createGroupSwitch(bridgeid, groupid));
+            groupItem.add_child(this._createGroupSwitch(bridgeid, groupid));
 
             groupItem.originalActivate = groupItem.activate;
             groupItem.activate = (event) => {
@@ -2660,7 +2660,7 @@ export const PhueMenu = GObject.registerClass({
         groupsSubMenu.remove_child(groupsSubMenu.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;
-        itemBox.add(label);
+        itemBox.add_child(label);
         groupsSubMenu.insert_child_at_index(itemBox, 1);
 
         this._compactMenuBridges[bridgeid]["groups"] = {}
@@ -2758,7 +2758,7 @@ export const PhueMenu = GObject.registerClass({
         lightsSubMenu.remove_child(lightsSubMenu.label);
         let itemBox = new St.BoxLayout();
         itemBox.vertical = true;
-        itemBox.add(label);
+        itemBox.add_child(label);
         lightsSubMenu.insert_child_at_index(itemBox, 1);
 
         lightsSubMenu.connect(
@@ -2962,7 +2962,7 @@ export const PhueMenu = GObject.registerClass({
         entertainment.set_x_align(Clutter.ActorAlign.FILL);
         entertainment.label.set_x_expand(true);
 
-        entertainment.add(this._createEntertainmentSwitch(bridgeid, groupid));
+        entertainment.add_child(this._createEntertainmentSwitch(bridgeid, groupid));
 
         return entertainment;
     }
@@ -2996,7 +2996,7 @@ export const PhueMenu = GObject.registerClass({
         slider.set_x_expand(false);
         slider.value = defaultValue;
 
-        entertainmentSliderItem.add(slider);
+        entertainmentSliderItem.add_child(slider);
 
         slider.connect(
             "drag-end",
@@ -3136,7 +3136,7 @@ export const PhueMenu = GObject.registerClass({
             serviceItem.set_x_align(Clutter.ActorAlign.FILL);
             serviceItem.label.set_x_expand(true);
 
-            serviceItem.add(switchButton);
+            serviceItem.add_child(switchButton);
 
             this._isStreaming[bridgeid]["entertainmentModeSwitches"].push(
                 [service, switchBox]
@@ -5367,3 +5367,4 @@ export const PhueMenu = GObject.registerClass({
         }
     }
 });
+

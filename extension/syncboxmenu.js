@@ -639,7 +639,7 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         slider.set_x_expand(false);
         slider.value = data["execution"]["brightness"];
 
-        item.add(slider);
+        item.add_child(slider);
 
         slider.connect(
             "drag-end",

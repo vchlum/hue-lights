@@ -315,11 +315,16 @@ export const PhuePanelMenu = GObject.registerClass({
 
         let children = null;
 
+        if (! this.container.get_parent()) {
+            /* not in the status area yet */
+            return;
+        }
+
         if (this._indicatorPositionBackUp === this._indicatorPosition) {
             return;
         }
 
-        this.get_parent().remove_actor(this);
+        this.container.get_parent().remove_child(this.container);
 
         switch (this._indicatorPosition) {
 
@@ -327,7 +332,7 @@ export const PhuePanelMenu = GObject.registerClass({
 
                 children = Main.panel._leftBox.get_children();
                 Main.panel._leftBox.insert_child_at_index(
-                    this,
+                    this.container,
                     children.length
                 );
                 break;
@@ -336,7 +341,7 @@ export const PhuePanelMenu = GObject.registerClass({
 
                 children = Main.panel._centerBox.get_children();
                 Main.panel._centerBox.insert_child_at_index(
-                    this,
+                    this.container,
                     children.length
                     );
                 break;
@@ -344,12 +349,18 @@ export const PhuePanelMenu = GObject.registerClass({
             case PhueMenuPosition.RIGHT:
 
                 children = Main.panel._rightBox.get_children();
-                Main.panel._rightBox.insert_child_at_index(this, 0);
+                Main.panel._rightBox.insert_child_at_index(
+                    this.container,
+                    0
+                    );
                 break;
 
             default:
                 children = Main.panel._rightBox.get_children();
-                Main.panel._rightBox.insert_child_at_index(this, 0);
+                Main.panel._rightBox.insert_child_at_index(
+                    this.container,
+                    0
+                    );
         }
 
         this._indicatorPositionBackUp = this._indicatorPosition;
