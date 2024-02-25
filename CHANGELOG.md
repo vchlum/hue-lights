@@ -1,4 +1,7 @@
-## Version 33
+## Version 34
+ * add Gnome 46 support
+ * added Dutch translation
+ ## Version 33
  * null runNotify in disable
 ## Version 32
  * fix replacing createBanner function for notifications
