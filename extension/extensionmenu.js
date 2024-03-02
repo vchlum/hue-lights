@@ -5272,7 +5272,7 @@ export const PhueMenu = GObject.registerClass({
             this.hue.instances[bridgeid].setLights(
                 lightid,
                 this.oldNotifylight[reqBridgeid][i],
-                PhueRequestype.NO_RESPONSE_NEED
+                HueApi.PhueRequestype.NO_RESPONSE_NEED
             );
         }
     }

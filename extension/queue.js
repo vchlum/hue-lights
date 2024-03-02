@@ -35,7 +35,8 @@
  * THE SOFTWARE.
  */
 
- import GLib from 'gi://GLib';
+import GLib from 'gi://GLib';
+import * as Utils from './utils.js';
 
 export const handlerType = {
     CUSTOM: 0,
