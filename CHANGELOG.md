@@ -1,3 +1,5 @@
+## Version 35
+ * fix lights notification
 ## Version 34
  * add Gnome 46 support
  * added Dutch translation
