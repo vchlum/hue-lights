@@ -219,6 +219,7 @@ export const getHueIconFile = {
     "RWL022": "devicesDimmerswitch",
     "SML001": "devicesMotionSensor",
     "SML002": "devicesOutdoorMotionSensor",
+    "SML003": "devicesMotionSensor",
     "SWT001": "devicesTap",
 
     "Downstairs": "zonesAreasGroundfloor",
