@@ -33,9 +33,13 @@
  * THE SOFTWARE.
  */
 
- import Shell from 'gi://Shell';
- import GObject from 'gi://GObject';
- import Clutter from 'gi://Clutter';
+import Shell from 'gi://Shell';
+import GObject from 'gi://GObject';
+import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
+
+const ShellVersion = parseFloat(Config.PACKAGE_VERSION);
 
 /**
  * PhueScreenshot class for taking screenshots
@@ -63,11 +67,16 @@ export const PhueScreenshot =  GObject.registerClass({
      * @return {Object} color
      */
     async getColorPixel(x, y) {
-        let color = new Clutter.Color();
+        let color;
+        if (ShellVersion >= 47) {
+            color = new Cogl.Color();
+        } else {
+            color = new Clutter.Color();
+        }
         color.red = 0;
         color.green = 0;
         color.blue = 0;
-        color.alfa = 0;
+        color.alpha = 0;
 
         if (!this.pixelWithinScreen(x, y)) {
             return color;

@@ -38,11 +38,15 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
+import Cogl from 'gi://Cogl';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Utils from './utils.js';
 import {Extension, gettext} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+const ShellVersion = parseFloat(Config.PACKAGE_VERSION);
 
 const __ = gettext;
 
@@ -157,22 +161,38 @@ export const PhuePanelMenu = GObject.registerClass({
 
             case PhueIconPack.BRIGHT:
 
-                color = new Clutter.Color({
-                    red: 237,
-                    green: 237,
-                    blue: 237,
-                    alpha: 255
-                });
+                if (ShellVersion >= 47) {
+                    color = new Cogl.Color();
+                    color.red = 237;
+                    color.green = 237;
+                    color.blue = 237;
+                    color.alpha = 255;
+                } else {
+                    color = new Clutter.Color({
+                        red: 237,
+                        green: 237,
+                        blue: 237,
+                        alpha: 255
+                    });
+                }
                 break;
 
             case PhueIconPack.DARK:
 
-                color = new Clutter.Color({
-                    red: 40,
-                    green: 40,
-                    blue: 40,
-                    alpha: 255
-                });
+                if (ShellVersion >= 47) {
+                    color = new Cogl.Color();
+                    color.red = 40;
+                    color.green = 40;
+                    color.blue = 40;
+                    color.alpha = 255;
+                } else {
+                    color = new Clutter.Color({
+                        red: 40,
+                        green: 40,
+                        blue: 40,
+                        alpha: 255
+                    });
+                }
                 break;
 
             default:

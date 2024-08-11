@@ -40,6 +40,8 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import Mtk from 'gi://Mtk';
+import Cogl from 'gi://Cogl';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -52,6 +54,8 @@ import * as ModalSelector from './modalselector.js';
 import * as AreaSelector from './areaselector.js';
 import * as Queue from './queue.js';
 import * as Utils from './utils.js';
+
+const ShellVersion = parseFloat(Config.PACKAGE_VERSION);
 
 const StreamState = {
     STOPPED: 0,
@@ -3968,12 +3972,21 @@ export const PhueMenu = GObject.registerClass({
      * @param {Array} array with RGB
      */
     _setSwitchColor(object, [r, g, b]) {
-        let color = new Clutter.Color({
-            red: r,
-            green: g,
-            blue: b,
-            alpha: 255
-        });
+        let color;
+        if (ShellVersion >= 47) {
+            color = new Cogl.Color();
+            color.red = r;
+            color.green = g;
+            color.blue = b;
+            color.alpha = 255;
+        } else {
+            color = new Clutter.Color({
+                red: r,
+                green: g,
+                blue: b,
+                alpha: 255
+            });
+        }
 
         object.clear_effects();
 
