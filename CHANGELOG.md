@@ -1,3 +1,6 @@
+## Version 36
+ * new motion sensor icons
+ * add Gnome 47 support
 ## Version 35
  * fix lights notification
 ## Version 34
