@@ -446,13 +446,17 @@ export const PhueMenu = GObject.registerClass({
         parsedBridgePath[2] = parseInt(parsedBridgePath[2]);
 
         if (!this.hue.instances[bridgeid].isConnected()){
-            object.state = false;
+            if (object.state) {
+                object.state = false;
+            }
             this._checkHueLightsIsStreaming(bridgeid);
             return;
         }
 
         if (parsedBridgePath[1] !== "groups") {
-            object.state = false;
+            if (object.state) {
+                object.state = false;
+            }
             return;
         }
 
@@ -493,7 +497,9 @@ export const PhueMenu = GObject.registerClass({
                 this._isStreaming[bridgeid]["state"] = StreamState.FAILED;
                 this._checkHueLightsIsStreaming(bridgeid);
 
-                object.state = false;
+                if (object.state) {
+                    object.state = false;
+                }
                 break;
 
             case StreamState.STOPPING:
@@ -503,12 +509,16 @@ export const PhueMenu = GObject.registerClass({
                     break;
                 }
 
-                object.state = false;
+                if (object.state) {
+                    object.state = false;
+                }
                 break;
 
             case StreamState.RUNNING:
                 if (this._isStreaming[bridgeid]["groupid"] !== parsedBridgePath[2]) {
-                    object.state = false;
+                    if (object.state) {
+                        object.state = false;
+                    }
 
                     Utils.logDebug(`Entertainment group ${this._isStreaming[bridgeid]["groupid"]} is already streaming.`);
                     break;
@@ -999,18 +1009,19 @@ export const PhueMenu = GObject.registerClass({
         let bridgePath = `${this._rndID()}::sensors::${sensorid}::config::on`;
 
         switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         switchButton = new St.Button({reactive: true, can_focus: true});
         switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () =>{
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -1363,8 +1374,8 @@ export const PhueMenu = GObject.registerClass({
             bridgePath = `${this._rndID()}::lights::${lightid}::state::on`;
         }
 
-        let switchBox = new PopupMenu.Switch(false);
-        switchBox.state = defaultValue;
+        let switchBox = new PopupMenu.Switch(defaultValue);
+        switchBox.reactive = false;
 
         let switchButton = new St.Button(
             {reactive: true, can_focus: true}
@@ -1374,13 +1385,13 @@ export const PhueMenu = GObject.registerClass({
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -1854,18 +1865,19 @@ export const PhueMenu = GObject.registerClass({
         let bridgePath = `${this._rndID()}::groups::${groupid}::state::any_on`;
 
         switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         switchButton = new St.Button({reactive: true, can_focus: true});
         switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -2187,7 +2199,7 @@ export const PhueMenu = GObject.registerClass({
         unselectButton.child = buttonContent;
 
         unselectButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 if (this._menuSelected[bridgeid]["lightid"] !== undefined) {
                     delete(this._menuSelected[bridgeid]["lightid"]);
@@ -2375,7 +2387,7 @@ export const PhueMenu = GObject.registerClass({
         unselectButton.child = buttonContent;
 
         unselectButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 this._menuSelected[bridgeid] = {};
                 this.writeMenuSelectedSettings();
@@ -2913,18 +2925,19 @@ export const PhueMenu = GObject.registerClass({
         let bridgePath = `${this._rndID()}::groups::${groupid}::stream::active`;
 
         switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         switchButton = new St.Button({reactive: true, can_focus: true});
         switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -3094,6 +3107,7 @@ export const PhueMenu = GObject.registerClass({
             );
 
             let switchBox = new PopupMenu.Switch(false);
+            switchBox.reactive = false;
             switchBoxes.push(switchBox);
             let switchButton = new St.Button({reactive: true, can_focus: true});
             switchButton.set_x_align(Clutter.ActorAlign.END);
@@ -3101,20 +3115,24 @@ export const PhueMenu = GObject.registerClass({
             switchButton.child = switchBox;
 
             if (this._isStreaming[bridgeid]["entertainmentMode"] === service) {
-                switchBox.state = true;
+                if (!switchBox.state) {
+                    switchBox.state = true;
+                }
             }
 
             signal = switchButton.connect(
-                "button-press-event",
+                "clicked",
                 () => {
                     switchBox.toggle();
 
-                    if (switchBox.state === false) {
+                    if (!switchBox.state) {
                         switchBox.state = true;
                     }
                     for (let i of switchBoxes) {
                         if (i !== switchBox) {
-                            i.state = false;
+                            if (i.state) {
+                                i.state = false;
+                            }
                         }
                     }
                 }
@@ -3122,7 +3140,7 @@ export const PhueMenu = GObject.registerClass({
             this._appendSignal(signal, switchButton, true);
 
             signal = switchButton.connect(
-                "button-press-event",
+                "clicked",
                 this._menuEventHandler.bind(
                     this,
                     {
@@ -3216,19 +3234,20 @@ export const PhueMenu = GObject.registerClass({
         let bridgePath = `${this._rndID()}`;
 
         switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         switchButton = new St.Button({reactive: true, can_focus: true});
         switchButton.set_x_align(Clutter.ActorAlign.END);
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
 
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -4087,7 +4106,9 @@ export const PhueMenu = GObject.registerClass({
                     }
 
                     if (this._checkEntertainmentStream(bridgeid, parsedBridgePath)) {
-                        object.state = true;
+                        if (!object.state) {
+                            object.state = true;
+                        }
                     }
 
                     break;
@@ -4284,7 +4305,7 @@ export const PhueMenu = GObject.registerClass({
                 case "main-switch-entertainment":
 
                     object.visible = false;
-                    object.state = false;
+                    let object_state = false;
 
                     if (this._isStreaming[bridgeid] === undefined) {
                         break;
@@ -4297,8 +4318,12 @@ export const PhueMenu = GObject.registerClass({
 
                         if (this.bridesData[bridgeid]["groups"][groupid]["stream"]["active"]) {
                             object.visible = true;
-                            object.state = true;
+                            object_state = true;
                         }
+                    }
+
+                    if (object.state != object_state) {
+                        object.state = object_state;
                     }
 
                     break;
@@ -4356,7 +4381,9 @@ export const PhueMenu = GObject.registerClass({
                             if (this._isStreaming[bridgeid]["entertainmentMode"] !== Utils.entertainmentMode.DISPLAYN ||
                                 this._isStreaming[bridgeid]["syncGeometry"] === undefined) {
 
-                                modeSwitch.state = false;
+                                if (modeSwitch.state) {
+                                    modeSwitch.state = false;
+                                }
                                 continue;
                             }
 
@@ -4365,15 +4392,23 @@ export const PhueMenu = GObject.registerClass({
                             let monitorN = global.display.get_monitor_index_for_rect(rect);
 
                             if (service[1] !== monitorN) {
-                                modeSwitch.state = false;
+                                if (modeSwitch.state) {
+                                    modeSwitch.state = false;
+                                }
                             } else {
-                                modeSwitch.state = true;
+                                if (!modeSwitch.state) {
+                                    modeSwitch.state = true;
+                                }
                             }
 
                         } else if (this._isStreaming[bridgeid]["entertainmentMode"] !== service) {
-                            modeSwitch.state = false;
+                            if (modeSwitch.state) {
+                                modeSwitch.state = false;
+                            }
                         } else {
-                            modeSwitch.state = true;
+                            if (!modeSwitch.state) {
+                                modeSwitch.state = true;
+                            }
                         }
                     }
 

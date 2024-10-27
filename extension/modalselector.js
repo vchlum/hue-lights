@@ -112,7 +112,7 @@ const __ = gettext;
             button.child = label;
 
             signal = button.connect(
-                "button-press-event",
+                "clicked",
                 () => {
 
                     this.result = i;

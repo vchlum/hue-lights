@@ -269,6 +269,7 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         let syncBoxPath = `${this._rndID()}::execution::mode`;
 
         let switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         let switchButton = new St.Button(
             {reactive: true, can_focus: true}
         );
@@ -277,13 +278,13 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -304,9 +305,13 @@ export const PhueSyncBoxMenu = GObject.registerClass({
 
         if (data["execution"] !== undefined &&
             data["execution"]["mode"] !== "powersave") {
-            switchBox.state = false;
+            if (switchBox.state) {
+                switchBox.state = false;
+            }
         } else {
-            switchBox.state = true;
+            if (!switchBox.state) {
+                switchBox.state = true;
+            }
         }
 
         return switchButton;
@@ -466,6 +471,7 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         let syncBoxPath = `${this._rndID()}::execution::syncActive`;
 
         let switchBox = new PopupMenu.Switch(false);
+        switchBox.reactive = false;
         let switchButton = new St.Button(
             {reactive: true, can_focus: true}
         );
@@ -474,13 +480,13 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         switchButton.set_x_expand(false);
         switchButton.child = switchBox;
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             () => {
                 switchBox.toggle();
             }
         );
         switchButton.connect(
-            "button-press-event",
+            "clicked",
             this._menuEventHandler.bind(
                 this,
                 {
@@ -500,7 +506,9 @@ export const PhueSyncBoxMenu = GObject.registerClass({
         }
 
         if (data["execution"] !== undefined) {
-            switchBox.state = data["execution"]["syncActive"];
+            if (switchBox.state !== data["execution"]["syncActive"]) {
+                switchBox.state = data["execution"]["syncActive"];
+            }
         }
 
         return switchButton;
@@ -983,9 +991,13 @@ export const PhueSyncBoxMenu = GObject.registerClass({
                     }
 
                     if (value.length > 0 && value === "powersave") {
-                        object.state = false;
+                        if (object.state) {
+                            object.state = false;
+                        }
                     } else {
-                        object.state = true;
+                        if (!object.state) {
+                            object.state = true;
+                        }
                     }
 
                     break;
@@ -997,7 +1009,9 @@ export const PhueSyncBoxMenu = GObject.registerClass({
 
                 case "syncActive-switch":
                     value = this.syncBoxesData[id]["execution"]["syncActive"];
-                    object.state = value;
+                    if (object.state !== value) {
+                        object.state = value;
+                    }
                     break;
 
                 case "selected-mode":
