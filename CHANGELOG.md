@@ -1,3 +1,5 @@
+## Version 37
+ * fix switches toggling area
 ## Version 36
  * new motion sensor icons
  * add Gnome 47 support
