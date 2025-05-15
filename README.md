@@ -1,3 +1,6 @@
+# DEPRECATED
+This extension has been deprecated but a new extension Smart Home has been released to replace it. Please go to https://github.com/vchlum/smart-home
+
 # hue-lights
 ![screenshot](https://github.com/vchlum/hue-lights/blob/main/screenshot.png)
 
